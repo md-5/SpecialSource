@@ -40,9 +40,9 @@ public class JarComparer extends ClassVisitor {
     public final Jar jar;
     private String myName;
     public int iterDepth;
-    public NoDupeList<String> classes = new NoDupeList<>();
-    public NoDupeList<Ownable> fields = new NoDupeList<>();
-    public NoDupeList<Ownable> methods = new NoDupeList<>();
+    public NoDupeList<String> classes = new NoDupeList<String>();
+    public NoDupeList<Ownable> fields = new NoDupeList<Ownable>();
+    public NoDupeList<Ownable> methods = new NoDupeList<Ownable>();
 
     private void visitType(Type type) {
         // FIXME: Scan arrays too!

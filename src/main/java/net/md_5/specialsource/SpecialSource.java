@@ -30,16 +30,15 @@ package net.md_5.specialsource;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.jar.JarFile;
 import org.objectweb.asm.ClassReader;
 
 public class SpecialSource {
 
     public static void main(String[] args) throws Exception {
-        args = new String[]{"jars/1.4.5/bukkit.jar", "jars/1.4.5/vanilla.jar", "jars/1.4.5/craftbukkit-1.4.5-R0.3-SNAPSHOT.jar"};
         if (args.length != 3) {
             System.err.println("SpecialSource takes 3 arguments. It will take 2 jars to generate a difference between, and a 3rd jar based on the first jar to rename to the second jar.");
             System.err.println("Usage: java -jar SpecialSource.jar <first jar> <second jar> <jar of first names>");
+            System.err.println("It is currently tuned to only accept a Minecraft v1.4.5 server jar as the 2 jars to compare");
             return;
         }
 
@@ -50,7 +49,7 @@ public class SpecialSource {
         System.out.println("Creating jar compare");
         JarComparer visitor1 = new JarComparer(jar1);
         JarComparer visitor2 = new JarComparer(jar2);
-        visit(new Pair<>(jar1, jar2), new Pair<>(visitor1, visitor2), new Pair<>(jar1.main, jar2.main));
+        visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.main, jar2.main));
 
         System.out.println("Checking vailidity");
         if (visitor1.classes.size() != 1004 || visitor2.classes.size() != 1004) {
@@ -67,7 +66,7 @@ public class SpecialSource {
         JarRemapper.renameJar(Jar.init(args[2]), new File("out.jar"), visitor1, visitor2);
     }
 
-    private static void visit(Pair<Jar, Jar> jars, Pair<JarComparer, JarComparer> visitors, Pair<String, String> classes) throws IOException {
+    private static void visit(Pair<Jar> jars, Pair<JarComparer> visitors, Pair<String> classes) throws IOException {
         JarComparer visitor1 = visitors.first;
         JarComparer visitor2 = visitors.second;
 
@@ -81,7 +80,7 @@ public class SpecialSource {
         while (visitor1.iterDepth < visitor1.classes.size()) {
             String className1 = visitor1.classes.get(visitor1.iterDepth);
             String className2 = visitor2.classes.get(visitor1.iterDepth);
-            Pair<String, String> pair = new Pair<>(className1, className2);
+            Pair<String> pair = new Pair<String>(className1, className2);
             visitor1.iterDepth++;
             visit(jars, visitors, pair);
         }
@@ -97,6 +96,5 @@ public class SpecialSource {
         if (visitor1.methods.size() != visitor2.methods.size()) {
             throw new IllegalStateException("methods");
         }
-
     }
 }

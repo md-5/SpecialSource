@@ -57,13 +57,13 @@ public class JarRemapper extends Remapper {
     private static final String HEADER = ""
             + "# THESE ARE AUTOMATICALLY GENERATED MAPPINGS BETWEEN {0} and {1}\n"
             + "# THEY WERE GENERATED ON {2} USING Special Source (c) md_5 2012.\n"
-            + "# PLEASE DO NOT REMOVE THIS HEADER OR DISTRIBUTE THIS FILE WITHOUT PERMISSION!\n";
+            + "# PLEASE DO NOT REMOVE THIS HEADER!\n";
     private final JarComparer oldJar;
     private final JarComparer newJar;
     private final Jar self;
-    private final Map<String, String> classes = new HashMap<>();
-    private final Map<String, String> fields = new HashMap<>();
-    private final Map<String, String> methods = new HashMap<>();
+    private final Map<String, String> classes = new HashMap<String, String>();
+    private final Map<String, String> fields = new HashMap<String, String>();
+    private final Map<String, String> methods = new HashMap<String, String>();
 
     private JarRemapper(JarComparer oldJar, JarComparer newJar, Jar self, File logfile) throws IOException {
         SpecialSource.validate(oldJar, newJar);
@@ -71,7 +71,7 @@ public class JarRemapper extends Remapper {
         this.newJar = newJar;
         this.self = self;
 
-        List<String> searge = new ArrayList<>();
+        List<String> searge = new ArrayList<String>();
 
         for (int i = 0; i < oldJar.classes.size(); i++) {
             String oldClass = oldJar.classes.get(i);
@@ -99,11 +99,15 @@ public class JarRemapper extends Remapper {
         }
 
         Collections.sort(searge);
-        try (PrintWriter out = new PrintWriter(logfile)) {
+        // No try with resources for us!
+        PrintWriter out = new PrintWriter(logfile);
+        try {
             out.println(MessageFormat.format(HEADER, oldJar.jar.file.getName(), newJar.jar.file.getName(), new Date()));
             for (String s : searge) {
                 out.println(s);
             }
+        } finally {
+            out.close();
         }
     }
 
@@ -148,11 +152,14 @@ public class JarRemapper extends Remapper {
     }
 
     public static void renameJar(Jar jar, File target, JarComparer oldNames, JarComparer newNames) throws IOException {
-        try (JarOutputStream out = new JarOutputStream(new FileOutputStream(target))) {
+        JarOutputStream out = new JarOutputStream(new FileOutputStream(target));
+        try {
             JarRemapper self = new JarRemapper(oldNames, newNames, jar, new File(target.getPath() + ".srg"));
             for (Enumeration<JarEntry> entr = jar.file.entries(); entr.hasMoreElements();) {
                 JarEntry entry = entr.nextElement();
-                try (InputStream is = jar.file.getInputStream(entry)) {
+
+                InputStream is = jar.file.getInputStream(entry);
+                try {
                     String name = entry.getName();
                     byte[] data;
                     if (name.endsWith(".class")) {
@@ -170,7 +177,7 @@ public class JarRemapper extends Remapper {
                     } else {
                         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                         int n;
-                        byte[] b = new byte[1 << 15]; // Max class file size, arbritrary number
+                        byte[] b = new byte[1 << 15]; // Max class file size
                         while ((n = is.read(b, 0, b.length)) != -1) {
                             buffer.write(b, 0, n);
                         }
@@ -180,8 +187,12 @@ public class JarRemapper extends Remapper {
                     entry.setTime(0);
                     out.putNextEntry(entry);
                     out.write(data);
+                } finally {
+                    is.close();
                 }
             }
+        } finally {
+            out.close();
         }
     }
 }

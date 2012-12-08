@@ -35,14 +35,13 @@ import lombok.ToString;
 /**
  * A class representing a set of 2 objects as defined by the type parameters.
  *
- * @param <T1> First type
- * @param <T2> Second type
+ * @param <E> type of element
  */
 @ToString
 @EqualsAndHashCode
 @RequiredArgsConstructor
-public class Pair<T1, T2> {
+public class Pair<E> {
 
-    public final T1 first;
-    public final T2 second;
+    public final E first;
+    public final E second;
 }

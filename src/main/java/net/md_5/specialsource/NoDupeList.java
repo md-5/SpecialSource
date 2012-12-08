@@ -43,8 +43,8 @@ import java.util.Set;
  */
 public class NoDupeList<E> implements Iterable<E> {
 
-    private final Set<E> set = new HashSet<>();
-    private final List<E> backing = new ArrayList<>();
+    private final Set<E> set = new HashSet<E>();
+    private final List<E> backing = new ArrayList<E>();
 
     public boolean add(E e) {
         if (set.contains(e)) {

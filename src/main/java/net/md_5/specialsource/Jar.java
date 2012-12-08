@@ -56,8 +56,8 @@ public class Jar {
 
     public final JarFile file;
     public final String main;
-    private final Set<String> contains = new HashSet<>();
-    private final Map<String, ClassNode> classes = new HashMap<>();
+    private final Set<String> contains = new HashSet<String>();
+    private final Map<String, ClassNode> classes = new HashMap<String, ClassNode>();
 
     public boolean containsClass(String clazz) {
         return contains.contains(clazz) ? true : getClass(clazz) != null;
