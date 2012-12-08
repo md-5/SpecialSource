@@ -50,8 +50,6 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.commons.RemappingClassAdapter;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.MethodNode;
 
 public class JarRemapper extends Remapper {
 
@@ -123,11 +121,10 @@ public class JarRemapper extends Remapper {
         return mapped == null ? name : mapped;
     }
 
+    @SuppressWarnings("unchecked") // Saddens me to see ASM strip vital info like that
     private String tryClimb(Map<String, String> map, NodeType type, String owner, String name) {
         String key = owner + "/" + name;
-        if (key.contains("findNearestMapFeature")) {
-            System.out.println();
-        }
+
         String mapped = map.get(key);
         if (mapped == null) {
             ClassNode node = self.getNode(owner);
