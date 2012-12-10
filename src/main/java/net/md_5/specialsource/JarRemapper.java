@@ -85,7 +85,7 @@ public class JarRemapper extends Remapper {
             Ownable oldField = oldJar.fields.get(i);
             Ownable newField = newJar.fields.get(i);
             fields.put(oldField.owner + "/" + oldField.name, newField.name);
-            if (!Objects.equals(oldField, newField)) {
+            if (!Objects.equals(oldField.name, newField.name)) {
                 searge.add("FD: " + oldField.owner + "/" + oldField.name + " " + newField.owner + "/" + newField.name);
             }
         }
@@ -93,7 +93,7 @@ public class JarRemapper extends Remapper {
             Ownable oldMethod = oldJar.methods.get(i);
             Ownable newMethod = newJar.methods.get(i);
             methods.put(oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor, newMethod.name);
-            if (!Objects.equals(oldMethod, newMethod)) {
+            if (!Objects.equals(oldMethod.name + " " + oldMethod.descriptor, newMethod.name + " " + newMethod.descriptor)) {
                 searge.add("MD: " + oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor + " " + newMethod.owner + "/" + newMethod.name + " " + newMethod.descriptor);
             }
         }
