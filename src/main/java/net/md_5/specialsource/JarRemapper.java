@@ -93,7 +93,13 @@ public class JarRemapper extends Remapper {
             Ownable oldMethod = oldJar.methods.get(i);
             Ownable newMethod = newJar.methods.get(i);
             methods.put(oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor, newMethod.name);
-            if (!Objects.equals(oldMethod.name + " " + oldMethod.descriptor, newMethod.name + " " + newMethod.descriptor)) {
+
+            String oldDescriptor = oldMethod.descriptor;
+            for (Map.Entry<String, String> entry : classes.entrySet()) {
+                oldDescriptor = oldDescriptor.replaceAll("L" + entry.getKey() + ";", "L" + entry.getValue() + ";");
+            }
+
+            if (!Objects.equals(oldMethod.name + " " + oldDescriptor, newMethod.name + " " + newMethod.descriptor)) {
                 searge.add("MD: " + oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor + " " + newMethod.owner + "/" + newMethod.name + " " + newMethod.descriptor);
             }
         }
