@@ -51,17 +51,6 @@ public class SpecialSource {
         JarComparer visitor2 = new JarComparer(jar2);
         visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.main, jar2.main));
 
-        System.out.println("Checking vailidity");
-        if (visitor1.classes.size() != 1004 || visitor2.classes.size() != 1004) {
-            throw new IllegalStateException("classes");
-        }
-        if (visitor1.fields.size() != 3582 || visitor2.fields.size() != 3582) {
-            throw new IllegalStateException("fields");
-        }
-        if (visitor1.methods.size() != 6531 + 4 || visitor2.methods.size() != 6531 + 4) { // 3 broken enums (EnumEntitySize, EnumFacing, EnumGameType), and 1 main method
-            throw new IllegalStateException("methods");
-        }
-
         System.out.println("Renaming final jar");
         JarRemapper.renameJar(Jar.init(args[2]), new File("out.jar"), visitor1, visitor2);
     }
