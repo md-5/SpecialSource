@@ -35,9 +35,9 @@ import org.objectweb.asm.ClassReader;
 public class SpecialSource {
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 3) {
-            System.err.println("SpecialSource takes 3 arguments. It will take 2 jars to generate a difference between, and a 3rd jar based on the first jar to rename to the second jar.");
-            System.err.println("Usage: java -jar SpecialSource.jar <first jar> <second jar> <jar of first names>");
+        if (args.length != 2 && args.length != 3) {
+            System.err.println("SpecialSource takes 2 or 3 arguments. It will take 2 jars to generate a difference between, and a 3rd jar based on the first jar to rename to the second jar.");
+            System.err.println("Usage: java -jar SpecialSource.jar <first jar> <second jar> [<jar of first names>]");
             System.err.println("It is currently tuned to only accept a Minecraft v1.4.5 server jar as the 2 jars to compare");
             return;
         }
@@ -51,8 +51,10 @@ public class SpecialSource {
         JarComparer visitor2 = new JarComparer(jar2);
         visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.main, jar2.main));
 
+        Jar jar3 = (args.length == 3) ? Jar.init(args[2]) : null;
+
         System.out.println("Renaming final jar");
-        JarRemapper.renameJar(Jar.init(args[2]), new File("out.jar"), visitor1, visitor2);
+        JarRemapper.renameJar(jar3, new File("out.jar"), visitor1, visitor2);
     }
 
     private static void visit(Pair<Jar> jars, Pair<JarComparer> visitors, Pair<String> classes) throws IOException {

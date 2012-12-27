@@ -161,6 +161,9 @@ public class JarRemapper extends Remapper {
         JarOutputStream out = new JarOutputStream(new FileOutputStream(target));
         try {
             JarRemapper self = new JarRemapper(oldNames, newNames, jar, new File(target.getPath() + ".srg"));
+            if (jar == null) {
+                return;
+            }
             for (Enumeration<JarEntry> entr = jar.file.entries(); entr.hasMoreElements();) {
                 JarEntry entry = entr.nextElement();
 
