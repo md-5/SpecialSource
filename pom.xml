@@ -45,6 +45,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <main.class>net.md_5.specialsource.SpecialSource</main.class>
     </properties>
 
     <dependencies>
