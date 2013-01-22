@@ -31,10 +31,12 @@ package net.md_5.specialsource;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.text.MessageFormat;
 import java.util.*;
 
 public class JarMapping {
+    // Mappings from old to new name
     public final Map<String, String> classes = new HashMap<String, String>();
     public final Map<String, String> fields = new HashMap<String, String>();
     public final Map<String, String> methods = new HashMap<String, String>();
@@ -47,7 +49,7 @@ public class JarMapping {
     public JarMapping(JarComparer oldJar, JarComparer newJar, File logfile) throws IOException {
         SpecialSource.validate(oldJar, newJar);
 
-        List<String> searge = new ArrayList<String>();
+        List<String> searge = new ArrayList<String>(); // TODO: refactor
 
         for (int i = 0; i < oldJar.classes.size(); i++) {
             String oldClass = oldJar.classes.get(i);
@@ -60,7 +62,9 @@ public class JarMapping {
         for (int i = 0; i < oldJar.fields.size(); i++) {
             Ownable oldField = oldJar.fields.get(i);
             Ownable newField = newJar.fields.get(i);
-            fields.put(oldField.owner + "/" + oldField.name, newField.name);
+            String key = oldField.owner + "/" + oldField.name;
+            fields.put(key, newField.name);
+
             if (!Objects.equals(oldField.name, newField.name)) {
                 searge.add("FD: " + oldField.owner + "/" + oldField.name + " " + newField.owner + "/" + newField.name);
             }
@@ -68,11 +72,12 @@ public class JarMapping {
         for (int i = 0; i < oldJar.methods.size(); i++) {
             Ownable oldMethod = oldJar.methods.get(i);
             Ownable newMethod = newJar.methods.get(i);
-            methods.put(oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor, newMethod.name);
+            String key = oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor;
+            methods.put(key, newMethod.name);
 
             String oldDescriptor = oldMethod.descriptor;
             for (Map.Entry<String, String> entry : classes.entrySet()) {
-                oldDescriptor = oldDescriptor.replaceAll("L" + entry.getKey() + ";", "L" + entry.getValue() + ";");
+                oldDescriptor = oldDescriptor.replaceAll("L" + entry.getKey() + ";", "L" + entry.getValue() + ";"); // TODO: efficiency
             }
 
             if (!Objects.equals(oldMethod.name + " " + oldDescriptor, newMethod.name + " " + newMethod.descriptor)) {
@@ -80,9 +85,17 @@ public class JarMapping {
             }
         }
 
+        PrintWriter out;
+
+        if (logfile == null) {
+            out = new PrintWriter(System.out);
+        } else {
+            System.out.println("Writing mapping file");
+            out = new PrintWriter(logfile);
+        }
+
         Collections.sort(searge);
         // No try with resources for us!
-        PrintWriter out = new PrintWriter(logfile);
         try {
             out.println(MessageFormat.format(HEADER, oldJar.jar.file.getName(), newJar.jar.file.getName(), new Date()));
             for (String s : searge) {

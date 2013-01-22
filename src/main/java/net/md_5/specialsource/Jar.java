@@ -99,6 +99,10 @@ public class Jar {
 
     public static Jar init(String jar) throws IOException {
         File file = new File(jar);
+        return init(file);
+    }
+
+    public static Jar init(File file) throws IOException {
         JarFile jarFile = new JarFile(file);
         String main = jarFile.getManifest().getMainAttributes().getValue("Main-Class").replace('.', '/');
         return new Jar(jarFile, main);

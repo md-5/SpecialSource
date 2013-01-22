@@ -30,35 +30,85 @@ package net.md_5.specialsource;
 
 import java.io.File;
 import java.io.IOException;
+
+import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 import org.objectweb.asm.ClassReader;
+
+import static java.util.Arrays.asList;
 
 public class SpecialSource {
 
     public static void main(String[] args) throws Exception {
+        OptionParser parser = new OptionParser() {
+            {
+                acceptsAll(asList("?", "help"), "Show the help");
+
+                acceptsAll(asList("a", "first-jar"), "First jar")
+                        .withRequiredArg()
+                        .ofType(File.class);
+
+                acceptsAll(asList("b", "second-jar"), "Second jar")
+                        .withRequiredArg()
+                        .ofType(File.class);
+
+                acceptsAll(asList("s", "srg-out"), "Mapping srg output")
+                        .withRequiredArg()
+                        .ofType(File.class);
+
+                acceptsAll(asList("i", "remap-jar"), "Input jar to remap")
+                        .withRequiredArg()
+                        .ofType(File.class);
+
+                acceptsAll(asList("o", "out-jar"), "Output jar to write")
+                        .withRequiredArg()
+                        .ofType(File.class);
+            }
+        };
+
+        OptionSet options = null;
+
+        try {
+            options = parser.parse(args);
+        } catch (OptionException ex) {
+            System.out.println(ex.getLocalizedMessage());
+            return;
+        }
+
+        if (options == null || options.has("?") || !options.has("a") || !options.has("b")) {
+            try {
+                parser.printHelpOn(System.out);
+                return;
+            } catch (IOException ex) {
+                System.out.println(ex.getLocalizedMessage());
+                return;
+            }
+        }
+
+        /* TODO: move to help
         if (args.length != 2 && args.length != 3) {
             System.err.println("SpecialSource takes 2 or 3 arguments. It will take 2 jars to generate a difference between, and a 3rd jar based on the first jar to rename to the second jar.");
             System.err.println("Usage: java -jar SpecialSource.jar <first jar> <second jar> [<jar of first names>]");
             System.err.println("It is currently tuned to only accept a Minecraft v1.4.5 server jar as the 2 jars to compare");
             return;
-        }
+        }*/
 
         System.out.println("Reading jars");
-        Jar jar1 = Jar.init(args[0]);
-        Jar jar2 = Jar.init(args[1]);
+        Jar jar1 = Jar.init((File)options.valueOf("first-jar"));
+        Jar jar2 = Jar.init((File)options.valueOf("second-jar"));
 
         System.out.println("Creating jar compare");
         JarComparer visitor1 = new JarComparer(jar1);
         JarComparer visitor2 = new JarComparer(jar2);
         visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.main, jar2.main));
 
-        System.out.println("Writing mapping file");
-        File srgOutput = new File("out.srg");
-        JarMapping jarMapping = new JarMapping(visitor1, visitor2, srgOutput);
+        JarMapping jarMapping = new JarMapping(visitor1, visitor2, (File)options.valueOf("srg-out"));
 
-        if (args.length == 3) {
-            System.out.println("Renaming final jar");
-            Jar jar3 = Jar.init(args[2]);
-            JarRemapper.renameJar(jar3, new File("out.jar"), jarMapping);
+        if (options.has("in-jar")) {
+            System.out.println("Remapping final jar");
+            Jar jar3 = Jar.init((File)options.valueOf("remap-jar"));
+            JarRemapper.renameJar(jar3, (File)options.valueOf("out-jar"), jarMapping);
         }
     }
 
