@@ -90,7 +90,6 @@ public class JarMapping {
         if (logfile == null) {
             out = new PrintWriter(System.out);
         } else {
-            System.out.println("Writing mapping file");
             out = new PrintWriter(logfile);
         }
 

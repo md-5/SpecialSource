@@ -39,6 +39,7 @@ import org.objectweb.asm.ClassReader;
 import static java.util.Arrays.asList;
 
 public class SpecialSource {
+    private static OptionSet options;
 
     public static void main(String[] args) throws Exception {
         OptionParser parser = new OptionParser() {
@@ -64,10 +65,10 @@ public class SpecialSource {
                 acceptsAll(asList("o", "out-jar"), "Output jar to write")
                         .withRequiredArg()
                         .ofType(File.class);
+
+                acceptsAll(asList("q", "quiet"), "Quiet mode");
             }
         };
-
-        OptionSet options = null;
 
         try {
             options = parser.parse(args);
@@ -94,11 +95,11 @@ public class SpecialSource {
             return;
         }*/
 
-        System.out.println("Reading jars");
+        log("Reading jars");
         Jar jar1 = Jar.init((File)options.valueOf("first-jar"));
         Jar jar2 = Jar.init((File)options.valueOf("second-jar"));
 
-        System.out.println("Creating jar compare");
+        log("Creating jar compare");
         JarComparer visitor1 = new JarComparer(jar1);
         JarComparer visitor2 = new JarComparer(jar2);
         visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.main, jar2.main));
@@ -106,9 +107,15 @@ public class SpecialSource {
         JarMapping jarMapping = new JarMapping(visitor1, visitor2, (File)options.valueOf("srg-out"));
 
         if (options.has("in-jar")) {
-            System.out.println("Remapping final jar");
+            log("Remapping final jar");
             Jar jar3 = Jar.init((File)options.valueOf("remap-jar"));
             JarRemapper.renameJar(jar3, (File)options.valueOf("out-jar"), jarMapping);
+        }
+    }
+
+    private static void log(String message) {
+        if (!options.has("q")) {
+            System.out.println(message);
         }
     }
 
