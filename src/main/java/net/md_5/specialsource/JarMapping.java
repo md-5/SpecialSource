@@ -41,7 +41,23 @@ public class JarMapping {
     public final Map<String, String> fields = new HashMap<String, String>();
     public final Map<String, String> methods = new HashMap<String, String>();
 
+    /**
+     * Load a mapping given a .csrg file
+     * @param file
+     * @throws IOException
+     */
+    public JarMapping(File file) throws IOException {
+        new CompactSrgReader(file, this);
+    }
 
+    /**
+     * Generate a mapping given an original jar and renamed jar
+     * @param oldJar Original jar
+     * @param newJar Renamed jar
+     * @param logfile Optional .srg file to output mappings to
+     * @param compact If true, generate .csrg logfile instead
+     * @throws IOException
+     */
     public JarMapping(JarComparer oldJar, JarComparer newJar, File logfile, boolean compact) throws IOException {
         SpecialSource.validate(oldJar, newJar);
 

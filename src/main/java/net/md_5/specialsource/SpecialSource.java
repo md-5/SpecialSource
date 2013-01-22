@@ -58,7 +58,11 @@ public class SpecialSource {
                         .withRequiredArg()
                         .ofType(File.class);
 
-                acceptsAll(asList("i", "remap-jar"), "Input jar to remap")
+                acceptsAll(asList("m", "srg-in"), "Mapping file input")
+                        .withRequiredArg()
+                        .ofType(File.class);
+
+                acceptsAll(asList("i", "in-jar"), "Input jar to remap")
                         .withRequiredArg()
                         .ofType(File.class);
 
@@ -78,9 +82,9 @@ public class SpecialSource {
             return;
         }
 
-        if (options == null || options.has("?") || !options.has("a") || !options.has("b")) {
+        if (options == null || options.has("?")) {
             try {
-                parser.printHelpOn(System.out);
+                parser.printHelpOn(System.err);
                 return;
             } catch (IOException ex) {
                 System.out.println(ex.getLocalizedMessage());
@@ -96,20 +100,40 @@ public class SpecialSource {
             return;
         }*/
 
-        log("Reading jars");
-        Jar jar1 = Jar.init((File)options.valueOf("first-jar"));
-        Jar jar2 = Jar.init((File)options.valueOf("second-jar"));
+        JarMapping jarMapping;
 
-        log("Creating jar compare");
-        JarComparer visitor1 = new JarComparer(jar1);
-        JarComparer visitor2 = new JarComparer(jar2);
-        visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.main, jar2.main));
+        if (options.has("first-jar") && options.has("second-jar")) {
+            // Generate mappings from two otherwise-identical jars
+            log("Reading jars");
+            Jar jar1 = Jar.init((File)options.valueOf("first-jar"));
+            Jar jar2 = Jar.init((File)options.valueOf("second-jar"));
 
-        JarMapping jarMapping = new JarMapping(visitor1, visitor2, (File)options.valueOf("srg-out"), options.has("c"));
+            log("Creating jar compare");
+            JarComparer visitor1 = new JarComparer(jar1);
+            JarComparer visitor2 = new JarComparer(jar2);
+            visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.main, jar2.main));
+
+            jarMapping = new JarMapping(visitor1, visitor2, (File)options.valueOf("srg-out"), options.has("compact"));
+        } else if (options.has("srg-in")) {
+            // Load mappings
+            log("Loading mappings");
+            jarMapping = new JarMapping((File)options.valueOf("srg-in"));
+        } else {
+            System.err.println("No mappings given, first-jar/second-jar or srg-in required");
+            parser.printHelpOn(System.err);
+            return;
+        }
+        log(jarMapping.classes.size()+" classes, "+jarMapping.fields.size()+" fields, "+jarMapping.methods.size()+" methods");
 
         if (options.has("in-jar")) {
+            if (!options.has("out-jar")) {
+                System.err.println("No output jar given, in-jar requires in-jar");
+                parser.printHelpOn(System.err);
+                return;
+            }
+
             log("Remapping final jar");
-            Jar jar3 = Jar.init((File)options.valueOf("remap-jar"));
+            Jar jar3 = Jar.init((File)options.valueOf("in-jar"));
             JarRemapper.renameJar(jar3, (File)options.valueOf("out-jar"), jarMapping);
         }
     }
