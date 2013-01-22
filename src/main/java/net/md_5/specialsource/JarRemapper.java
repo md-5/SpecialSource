@@ -66,7 +66,18 @@ public class JarRemapper extends Remapper {
     public String map(String typeName) {
         int index = typeName.indexOf('$');
         String key = (index == -1) ? typeName : typeName.substring(0, index);
-        String mapped = jarMapping.classes.get(key);
+        String mapped = null;
+        for (String oldPackage : jarMapping.packages.keySet()) {
+            if (key.startsWith(oldPackage)) {
+                String newPackage = jarMapping.packages.get(oldPackage);
+                mapped = newPackage + key.substring(oldPackage.length());
+                break;
+            }
+        }
+        if (mapped == null) {
+            mapped = jarMapping.classes.get(key);
+        }
+
         return mapped != null ? mapped + (index == -1 ? "" : typeName.substring(index, typeName.length())) : typeName;
     }
 

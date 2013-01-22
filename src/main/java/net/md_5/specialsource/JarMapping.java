@@ -37,6 +37,7 @@ import java.util.*;
 
 public class JarMapping {
     // Mappings from old to new name
+    public final Map<String, String> packages = new HashMap<String, String>();
     public final Map<String, String> classes = new HashMap<String, String>();
     public final Map<String, String> fields = new HashMap<String, String>();
     public final Map<String, String> methods = new HashMap<String, String>();

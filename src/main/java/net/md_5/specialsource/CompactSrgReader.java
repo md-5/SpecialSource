@@ -15,7 +15,13 @@ public class CompactSrgReader {
             if (tokens.length == 2) {
                 String oldClassName = tokens[0];
                 String newClassName = tokens[1];
-                jarMapping.classes.put(oldClassName, newClassName);
+
+                if (oldClassName.endsWith("/")) {
+                    // Special case: mapping an entire hierarchy of classes
+                    jarMapping.packages.put(oldClassName, newClassName);
+                } else {
+                    jarMapping.classes.put(oldClassName, newClassName);
+                }
             } else if (tokens.length == 3) {
                 String oldClassName = tokens[0];
                 String oldFieldName = tokens[1];
