@@ -51,10 +51,15 @@ public class SpecialSource {
         JarComparer visitor2 = new JarComparer(jar2);
         visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.main, jar2.main));
 
-        Jar jar3 = (args.length == 3) ? Jar.init(args[2]) : null;
+        System.out.println("Writing mapping file");
+        File srgOutput = new File("out.srg");
+        JarMapping jarMapping = new JarMapping(visitor1, visitor2, srgOutput);
 
-        System.out.println("Renaming final jar");
-        JarRemapper.renameJar(jar3, new File("out.jar"), visitor1, visitor2);
+        if (args.length == 3) {
+            System.out.println("Renaming final jar");
+            Jar jar3 = Jar.init(args[2]);
+            JarRemapper.renameJar(jar3, new File("out.jar"), jarMapping);
+        }
     }
 
     private static void visit(Pair<Jar> jars, Pair<JarComparer> visitors, Pair<String> classes) throws IOException {

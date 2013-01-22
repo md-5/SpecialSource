@@ -54,80 +54,25 @@ import org.objectweb.asm.tree.ClassNode;
 public class JarRemapper extends Remapper {
 
     private static final int CLASS_LEN = ".class".length();
-    private static final String HEADER = ""
-            + "# THESE ARE AUTOMATICALLY GENERATED MAPPINGS BETWEEN {0} and {1}\n"
-            + "# THEY WERE GENERATED ON {2} USING Special Source (c) md_5 2012.\n"
-            + "# PLEASE DO NOT REMOVE THIS HEADER!\n";
-    private final JarComparer oldJar;
-    private final JarComparer newJar;
     private final Jar self;
-    private final Map<String, String> classes = new HashMap<String, String>();
-    private final Map<String, String> fields = new HashMap<String, String>();
-    private final Map<String, String> methods = new HashMap<String, String>();
+    private final JarMapping jarMapping;
 
-    private JarRemapper(JarComparer oldJar, JarComparer newJar, Jar self, File logfile) throws IOException {
-        SpecialSource.validate(oldJar, newJar);
-        this.oldJar = oldJar;
-        this.newJar = newJar;
+    private JarRemapper(JarMapping jarMapping, Jar self) throws IOException {
+        this.jarMapping = jarMapping;
         this.self = self;
-
-        List<String> searge = new ArrayList<String>();
-
-        for (int i = 0; i < oldJar.classes.size(); i++) {
-            String oldClass = oldJar.classes.get(i);
-            String newClass = newJar.classes.get(i);
-            classes.put(oldClass, newClass);
-            if (!Objects.equals(oldClass, newClass)) {
-                searge.add("CL: " + oldClass + " " + newClass);
-            }
-        }
-        for (int i = 0; i < oldJar.fields.size(); i++) {
-            Ownable oldField = oldJar.fields.get(i);
-            Ownable newField = newJar.fields.get(i);
-            fields.put(oldField.owner + "/" + oldField.name, newField.name);
-            if (!Objects.equals(oldField.name, newField.name)) {
-                searge.add("FD: " + oldField.owner + "/" + oldField.name + " " + newField.owner + "/" + newField.name);
-            }
-        }
-        for (int i = 0; i < oldJar.methods.size(); i++) {
-            Ownable oldMethod = oldJar.methods.get(i);
-            Ownable newMethod = newJar.methods.get(i);
-            methods.put(oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor, newMethod.name);
-
-            String oldDescriptor = oldMethod.descriptor;
-            for (Map.Entry<String, String> entry : classes.entrySet()) {
-                oldDescriptor = oldDescriptor.replaceAll("L" + entry.getKey() + ";", "L" + entry.getValue() + ";");
-            }
-
-            if (!Objects.equals(oldMethod.name + " " + oldDescriptor, newMethod.name + " " + newMethod.descriptor)) {
-                searge.add("MD: " + oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor + " " + newMethod.owner + "/" + newMethod.name + " " + newMethod.descriptor);
-            }
-        }
-
-        Collections.sort(searge);
-        // No try with resources for us!
-        PrintWriter out = new PrintWriter(logfile);
-        try {
-            out.println(MessageFormat.format(HEADER, oldJar.jar.file.getName(), newJar.jar.file.getName(), new Date()));
-            for (String s : searge) {
-                out.println(s);
-            }
-        } finally {
-            out.close();
-        }
     }
 
     @Override
     public String map(String typeName) {
         int index = typeName.indexOf('$');
         String key = (index == -1) ? typeName : typeName.substring(0, index);
-        String mapped = classes.get(key);
+        String mapped = jarMapping.classes.get(key);
         return mapped != null ? mapped + (index == -1 ? "" : typeName.substring(index, typeName.length())) : typeName;
     }
 
     @Override
     public String mapFieldName(String owner, String name, String desc) {
-        String mapped = tryClimb(fields, NodeType.FIELD, owner, name);
+        String mapped = tryClimb(jarMapping.fields, NodeType.FIELD, owner, name);
         return mapped == null ? name : mapped;
     }
 
@@ -153,14 +98,14 @@ public class JarRemapper extends Remapper {
 
     @Override
     public String mapMethodName(String owner, String name, String desc) {
-        String mapped = tryClimb(methods, NodeType.METHOD, owner, name + " " + desc);
+        String mapped = tryClimb(jarMapping.methods, NodeType.METHOD, owner, name + " " + desc);
         return mapped == null ? name : mapped;
     }
 
-    public static void renameJar(Jar jar, File target, JarComparer oldNames, JarComparer newNames) throws IOException {
+    public static void renameJar(Jar jar, File target, JarMapping jarMapping) throws IOException {
         JarOutputStream out = new JarOutputStream(new FileOutputStream(target));
         try {
-            JarRemapper self = new JarRemapper(oldNames, newNames, jar, new File(target.getPath() + ".srg"));
+            JarRemapper self = new JarRemapper(jarMapping, jar);
             if (jar == null) {
                 return;
             }
