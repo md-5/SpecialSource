@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-public class SrgWriter {
+public class SrgWriter implements ISrgWriter {
     private static final String HEADER = ""
             + "# THESE ARE AUTOMATICALLY GENERATED MAPPINGS BETWEEN {0} and {1}\n"
             + "# THEY WERE GENERATED ON {2} USING Special Source (c) md_5 2012.\n"
@@ -17,8 +17,16 @@ public class SrgWriter {
 
     private List<String> lines;
 
-    public SrgWriter() {
+    private PrintWriter out;
+    private String oldJarName;
+    private String newJarName;
+
+    public SrgWriter(PrintWriter out, String oldJarName, String newJarName) {
         this.lines = new ArrayList<String>();
+
+        this.out = out;
+        this.oldJarName = oldJarName;
+        this.newJarName = newJarName;
     }
 
     public void addClassMap(String oldClass, String newClass) {
@@ -33,14 +41,7 @@ public class SrgWriter {
         lines.add("MD: " + oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor + " " + newMethod.owner + "/" + newMethod.name + " " + newMethod.descriptor);
     }
 
-    public void write(File logfile, String oldJarName, String newJarName) throws IOException {
-        PrintWriter out;
-        if (logfile == null) {
-            out = new PrintWriter(System.out);
-        } else {
-            out = new PrintWriter(logfile);
-        }
-
+    public void write() throws IOException {
         Collections.sort(lines);
         // No try with resources for us!
         try {

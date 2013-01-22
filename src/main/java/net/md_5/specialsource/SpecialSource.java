@@ -54,7 +54,7 @@ public class SpecialSource {
                         .withRequiredArg()
                         .ofType(File.class);
 
-                acceptsAll(asList("s", "srg-out"), "Mapping srg output")
+                acceptsAll(asList("s", "srg-out"), "Mapping file output")
                         .withRequiredArg()
                         .ofType(File.class);
 
@@ -67,6 +67,7 @@ public class SpecialSource {
                         .ofType(File.class);
 
                 acceptsAll(asList("q", "quiet"), "Quiet mode");
+                acceptsAll(asList("c", "compact"), "Output mapping file in compact format");
             }
         };
 
@@ -104,7 +105,7 @@ public class SpecialSource {
         JarComparer visitor2 = new JarComparer(jar2);
         visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.main, jar2.main));
 
-        JarMapping jarMapping = new JarMapping(visitor1, visitor2, (File)options.valueOf("srg-out"));
+        JarMapping jarMapping = new JarMapping(visitor1, visitor2, (File)options.valueOf("srg-out"), options.has("c"));
 
         if (options.has("in-jar")) {
             log("Remapping final jar");

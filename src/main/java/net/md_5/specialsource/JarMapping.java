@@ -42,10 +42,22 @@ public class JarMapping {
     public final Map<String, String> methods = new HashMap<String, String>();
 
 
-    public JarMapping(JarComparer oldJar, JarComparer newJar, File logfile) throws IOException {
+    public JarMapping(JarComparer oldJar, JarComparer newJar, File logfile, boolean compact) throws IOException {
         SpecialSource.validate(oldJar, newJar);
 
-        SrgWriter srgWriter = new SrgWriter();
+        PrintWriter out;
+        if (logfile == null) {
+            out = new PrintWriter(System.out);
+        } else {
+            out = new PrintWriter(logfile);
+        }
+
+        ISrgWriter srgWriter;
+        if (compact) {
+            srgWriter = new CompactSrgWriter(out);
+        } else {
+            srgWriter = new SrgWriter(out, oldJar.jar.file.getName(), newJar.jar.file.getName());
+        }
 
         for (int i = 0; i < oldJar.classes.size(); i++) {
             String oldClass = oldJar.classes.get(i);
@@ -81,6 +93,6 @@ public class JarMapping {
             }
         }
 
-        srgWriter.write(logfile, oldJar.jar.file.getName(), newJar.jar.file.getName());
+        srgWriter.write();
     }
 }
