@@ -41,22 +41,18 @@ public class JarMapping {
     public final Map<String, String> fields = new HashMap<String, String>();
     public final Map<String, String> methods = new HashMap<String, String>();
 
-    private static final String HEADER = ""
-        + "# THESE ARE AUTOMATICALLY GENERATED MAPPINGS BETWEEN {0} and {1}\n"
-        + "# THEY WERE GENERATED ON {2} USING Special Source (c) md_5 2012.\n"
-        + "# PLEASE DO NOT REMOVE THIS HEADER!\n";
 
     public JarMapping(JarComparer oldJar, JarComparer newJar, File logfile) throws IOException {
         SpecialSource.validate(oldJar, newJar);
 
-        List<String> searge = new ArrayList<String>(); // TODO: refactor
+        SrgWriter srgWriter = new SrgWriter();
 
         for (int i = 0; i < oldJar.classes.size(); i++) {
             String oldClass = oldJar.classes.get(i);
             String newClass = newJar.classes.get(i);
             classes.put(oldClass, newClass);
             if (!Objects.equals(oldClass, newClass)) {
-                searge.add("CL: " + oldClass + " " + newClass);
+                srgWriter.addClassMap(oldClass, newClass);
             }
         }
         for (int i = 0; i < oldJar.fields.size(); i++) {
@@ -66,7 +62,7 @@ public class JarMapping {
             fields.put(key, newField.name);
 
             if (!Objects.equals(oldField.name, newField.name)) {
-                searge.add("FD: " + oldField.owner + "/" + oldField.name + " " + newField.owner + "/" + newField.name);
+                srgWriter.addFieldMap(oldField, newField);
             }
         }
         for (int i = 0; i < oldJar.methods.size(); i++) {
@@ -81,27 +77,10 @@ public class JarMapping {
             }
 
             if (!Objects.equals(oldMethod.name + " " + oldDescriptor, newMethod.name + " " + newMethod.descriptor)) {
-                searge.add("MD: " + oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor + " " + newMethod.owner + "/" + newMethod.name + " " + newMethod.descriptor);
+                srgWriter.addMethodMap(oldMethod, newMethod);
             }
         }
 
-        PrintWriter out;
-
-        if (logfile == null) {
-            out = new PrintWriter(System.out);
-        } else {
-            out = new PrintWriter(logfile);
-        }
-
-        Collections.sort(searge);
-        // No try with resources for us!
-        try {
-            out.println(MessageFormat.format(HEADER, oldJar.jar.file.getName(), newJar.jar.file.getName(), new Date()));
-            for (String s : searge) {
-                out.println(s);
-            }
-        } finally {
-            out.close();
-        }
+        srgWriter.write(logfile, oldJar.jar.file.getName(), newJar.jar.file.getName());
     }
 }
