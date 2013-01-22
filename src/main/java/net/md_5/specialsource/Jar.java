@@ -35,7 +35,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.Attributes;
 import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -104,7 +106,19 @@ public class Jar {
 
     public static Jar init(File file) throws IOException {
         JarFile jarFile = new JarFile(file);
-        String main = jarFile.getManifest().getMainAttributes().getValue("Main-Class").replace('.', '/');
+        String main = null;
+
+        Manifest manifest = jarFile.getManifest();
+        if (manifest != null) {
+            Attributes attributes = manifest.getMainAttributes();
+            if (attributes != null) {
+                String mainClassName = attributes.getValue("Main-Class");
+                if (mainClassName != null) {
+                    main = mainClassName.replace('.', '/');
+                }
+            }
+        }
+
         return new Jar(jarFile, main);
     }
 }
