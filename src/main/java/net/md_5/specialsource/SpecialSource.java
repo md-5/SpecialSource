@@ -76,6 +76,8 @@ public class SpecialSource {
                         .withRequiredArg()
                         .withValuesSeparatedBy(',');
 
+                acceptsAll(asList("l", "live"), "Enable runtime inheritance lookup");
+
                 acceptsAll(asList("q", "quiet"), "Quiet mode");
                 acceptsAll(asList("c", "compact"), "Output mapping file in compact format");
             }
@@ -150,7 +152,7 @@ public class SpecialSource {
 
             log("Remapping final jar");
             Jar jar3 = Jar.init((File)options.valueOf("in-jar"));
-            JarRemapper.renameJar(jar3, (File)options.valueOf("out-jar"), jarMapping);
+            JarRemapper.renameJar(jar3, (File)options.valueOf("out-jar"), jarMapping, options.has("live"));
         }
     }
 

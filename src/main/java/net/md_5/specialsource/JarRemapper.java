@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -47,12 +48,12 @@ import org.objectweb.asm.tree.ClassNode;
 public class JarRemapper extends Remapper {
 
     private static final int CLASS_LEN = ".class".length();
-    private final IInheritanceProvider inheritanceProvider;
+    private final List<IInheritanceProvider> inheritanceProviders;
     private final JarMapping jarMapping;
 
-    private JarRemapper(JarMapping jarMapping, IInheritanceProvider inheritanceProvider) throws IOException {
+    private JarRemapper(JarMapping jarMapping, List<IInheritanceProvider> inheritanceProviders) throws IOException {
         this.jarMapping = jarMapping;
-        this.inheritanceProvider = inheritanceProvider;
+        this.inheritanceProviders = inheritanceProviders;
     }
 
     @Override
@@ -96,10 +97,12 @@ public class JarRemapper extends Remapper {
 
         String mapped = map.get(key);
         if (mapped == null) {
-            for (String parent : inheritanceProvider.getParents(owner)) {
-                mapped = tryClimb(map, type, parent, name);
-                if (mapped != null) {
-                    return mapped;
+            for (IInheritanceProvider inheritanceProvider : inheritanceProviders) {
+                for (String parent : inheritanceProvider.getParents(owner)) {
+                    mapped = tryClimb(map, type, parent, name);
+                    if (mapped != null) {
+                        return mapped;
+                    }
                 }
             }
         }
@@ -112,11 +115,15 @@ public class JarRemapper extends Remapper {
         return mapped == null ? name : mapped;
     }
 
-    public static void renameJar(Jar jar, File target, JarMapping jarMapping) throws IOException {
+    public static void renameJar(Jar jar, File target, JarMapping jarMapping, boolean live) throws IOException {
         JarOutputStream out = new JarOutputStream(new FileOutputStream(target));
         try {
-            JarInheritanceProvider jarInheritanceProvider = new JarInheritanceProvider(jar);
-            JarRemapper self = new JarRemapper(jarMapping, jarInheritanceProvider);
+            List<IInheritanceProvider> inheritanceProviders = new ArrayList<IInheritanceProvider>();
+            inheritanceProviders.add(new JarInheritanceProvider(jar));
+            if (live) {
+                inheritanceProviders.add(new RuntimeInheritanceProvider());
+            }
+            JarRemapper self = new JarRemapper(jarMapping, inheritanceProviders);
             if (jar == null) {
                 return;
             }
