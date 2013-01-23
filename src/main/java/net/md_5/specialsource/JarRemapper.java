@@ -47,12 +47,12 @@ import org.objectweb.asm.tree.ClassNode;
 public class JarRemapper extends Remapper {
 
     private static final int CLASS_LEN = ".class".length();
-    private final Jar self;
+    private final IInheritanceProvider inheritanceProvider;
     private final JarMapping jarMapping;
 
-    private JarRemapper(JarMapping jarMapping, Jar self) throws IOException {
+    private JarRemapper(JarMapping jarMapping, IInheritanceProvider inheritanceProvider) throws IOException {
         this.jarMapping = jarMapping;
-        this.self = self;
+        this.inheritanceProvider = inheritanceProvider;
     }
 
     @Override
@@ -91,21 +91,16 @@ public class JarRemapper extends Remapper {
         return mapped == null ? name : mapped;
     }
 
-    @SuppressWarnings("unchecked") // Saddens me to see ASM strip vital info like that
     private String tryClimb(Map<String, String> map, NodeType type, String owner, String name) {
         String key = owner + "/" + name;
 
         String mapped = map.get(key);
         if (mapped == null) {
-            ClassNode node = self.getNode(owner);
-            if (node != null) {
-                for (String iface : (List<String>) node.interfaces) {
-                    mapped = tryClimb(map, type, iface, name);
-                    if (mapped != null) {
-                        return mapped;
-                    }
+            for (String parent : inheritanceProvider.getParents(owner)) {
+                mapped = tryClimb(map, type, parent, name);
+                if (mapped != null) {
+                    return mapped;
                 }
-                return tryClimb(map, type, node.superName, name);
             }
         }
         return mapped;
@@ -120,7 +115,8 @@ public class JarRemapper extends Remapper {
     public static void renameJar(Jar jar, File target, JarMapping jarMapping) throws IOException {
         JarOutputStream out = new JarOutputStream(new FileOutputStream(target));
         try {
-            JarRemapper self = new JarRemapper(jarMapping, jar);
+            JarInheritanceProvider jarInheritanceProvider = new JarInheritanceProvider(jar);
+            JarRemapper self = new JarRemapper(jarMapping, jarInheritanceProvider);
             if (jar == null) {
                 return;
             }
