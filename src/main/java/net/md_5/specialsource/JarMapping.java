@@ -28,10 +28,7 @@
  */
 package net.md_5.specialsource;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
+import java.io.*;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -42,13 +39,60 @@ public class JarMapping {
     public final Map<String, String> fields = new HashMap<String, String>();
     public final Map<String, String> methods = new HashMap<String, String>();
 
+    public JarMapping(File file) throws IOException {
+        this(file, null);
+    }
+
     /**
      * Load a mapping given a .csrg file
-     * @param file
+     * @param file Mapping file
+     * @param shader Relocation to apply to old class names, or null for no relocation
      * @throws IOException
      */
-    public JarMapping(File file) throws IOException {
-        new CompactSrgReader(file, this);
+    public JarMapping(File file, ShadeRelocationSimulator shader) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+
+        if (shader == null) {
+            shader = ShadeRelocationSimulator.IDENTITY;
+        }
+
+        String line;
+        while((line = reader.readLine()) != null) {
+            String[] tokens = line.split(" ");
+
+            // Read .csrg file
+            if (tokens.length == 2) {
+                String oldClassName = shader.shade(tokens[0]);
+                String newClassName = tokens[1];
+
+                if (oldClassName.endsWith("/")) {
+                    // Special case: mapping an entire hierarchy of classes
+                    packages.put(oldClassName, newClassName);
+                } else {
+                    classes.put(oldClassName, newClassName);
+                }
+            } else if (tokens.length == 3) {
+                String oldClassName = shader.shade(tokens[0]);
+                String oldFieldName = tokens[1];
+                String newFieldName = tokens[2];
+                fields.put(oldClassName + "/" + oldFieldName, newFieldName);
+            } else if (tokens.length == 4) {
+                String oldClassName = shader.shade(tokens[0]);
+                String oldMethodName = tokens[1];
+                String oldMethodDescriptor = tokens[2];
+                String newMethodName = tokens[3];
+                methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
+            }
+            // TODO: also support .srg (auto-detect ':' in tokens[0]), and check validity (redundancies match)
+        }
+    }
+
+    private static String shade(String className, ShadeRelocationSimulator shadeRelocationSimulator) {
+        if (shadeRelocationSimulator == null) {
+            return className;
+        }
+
+        return shadeRelocationSimulator.shade(className);
     }
 
     /**

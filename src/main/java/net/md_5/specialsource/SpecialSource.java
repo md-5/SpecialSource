@@ -30,6 +30,8 @@ package net.md_5.specialsource;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -69,6 +71,10 @@ public class SpecialSource {
                 acceptsAll(asList("o", "out-jar"), "Output jar to write")
                         .withRequiredArg()
                         .ofType(File.class);
+
+                acceptsAll(asList("R", "shade-relocation"), "Simulate maven-shade-plugin relocation patterns on srg-in")
+                        .withRequiredArg()
+                        .withValuesSeparatedBy(',');
 
                 acceptsAll(asList("q", "quiet"), "Quiet mode");
                 acceptsAll(asList("c", "compact"), "Output mapping file in compact format");
@@ -115,9 +121,19 @@ public class SpecialSource {
 
             jarMapping = new JarMapping(visitor1, visitor2, (File)options.valueOf("srg-out"), options.has("compact"));
         } else if (options.has("srg-in")) {
-            // Load mappings
+            // Load mappings, possibly shaded
+            ShadeRelocationSimulator shadeRelocationSimulator = null;
+            if (options.has("shade-relocation")) {
+                List<String> relocations = (List<String>)options.valuesOf("shade-relocation");
+                shadeRelocationSimulator = new ShadeRelocationSimulator(relocations);
+
+                for (Map.Entry<String, String> entry : shadeRelocationSimulator.relocations.entrySet()) {
+                    log("Relocation: " + entry.getKey() + " -> " +entry.getValue());
+                }
+            }
+
             log("Loading mappings");
-            jarMapping = new JarMapping((File)options.valueOf("srg-in"));
+            jarMapping = new JarMapping((File)options.valueOf("srg-in"), shadeRelocationSimulator);
         } else {
             System.err.println("No mappings given, first-jar/second-jar or srg-in required");
             parser.printHelpOn(System.err);
