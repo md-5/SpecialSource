@@ -29,7 +29,6 @@
 package net.md_5.specialsource;
 
 import java.io.*;
-import java.text.MessageFormat;
 import java.util.*;
 
 public class JarMapping {
@@ -79,20 +78,12 @@ public class JarMapping {
             } else if (tokens.length == 4) {
                 String oldClassName = shader.shade(tokens[0]);
                 String oldMethodName = tokens[1];
-                String oldMethodDescriptor = tokens[2];
+                String oldMethodDescriptor = tokens[2]; // TODO shader.shadeMethodSignature(tokens[2]);
                 String newMethodName = tokens[3];
                 methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
             }
             // TODO: also support .srg (auto-detect ':' in tokens[0]), and check validity (redundancies match)
         }
-    }
-
-    private static String shade(String className, ShadeRelocationSimulator shadeRelocationSimulator) {
-        if (shadeRelocationSimulator == null) {
-            return className;
-        }
-
-        return shadeRelocationSimulator.shade(className);
     }
 
     /**
@@ -144,10 +135,8 @@ public class JarMapping {
             String key = oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor;
             methods.put(key, newMethod.name);
 
-            String oldDescriptor = oldMethod.descriptor;
-            for (Map.Entry<String, String> entry : classes.entrySet()) {
-                oldDescriptor = oldDescriptor.replaceAll("L" + entry.getKey() + ";", "L" + entry.getValue() + ";"); // TODO: efficiency
-            }
+            MethodDescriptorTransformer methodDescriptorTransformer = new MethodDescriptorTransformer(null, classes);
+            String oldDescriptor = methodDescriptorTransformer.transform(oldMethod.descriptor);
 
             if (!Objects.equals(oldMethod.name + " " + oldDescriptor, newMethod.name + " " + newMethod.descriptor)) {
                 srgWriter.addMethodMap(oldMethod, newMethod);

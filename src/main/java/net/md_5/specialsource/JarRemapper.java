@@ -33,16 +33,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import org.objectweb.asm.ClassReader;
@@ -64,21 +57,32 @@ public class JarRemapper extends Remapper {
 
     @Override
     public String map(String typeName) {
+        return mapTypeName(typeName, jarMapping.packages, jarMapping.classes);
+    }
+
+    public static String mapTypeName(String typeName, Map<String, String> packageMap, Map<String, String> classMap) {
         int index = typeName.indexOf('$');
         String key = (index == -1) ? typeName : typeName.substring(0, index);
-        String mapped = null;
-        for (String oldPackage : jarMapping.packages.keySet()) {
-            if (key.startsWith(oldPackage)) {
-                String newPackage = jarMapping.packages.get(oldPackage);
-                mapped = newPackage + key.substring(oldPackage.length());
-                break;
-            }
-        }
-        if (mapped == null) {
-            mapped = jarMapping.classes.get(key);
-        }
+        String mapped = mapClassName(typeName, packageMap, classMap);
 
         return mapped != null ? mapped + (index == -1 ? "" : typeName.substring(index, typeName.length())) : typeName;
+    }
+
+    /**
+     * Helper method to map a class name by package (prefix) or class (exact) map
+     */
+    private static String mapClassName(String className, Map<String, String> packageMap, Map<String, String> classMap) {
+        if (packageMap != null) {
+            for (String oldPackage : packageMap.keySet()) {
+                if (className.startsWith(oldPackage)) {
+                    String newPackage = packageMap.get(oldPackage);
+
+                    return newPackage + className.substring(oldPackage.length());
+                }
+            }
+        }
+
+        return classMap != null ? classMap.get(className) : null;
     }
 
     @Override
