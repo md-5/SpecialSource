@@ -32,7 +32,7 @@ import java.io.*;
 import java.util.*;
 
 public class JarMapping {
-    // Mappings from old to new name
+
     public final Map<String, String> packages = new HashMap<String, String>();
     public final Map<String, String> classes = new HashMap<String, String>();
     public final Map<String, String> fields = new HashMap<String, String>();
@@ -44,8 +44,10 @@ public class JarMapping {
 
     /**
      * Load a mapping given a .csrg file
+     *
      * @param file Mapping file
-     * @param shader Relocation to apply to old class names, or null for no relocation
+     * @param shader Relocation to apply to old class names, or null for no
+     * relocation
      * @throws IOException
      */
     public JarMapping(File file, ShadeRelocationSimulator shader) throws IOException {
@@ -56,7 +58,7 @@ public class JarMapping {
         }
 
         String line;
-        while((line = reader.readLine()) != null) {
+        while ((line = reader.readLine()) != null) {
             String[] tokens = line.split(" ");
 
             // Read .csrg file
@@ -88,6 +90,7 @@ public class JarMapping {
 
     /**
      * Generate a mapping given an original jar and renamed jar
+     *
      * @param oldJar Original jar
      * @param newJar Renamed jar
      * @param logfile Optional .srg file to output mappings to

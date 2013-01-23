@@ -41,6 +41,7 @@ import org.objectweb.asm.ClassReader;
 import static java.util.Arrays.asList;
 
 public class SpecialSource {
+
     private static OptionSet options;
 
     public static void main(String[] args) throws Exception {
@@ -100,48 +101,40 @@ public class SpecialSource {
             }
         }
 
-        /* TODO: move to help
-        if (args.length != 2 && args.length != 3) {
-            System.err.println("SpecialSource takes 2 or 3 arguments. It will take 2 jars to generate a difference between, and a 3rd jar based on the first jar to rename to the second jar.");
-            System.err.println("Usage: java -jar SpecialSource.jar <first jar> <second jar> [<jar of first names>]");
-            System.err.println("It is currently tuned to only accept a Minecraft v1.4.5 server jar as the 2 jars to compare");
-            return;
-        }*/
-
         JarMapping jarMapping;
 
         if (options.has("first-jar") && options.has("second-jar")) {
             // Generate mappings from two otherwise-identical jars
             log("Reading jars");
-            Jar jar1 = Jar.init((File)options.valueOf("first-jar"));
-            Jar jar2 = Jar.init((File)options.valueOf("second-jar"));
+            Jar jar1 = Jar.init((File) options.valueOf("first-jar"));
+            Jar jar2 = Jar.init((File) options.valueOf("second-jar"));
 
             log("Creating jar compare");
             JarComparer visitor1 = new JarComparer(jar1);
             JarComparer visitor2 = new JarComparer(jar2);
             visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.main, jar2.main));
 
-            jarMapping = new JarMapping(visitor1, visitor2, (File)options.valueOf("srg-out"), options.has("compact"));
+            jarMapping = new JarMapping(visitor1, visitor2, (File) options.valueOf("srg-out"), options.has("compact"));
         } else if (options.has("srg-in")) {
             // Load mappings, possibly shaded
             ShadeRelocationSimulator shadeRelocationSimulator = null;
             if (options.has("shade-relocation")) {
-                List<String> relocations = (List<String>)options.valuesOf("shade-relocation");
+                List<String> relocations = (List<String>) options.valuesOf("shade-relocation");
                 shadeRelocationSimulator = new ShadeRelocationSimulator(relocations);
 
                 for (Map.Entry<String, String> entry : shadeRelocationSimulator.relocations.entrySet()) {
-                    log("Relocation: " + entry.getKey() + " -> " +entry.getValue());
+                    log("Relocation: " + entry.getKey() + " -> " + entry.getValue());
                 }
             }
 
             log("Loading mappings");
-            jarMapping = new JarMapping((File)options.valueOf("srg-in"), shadeRelocationSimulator);
+            jarMapping = new JarMapping((File) options.valueOf("srg-in"), shadeRelocationSimulator);
         } else {
             System.err.println("No mappings given, first-jar/second-jar or srg-in required");
             parser.printHelpOn(System.err);
             return;
         }
-        log(jarMapping.classes.size()+" classes, "+jarMapping.fields.size()+" fields, "+jarMapping.methods.size()+" methods");
+        log(jarMapping.classes.size() + " classes, " + jarMapping.fields.size() + " fields, " + jarMapping.methods.size() + " methods");
 
         if (options.has("in-jar")) {
             if (!options.has("out-jar")) {
@@ -151,8 +144,8 @@ public class SpecialSource {
             }
 
             log("Remapping final jar");
-            Jar jar3 = Jar.init((File)options.valueOf("in-jar"));
-            JarRemapper.renameJar(jar3, (File)options.valueOf("out-jar"), jarMapping, options.has("live"));
+            Jar jar3 = Jar.init((File) options.valueOf("in-jar"));
+            JarRemapper.renameJar(jar3, (File) options.valueOf("out-jar"), jarMapping, options.has("live"));
         }
     }
 

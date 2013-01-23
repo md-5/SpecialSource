@@ -53,6 +53,7 @@
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-all</artifactId>
             <version>4.1</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -126,6 +127,7 @@
                 </executions>
                 <configuration>
                     <minimizeJar>true</minimizeJar>
+                    <shadedArtifactAttached>true</shadedArtifactAttached>
                 </configuration>
             </plugin>
         </plugins>

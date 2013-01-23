@@ -43,7 +43,6 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.commons.RemappingClassAdapter;
-import org.objectweb.asm.tree.ClassNode;
 
 public class JarRemapper extends Remapper {
 
@@ -70,7 +69,8 @@ public class JarRemapper extends Remapper {
     }
 
     /**
-     * Helper method to map a class name by package (prefix) or class (exact) map
+     * Helper method to map a class name by package (prefix) or class (exact)
+     * map
      */
     private static String mapClassName(String className, Map<String, String> packageMap, Map<String, String> classMap) {
         if (packageMap != null) {
