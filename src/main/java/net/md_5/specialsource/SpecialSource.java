@@ -171,7 +171,7 @@ public class SpecialSource {
     }
 
     public static void log(String message) {
-        if (!options.has("quiet")) {
+        if (options != null && !options.has("quiet")) {
             System.out.println(message);
         }
     }
