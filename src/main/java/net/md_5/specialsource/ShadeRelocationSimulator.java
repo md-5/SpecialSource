@@ -52,7 +52,7 @@ public class ShadeRelocationSimulator {
      */
     public ShadeRelocationSimulator(Map<String, String> relocations) {
         for (Map.Entry<String, String> entry : relocations.entrySet()) {
-            relocations.put(toInternalName(entry.getKey()), toInternalName(entry.getValue()));
+            this.relocations.put(toInternalName(entry.getKey()), toInternalName(entry.getValue()));
         }
     }
 
