@@ -120,6 +120,7 @@ public class SpecialSource {
             // Load mappings, possibly shaded
             ShadeRelocationSimulator shadeRelocationSimulator = null;
             if (options.has("shade-relocation")) {
+                @SuppressWarnings("unchecked")
                 List<String> relocations = (List<String>) options.valuesOf("shade-relocation");
                 shadeRelocationSimulator = new ShadeRelocationSimulator(relocations);
 
