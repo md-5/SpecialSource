@@ -47,7 +47,7 @@ public class RuntimeInheritanceProvider implements IInheritanceProvider {
             //clazz = Class.forName(toSourceName(sourceClassName)); // runs static initializers - avoid!
         } catch (Throwable t) {
             SpecialSource.log("RuntimeInheritanceProvider failed: " + t);
-            return parents;
+            return null;
         }
 
         for (Class iface : clazz.getInterfaces()) {

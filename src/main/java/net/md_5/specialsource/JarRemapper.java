@@ -97,12 +97,19 @@ public class JarRemapper extends Remapper {
 
         String mapped = map.get(key);
         if (mapped == null) {
+            // ask each provider for inheritance information on the class, until one responds
             for (IInheritanceProvider inheritanceProvider : inheritanceProviders) {
-                for (String parent : inheritanceProvider.getParents(owner)) {
-                    mapped = tryClimb(map, type, parent, name);
-                    if (mapped != null) {
-                        return mapped;
+                List<String> parents = inheritanceProvider.getParents(owner);
+
+                if (parents != null) {
+                    // climb the inheritance tree
+                    for (String parent : parents) {
+                        mapped = tryClimb(map, type, parent, name);
+                        if (mapped != null) {
+                            return mapped;
+                        }
                     }
+                    break;
                 }
             }
         }

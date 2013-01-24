@@ -36,7 +36,7 @@ public interface IInheritanceProvider {
      * Get the superclass and implemented interfaces of a class
      *
      * @param className
-     * @return
+     * @return List of interfaces, or null if no information is available and other providers should be checked
      */
     List<String> getParents(String className);
 }
