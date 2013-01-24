@@ -42,6 +42,10 @@ public class JarMapping {
 
     }
 
+    public JarMapping(BufferedReader reader, ShadeRelocationSimulator shader) throws IOException {
+        loadMappings(reader, shader);
+    }
+
     /**
      * Load a mapping given a .csrg file
      *
@@ -50,7 +54,7 @@ public class JarMapping {
      * relocation
      * @throws IOException
      */
-    public JarMapping(BufferedReader reader, ShadeRelocationSimulator shader) throws IOException {
+    public void loadMappings(BufferedReader reader, ShadeRelocationSimulator shader) throws IOException {
         if (shader == null) {
             shader = ShadeRelocationSimulator.IDENTITY;
         }
