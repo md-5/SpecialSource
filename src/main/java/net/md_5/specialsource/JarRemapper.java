@@ -50,7 +50,7 @@ public class JarRemapper extends Remapper {
     private final List<IInheritanceProvider> inheritanceProviders;
     private final JarMapping jarMapping;
 
-    private JarRemapper(JarMapping jarMapping, List<IInheritanceProvider> inheritanceProviders) throws IOException {
+    public JarRemapper(JarMapping jarMapping, List<IInheritanceProvider> inheritanceProviders) throws IOException {
         this.jarMapping = jarMapping;
         this.inheritanceProviders = inheritanceProviders;
     }
@@ -115,15 +115,12 @@ public class JarRemapper extends Remapper {
         return mapped == null ? name : mapped;
     }
 
-    public static void renameJar(Jar jar, File target, JarMapping jarMapping, boolean live) throws IOException {
+    /**
+     * Remap all the classes in a jar, writing a new jar to the target
+     */
+    public void remapJar(Jar jar, File target) throws IOException {
         JarOutputStream out = new JarOutputStream(new FileOutputStream(target));
         try {
-            List<IInheritanceProvider> inheritanceProviders = new ArrayList<IInheritanceProvider>();
-            inheritanceProviders.add(new JarInheritanceProvider(jar));
-            if (live) {
-                inheritanceProviders.add(new RuntimeInheritanceProvider());
-            }
-            JarRemapper self = new JarRemapper(jarMapping, inheritanceProviders);
             if (jar == null) {
                 return;
             }
@@ -137,12 +134,8 @@ public class JarRemapper extends Remapper {
                     if (name.endsWith(".class")) {
                         name = name.substring(0, name.length() - CLASS_LEN);
 
-                        ClassReader reader = new ClassReader(is);
-                        ClassWriter wr = new ClassWriter(0);
-                        RemappingClassAdapter mapper = new RemappingClassAdapter(wr, self);
-                        reader.accept(mapper, ClassReader.EXPAND_FRAMES);
-                        data = wr.toByteArray();
-                        String newName = self.map(name);
+                        data = remapClassFile(is);
+                        String newName = map(name);
 
                         entry = new JarEntry(newName == null ? name : newName + ".class");
 
@@ -166,5 +159,16 @@ public class JarRemapper extends Remapper {
         } finally {
             out.close();
         }
+    }
+
+    /**
+     * Remap an individual class given an InputStream to its bytecode
+     */
+    public byte[] remapClassFile(InputStream is) throws IOException {
+        ClassReader reader = new ClassReader(is);
+        ClassWriter wr = new ClassWriter(0);
+        RemappingClassAdapter mapper = new RemappingClassAdapter(wr, this);
+        reader.accept(mapper, ClassReader.EXPAND_FRAMES);
+        return wr.toByteArray();
     }
 }

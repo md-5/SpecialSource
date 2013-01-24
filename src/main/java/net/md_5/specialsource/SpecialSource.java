@@ -30,6 +30,7 @@ package net.md_5.specialsource;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -145,7 +146,16 @@ public class SpecialSource {
 
             log("Remapping final jar");
             Jar jar3 = Jar.init((File) options.valueOf("in-jar"));
-            JarRemapper.renameJar(jar3, (File) options.valueOf("out-jar"), jarMapping, options.has("live"));
+
+            List<IInheritanceProvider> inheritanceProviders = new ArrayList<IInheritanceProvider>();
+            inheritanceProviders.add(new JarInheritanceProvider(jar3));
+            if (options.has("live")) {
+                inheritanceProviders.add(new RuntimeInheritanceProvider());
+            }
+
+
+            JarRemapper jarRemapper = new JarRemapper(jarMapping, inheritanceProviders);
+            jarRemapper.remapJar(jar3, (File) options.valueOf("out-jar"));
         }
     }
 
