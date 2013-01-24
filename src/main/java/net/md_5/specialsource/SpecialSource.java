@@ -50,17 +50,19 @@ public class SpecialSource {
             {
                 acceptsAll(asList("?", "help"), "Show the help");
 
-                acceptsAll(asList("a", "first-jar"), "First jar")
+                acceptsAll(asList("a", "first-jar"), "First jar with original names, for generating mapping")
                         .withRequiredArg()
                         .ofType(File.class);
 
-                acceptsAll(asList("b", "second-jar"), "Second jar")
+                acceptsAll(asList("b", "second-jar"), "Second jar with renamed names, for generating mapping")
                         .withRequiredArg()
                         .ofType(File.class);
 
                 acceptsAll(asList("s", "srg-out"), "Mapping file output")
                         .withRequiredArg()
                         .ofType(File.class);
+
+                acceptsAll(asList("c", "compact"), "Output mapping file in compact format");
 
                 acceptsAll(asList("m", "srg-in"), "Mapping file input")
                         .withRequiredArg()
@@ -81,7 +83,6 @@ public class SpecialSource {
                 acceptsAll(asList("l", "live"), "Enable runtime inheritance lookup");
 
                 acceptsAll(asList("q", "quiet"), "Quiet mode");
-                acceptsAll(asList("c", "compact"), "Output mapping file in compact format");
             }
         };
 
@@ -140,7 +141,7 @@ public class SpecialSource {
 
         if (options.has("in-jar")) {
             if (!options.has("out-jar")) {
-                System.err.println("No output jar given, in-jar requires in-jar");
+                System.err.println("No output jar given, in-jar requires out-jar");
                 parser.printHelpOn(System.err);
                 return;
             }
@@ -160,8 +161,8 @@ public class SpecialSource {
         }
     }
 
-    private static void log(String message) {
-        if (!options.has("q")) {
+    public static void log(String message) {
+        if (!options.has("quiet")) {
             System.out.println(message);
         }
     }

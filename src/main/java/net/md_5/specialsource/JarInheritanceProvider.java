@@ -49,18 +49,13 @@ public class JarInheritanceProvider implements IInheritanceProvider {
     @Override
     @SuppressWarnings("unchecked") // Saddens me to see ASM strip vital info like that
     public List<String> getParents(String owner) {
-        System.out.println("jar: owner " + owner);
         List<String> parents = new ArrayList<String>();
         ClassNode node = self.getNode(owner);
         if (node != null) {
             for (String iface : (List<String>) node.interfaces) {
-                System.out.println("jar: add iface=" + iface);
                 parents.add(iface);
             }
-            System.out.println("jar: add super=" + node.superName);
             parents.add(node.superName);
-        } else {
-            System.out.println("jar: nothing for " + owner);
         }
         return parents;
     }

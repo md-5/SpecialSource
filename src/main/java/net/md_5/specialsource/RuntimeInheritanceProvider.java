@@ -46,7 +46,7 @@ public class RuntimeInheritanceProvider implements IInheritanceProvider {
             clazz = ClassLoader.getSystemClassLoader().loadClass(sourceClassName); // load class without initializing
             //clazz = Class.forName(toSourceName(sourceClassName)); // runs static initializers - avoid!
         } catch (Throwable t) {
-            System.out.println("RuntimeInheritanceProvider failed: " + t);
+            SpecialSource.log("RuntimeInheritanceProvider failed: " + t);
             return parents;
         }
 
