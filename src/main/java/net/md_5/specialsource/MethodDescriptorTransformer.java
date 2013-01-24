@@ -31,7 +31,6 @@ package net.md_5.specialsource;
 import java.util.Map;
 
 public class MethodDescriptorTransformer {
-
     private Map<String, String> packageMap;
     private Map<String, String> classMap;
 

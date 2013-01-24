@@ -81,6 +81,7 @@ public class SpecialSource {
                         .withValuesSeparatedBy(',');
 
                 acceptsAll(asList("l", "live"), "Enable runtime inheritance lookup");
+                acceptsAll(asList("L", "live-remapped"), "Enable runtime inheritance lookup through a mapping");
 
                 acceptsAll(asList("q", "quiet"), "Quiet mode");
             }
@@ -151,6 +152,11 @@ public class SpecialSource {
 
             List<IInheritanceProvider> inheritanceProviders = new ArrayList<IInheritanceProvider>();
             inheritanceProviders.add(new JarInheritanceProvider(jar3));
+
+            if (options.has("live-remapped")) {
+                inheritanceProviders.add(new RemappedRuntimeInheritanceProvider(jarMapping));
+            }
+
             if (options.has("live")) {
                 inheritanceProviders.add(new RuntimeInheritanceProvider());
             }

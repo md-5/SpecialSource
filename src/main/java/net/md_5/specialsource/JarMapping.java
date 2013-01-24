@@ -38,6 +38,10 @@ public class JarMapping {
     public final Map<String, String> fields = new HashMap<String, String>();
     public final Map<String, String> methods = new HashMap<String, String>();
 
+    public JarMapping() {
+
+    }
+
     public JarMapping(File file) throws IOException {
         this(file, null);
     }
