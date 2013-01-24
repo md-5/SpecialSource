@@ -28,7 +28,9 @@
  */
 package net.md_5.specialsource;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -132,7 +134,8 @@ public class SpecialSource {
             }
 
             log("Loading mappings");
-            jarMapping = new JarMapping((File) options.valueOf("srg-in"), shadeRelocationSimulator);
+            BufferedReader reader = new BufferedReader(new FileReader((File) options.valueOf("srg-in")));
+            jarMapping = new JarMapping(reader, shadeRelocationSimulator);
         } else {
             System.err.println("No mappings given, first-jar/second-jar or srg-in required");
             parser.printHelpOn(System.err);

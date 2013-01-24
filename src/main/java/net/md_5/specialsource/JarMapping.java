@@ -42,21 +42,15 @@ public class JarMapping {
 
     }
 
-    public JarMapping(File file) throws IOException {
-        this(file, null);
-    }
-
     /**
      * Load a mapping given a .csrg file
      *
-     * @param file Mapping file
+     * @param reader Mapping file reader
      * @param shader Relocation to apply to old class names, or null for no
      * relocation
      * @throws IOException
      */
-    public JarMapping(File file, ShadeRelocationSimulator shader) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-
+    public JarMapping(BufferedReader reader, ShadeRelocationSimulator shader) throws IOException {
         if (shader == null) {
             shader = ShadeRelocationSimulator.IDENTITY;
         }
