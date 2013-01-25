@@ -24,7 +24,7 @@ public class URLClassLoaderInheritanceProvider implements IInheritanceProvider {
     @SuppressWarnings("unchecked")
     public List<String> getParents(String owner) {
         try {
-            String ownerInternalName = owner.replace('.', '/'); // TODO: abstract out
+            String ownerInternalName = owner.replace('.', '/').concat(".class");
             URL url = classLoader.findResource(ownerInternalName);
             if (url == null) {
                 return null;
