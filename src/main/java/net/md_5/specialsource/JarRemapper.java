@@ -50,7 +50,7 @@ public class JarRemapper extends Remapper {
     private final List<IInheritanceProvider> inheritanceProviders;
     private final JarMapping jarMapping;
 
-    public JarRemapper(JarMapping jarMapping, List<IInheritanceProvider> inheritanceProviders) throws IOException {
+    public JarRemapper(JarMapping jarMapping, List<IInheritanceProvider> inheritanceProviders) {
         this.jarMapping = jarMapping;
         this.inheritanceProviders = inheritanceProviders;
     }
