@@ -11,7 +11,9 @@ public class RemappedRuntimeInheritanceProvider extends RuntimeInheritanceProvid
     private final JarMapping jarMapping;
     private final JarMapping inverseJarMapping;
 
-    public RemappedRuntimeInheritanceProvider(JarMapping jarMapping) {
+    public RemappedRuntimeInheritanceProvider(ClassLoader classLoader, boolean verbose, JarMapping jarMapping) {
+        super(classLoader, verbose);
+
         this.jarMapping = jarMapping;
         this.inverseJarMapping = new JarMapping();
 

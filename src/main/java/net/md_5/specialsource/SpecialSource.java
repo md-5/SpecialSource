@@ -157,11 +157,11 @@ public class SpecialSource {
             inheritanceProviders.add(new JarInheritanceProvider(jar3));
 
             if (options.has("live-remapped")) {
-                inheritanceProviders.add(new RemappedRuntimeInheritanceProvider(jarMapping));
+                inheritanceProviders.add(new RemappedRuntimeInheritanceProvider(ClassLoader.getSystemClassLoader(), !options.has("quiet"), jarMapping));
             }
 
             if (options.has("live")) {
-                inheritanceProviders.add(new RuntimeInheritanceProvider());
+                inheritanceProviders.add(new RuntimeInheritanceProvider(ClassLoader.getSystemClassLoader(), !options.has("quiet")));
             }
 
 
@@ -170,7 +170,7 @@ public class SpecialSource {
         }
     }
 
-    public static void log(String message) {
+    private static void log(String message) {
         if (options != null && !options.has("quiet")) {
             System.out.println(message);
         }

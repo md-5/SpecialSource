@@ -35,18 +35,33 @@ import java.util.ArrayList;
  * Lookup class inheritance from classes loaded at runtime.
  */
 public class RuntimeInheritanceProvider implements IInheritanceProvider {
+    private final ClassLoader classLoader;
+    private final boolean verbose;
 
-    // TODO: option to transform through a jarRemapper at runtime
+    public RuntimeInheritanceProvider(ClassLoader classLoader, boolean verbose) {
+        this.classLoader = classLoader;
+        this.verbose = verbose;
+    }
+
     @Override
     public List<String> getParents(String internalClassName) {
         List<String> parents = new ArrayList<String>();
         String sourceClassName = toSourceName(internalClassName);
         Class clazz;
         try {
-            clazz = ClassLoader.getSystemClassLoader().loadClass(sourceClassName); // load class without initializing
+            clazz = classLoader.loadClass(sourceClassName); // load class without initializing
             //clazz = Class.forName(toSourceName(sourceClassName)); // runs static initializers - avoid!
         } catch (Throwable t) {
-            SpecialSource.log("RuntimeInheritanceProvider failed: " + t);
+            if (verbose) {
+                System.out.println("RuntimeInheritanceProvider failed: " + t);
+                t.printStackTrace();
+            }
+            return null;
+        }
+        if (clazz == null) {
+            if (verbose) {
+                System.out.println("RuntimeInheritanceProvider no class: " + sourceClassName);
+            }
             return null;
         }
 
