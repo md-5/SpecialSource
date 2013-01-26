@@ -120,9 +120,7 @@ public class JarMapping {
             String oldClass = oldJar.classes.get(i);
             String newClass = newJar.classes.get(i);
             classes.put(oldClass, newClass);
-            if (!Objects.equals(oldClass, newClass)) {
-                srgWriter.addClassMap(oldClass, newClass);
-            }
+            srgWriter.addClassMap(oldClass, newClass);
         }
         for (int i = 0; i < oldJar.fields.size(); i++) {
             Ownable oldField = oldJar.fields.get(i);
