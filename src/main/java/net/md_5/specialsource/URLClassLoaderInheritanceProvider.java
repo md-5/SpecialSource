@@ -15,9 +15,11 @@ import java.util.List;
  */
 public class URLClassLoaderInheritanceProvider implements IInheritanceProvider {
     private final URLClassLoader classLoader;
+    private final boolean verbose;
 
-    public URLClassLoaderInheritanceProvider(URLClassLoader classLoader) {
+    public URLClassLoaderInheritanceProvider(URLClassLoader classLoader, boolean verbose) {
         this.classLoader = classLoader;
+        this.verbose = verbose;
     }
 
     @Override
@@ -25,6 +27,9 @@ public class URLClassLoaderInheritanceProvider implements IInheritanceProvider {
     public List<String> getParents(String owner) {
         try {
             String ownerInternalName = owner.replace('.', '/').concat(".class");
+            if (verbose) {
+                System.out.println("URLClassLoaderInheritanceProvider looking up "+ownerInternalName);
+            }
             URL url = classLoader.findResource(ownerInternalName);
             if (url == null) {
                 return null;
@@ -35,8 +40,6 @@ public class URLClassLoaderInheritanceProvider implements IInheritanceProvider {
                 return null;
             }
 
-            // TODO: refactor
-
             ClassReader cr = new ClassReader(inputStream);
             ClassNode node = new ClassNode();
             cr.accept(node, 0);
@@ -45,11 +48,21 @@ public class URLClassLoaderInheritanceProvider implements IInheritanceProvider {
 
             for (String iface : (List<String>) node.interfaces) {
                 parents.add(iface);
+                if (verbose) {
+                    System.out.println(" - "+iface);
+                }
             }
             parents.add(node.superName);
+            if (verbose) {
+                System.out.println(" + "+node.superName);
+            }
 
             return parents;
         } catch (IOException ex) {
+            if (verbose) {
+                System.out.println("URLClassLoaderInheritanceProvider "+owner+" exception: "+ex);
+                ex.printStackTrace();
+            }
             return null;
         }
     }
