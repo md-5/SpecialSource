@@ -31,7 +31,14 @@ public class RemappedRuntimeInheritanceProvider extends RuntimeInheritanceProvid
     @Override
     public List<String> getParents(String before) {
         // Remap the input (example: cb -> obf)
-        String after = JarRemapper.mapTypeName(before, jarMapping.packages, jarMapping.classes);
+        // If the type is not mapped, return immediately
+        String after = JarRemapper.mapTypeName(before, jarMapping.packages, jarMapping.classes, null);
+        if (after == null) {
+            if (verbose) {
+                System.out.println("RemappedRuntimeInheritanceProvider doesn't know about "+before);
+            }
+            return null;
+        }
 
         if (verbose) {
             System.out.println("RemappedRuntimeInheritanceProvider getParents "+before+" -> "+after);
@@ -48,7 +55,7 @@ public class RemappedRuntimeInheritanceProvider extends RuntimeInheritanceProvid
         // Un-remap the output (example: obf -> cb)
         List<String> afterParents = new ArrayList<String>();
         for (String beforeParent : beforeParents) {
-            String afterParent = JarRemapper.mapTypeName(beforeParent, inverseJarMapping.packages, inverseJarMapping.classes);
+            String afterParent = JarRemapper.mapTypeName(beforeParent, inverseJarMapping.packages, inverseJarMapping.classes, beforeParent);
             if (verbose) {
                 System.out.println("- " + beforeParent + " -> " + afterParent);
             }

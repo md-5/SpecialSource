@@ -57,20 +57,19 @@ public class JarRemapper extends Remapper {
 
     @Override
     public String map(String typeName) {
-        return mapTypeName(typeName, jarMapping.packages, jarMapping.classes);
+        return mapTypeName(typeName, jarMapping.packages, jarMapping.classes, typeName);
     }
 
-    public static String mapTypeName(String typeName, Map<String, String> packageMap, Map<String, String> classMap) {
+    public static String mapTypeName(String typeName, Map<String, String> packageMap, Map<String, String> classMap, String defaultIfUnmapped) {
         int index = typeName.indexOf('$');
         String key = (index == -1) ? typeName : typeName.substring(0, index);
         String mapped = mapClassName(key, packageMap, classMap);
 
-        return mapped != null ? mapped + (index == -1 ? "" : typeName.substring(index, typeName.length())) : typeName;
+        return mapped != null ? mapped + (index == -1 ? "" : typeName.substring(index, typeName.length())) : defaultIfUnmapped;
     }
 
     /**
      * Helper method to map a class name by package (prefix) or class (exact)
-     * map
      */
     private static String mapClassName(String className, Map<String, String> packageMap, Map<String, String> classMap) {
         if (packageMap != null) {

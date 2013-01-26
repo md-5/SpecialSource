@@ -57,7 +57,7 @@ public class MethodDescriptorTransformer {
                     String className = rest.substring(1, end);
                     i += className.length() + 1;
 
-                    String newClassName = JarRemapper.mapTypeName(className, packageMap, classMap);
+                    String newClassName = JarRemapper.mapTypeName(className, packageMap, classMap, className);
 
                     output.append("L").append(newClassName).append(";");
                     break;
