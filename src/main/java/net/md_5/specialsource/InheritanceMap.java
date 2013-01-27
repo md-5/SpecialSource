@@ -37,7 +37,10 @@ public class InheritanceMap {
     }
 
     public void save(PrintWriter writer) {
-        for (String className : inheritanceMap.keySet()) {
+        List<String> classes = new ArrayList<String>(inheritanceMap.keySet());
+        Collections.sort(classes);
+
+        for (String className : classes) {
             writer.print(className);
             writer.print(' ');
 
