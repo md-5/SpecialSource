@@ -28,10 +28,7 @@
  */
 package net.md_5.specialsource;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +81,10 @@ public class SpecialSource {
 
                 acceptsAll(asList("l", "live"), "Enable runtime inheritance lookup");
                 acceptsAll(asList("L", "live-remapped"), "Enable runtime inheritance lookup through a mapping");
+
+                acceptsAll(asList("H", "write-inheritance"), "Write inheritance map to file")
+                        .withRequiredArg()
+                        .ofType(File.class);
 
                 acceptsAll(asList("q", "quiet"), "Quiet mode");
             }
@@ -143,6 +144,17 @@ public class SpecialSource {
         }
         log(jarMapping.classes.size() + " classes, " + jarMapping.fields.size() + " fields, " + jarMapping.methods.size() + " methods");
 
+        List<IInheritanceProvider> inheritanceProviders = new ArrayList<IInheritanceProvider>();
+
+        if (options.has("live-remapped")) {
+            inheritanceProviders.add(new RemappedRuntimeInheritanceProvider(ClassLoader.getSystemClassLoader(), !options.has("quiet"), jarMapping));
+        }
+
+        if (options.has("live")) {
+            inheritanceProviders.add(new RuntimeInheritanceProvider(ClassLoader.getSystemClassLoader(), !options.has("quiet")));
+        }
+
+
         if (options.has("in-jar")) {
             if (!options.has("out-jar")) {
                 System.err.println("No output jar given, in-jar requires out-jar");
@@ -153,20 +165,22 @@ public class SpecialSource {
             log("Remapping final jar");
             Jar jar3 = Jar.init((File) options.valueOf("in-jar"));
 
-            List<IInheritanceProvider> inheritanceProviders = new ArrayList<IInheritanceProvider>();
             inheritanceProviders.add(new JarInheritanceProvider(jar3));
 
-            if (options.has("live-remapped")) {
-                inheritanceProviders.add(new RemappedRuntimeInheritanceProvider(ClassLoader.getSystemClassLoader(), !options.has("quiet"), jarMapping));
-            }
-
-            if (options.has("live")) {
-                inheritanceProviders.add(new RuntimeInheritanceProvider(ClassLoader.getSystemClassLoader(), !options.has("quiet")));
-            }
 
 
             JarRemapper jarRemapper = new JarRemapper(jarMapping, inheritanceProviders);
             jarRemapper.remapJar(jar3, (File) options.valueOf("out-jar"));
+        }
+
+
+        if (options.has("write-inheritance")) {
+            InheritanceMap inheritanceMap = new InheritanceMap();
+
+            inheritanceMap.generate(inheritanceProviders, jarMapping.classes.values());
+            PrintWriter printWriter = new PrintWriter((File) options.valueOf("write-inheritance"));
+            inheritanceMap.save(printWriter);
+            printWriter.close();
         }
     }
 
