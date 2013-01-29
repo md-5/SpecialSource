@@ -90,16 +90,21 @@ public class JarMapping {
         }
     }
 
+    public JarMapping(JarComparer oldJar, JarComparer newJar, File logFile, boolean compact) throws IOException {
+        this(oldJar, newJar, logFile, compact, false);
+    }
+
     /**
      * Generate a mapping given an original jar and renamed jar
      *
      * @param oldJar Original jar
      * @param newJar Renamed jar
      * @param logfile Optional .srg file to output mappings to
-     * @param compact If true, generate .csrg logfile instead
+     * @param compact If true, generate .csrg logfile instead of .srg
+     * @param full if true, generate duplicates
      * @throws IOException
      */
-    public JarMapping(JarComparer oldJar, JarComparer newJar, File logfile, boolean compact) throws IOException {
+    public JarMapping(JarComparer oldJar, JarComparer newJar, File logfile, boolean compact, boolean full) throws IOException {
         SpecialSource.validate(oldJar, newJar);
 
         PrintWriter out;
@@ -119,7 +124,7 @@ public class JarMapping {
         for (int i = 0; i < oldJar.classes.size(); i++) {
             String oldClass = oldJar.classes.get(i);
             String newClass = newJar.classes.get(i);
-            classes.put(oldClass, newClass);
+            classes.put(oldClass, newClass); // always output class names (no duplicate check)
             srgWriter.addClassMap(oldClass, newClass);
         }
         for (int i = 0; i < oldJar.fields.size(); i++) {
@@ -128,7 +133,7 @@ public class JarMapping {
             String key = oldField.owner + "/" + oldField.name;
             fields.put(key, newField.name);
 
-            if (!Objects.equals(oldField.name, newField.name)) {
+            if (full || !Objects.equals(oldField.name, newField.name)) {
                 srgWriter.addFieldMap(oldField, newField);
             }
         }
@@ -141,7 +146,7 @@ public class JarMapping {
             MethodDescriptorTransformer methodDescriptorTransformer = new MethodDescriptorTransformer(null, classes);
             String oldDescriptor = methodDescriptorTransformer.transform(oldMethod.descriptor);
 
-            if (!Objects.equals(oldMethod.name + " " + oldDescriptor, newMethod.name + " " + newMethod.descriptor)) {
+            if (full || !Objects.equals(oldMethod.name + " " + oldDescriptor, newMethod.name + " " + newMethod.descriptor)) {
                 srgWriter.addMethodMap(oldMethod, newMethod);
             }
         }

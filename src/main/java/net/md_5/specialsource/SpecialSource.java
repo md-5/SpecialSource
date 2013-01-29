@@ -62,6 +62,7 @@ public class SpecialSource {
                         .ofType(File.class);
 
                 acceptsAll(asList("c", "compact"), "Output mapping file in compact format");
+                acceptsAll(asList("f", "generate-dupes"), "Include unrenamed symbols in mapping file output");
 
                 acceptsAll(asList("m", "srg-in"), "Mapping file input")
                         .withRequiredArg()
@@ -120,7 +121,7 @@ public class SpecialSource {
             JarComparer visitor2 = new JarComparer(jar2);
             visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.main, jar2.main));
 
-            jarMapping = new JarMapping(visitor1, visitor2, (File) options.valueOf("srg-out"), options.has("compact"));
+            jarMapping = new JarMapping(visitor1, visitor2, (File) options.valueOf("srg-out"), options.has("compact"), options.has("generate-dupes"));
         } else if (options.has("srg-in")) {
             // Load mappings, possibly shaded
             ShadeRelocationSimulator shadeRelocationSimulator = null;
