@@ -30,13 +30,23 @@ package net.md_5.specialsource;
 
 import com.google.common.base.Joiner;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
-public class InheritanceMap {
+public class InheritanceMap implements IInheritanceProvider {
 
-    private final Map<String, ArrayList<String>> inheritanceMap = new HashMap<String, ArrayList<String>>();
+    public final Map<String, ArrayList<String>> inheritanceMap = new HashMap<String, ArrayList<String>>();
+
+    public InheritanceMap() {
+
+    }
+
+    public InheritanceMap(BufferedReader bufferedReader) throws IOException {
+        load(bufferedReader);
+    }
 
     /**
      * Generate an inheritance map for the given classes
@@ -90,5 +100,26 @@ public class InheritanceMap {
             List<String> parents = inheritanceMap.get(className);
             writer.println(Joiner.on(' ').join(parents));
         }
+    }
+
+    public void load(BufferedReader reader) throws IOException {
+        String line;
+
+        while ((line = reader.readLine()) != null) {
+            String[] tokens = line.split(" ");
+
+            if (tokens.length < 2) {
+                continue;
+            }
+
+            String className = tokens[0];
+            List<String> parents = Arrays.asList(tokens).subList(1, tokens.length - 1);
+
+            inheritanceMap.put(className, new ArrayList<String>(parents));
+        }
+    }
+
+    public List<String> getParents(String className) {
+        return inheritanceMap.get(className);
     }
 }

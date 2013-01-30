@@ -86,6 +86,9 @@ public class SpecialSource {
                 acceptsAll(asList("H", "write-inheritance"), "Write inheritance map to file")
                         .withRequiredArg()
                         .ofType(File.class);
+                acceptsAll(asList("h", "read-inheritance"), "Read inheritance map from file")
+                        .withRequiredArg()
+                        .ofType(File.class);
 
                 acceptsAll(asList("q", "quiet"), "Quiet mode");
             }
@@ -153,6 +156,16 @@ public class SpecialSource {
 
         if (options.has("live")) {
             inheritanceProviders.add(new RuntimeInheritanceProvider(ClassLoader.getSystemClassLoader(), !options.has("quiet")));
+        }
+
+        if (options.has("read-inheritance")) {
+            InheritanceMap inheritanceMap = new InheritanceMap();
+
+            BufferedReader reader = new BufferedReader(new FileReader((File) options.valueOf("read-inheritance")));
+            inheritanceMap.load(reader);
+            log("Loaded inheritance map for "+inheritanceMap.inheritanceMap.size()+" classes");
+
+            inheritanceProviders.add(inheritanceMap);
         }
 
 
