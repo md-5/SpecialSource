@@ -29,6 +29,7 @@
 package net.md_5.specialsource;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.BiMap;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -39,14 +40,6 @@ import java.util.*;
 public class InheritanceMap implements IInheritanceProvider {
 
     public final Map<String, ArrayList<String>> inheritanceMap = new HashMap<String, ArrayList<String>>();
-
-    public InheritanceMap() {
-
-    }
-
-    public InheritanceMap(BufferedReader bufferedReader) throws IOException {
-        load(bufferedReader);
-    }
 
     /**
      * Generate an inheritance map for the given classes
@@ -102,20 +95,39 @@ public class InheritanceMap implements IInheritanceProvider {
         }
     }
 
-    public void load(BufferedReader reader) throws IOException {
+    public void load(BufferedReader reader, BiMap<String, String> classMap) throws IOException {
         String line;
 
         while ((line = reader.readLine()) != null) {
             String[] tokens = line.split(" ");
 
             if (tokens.length < 2) {
-                continue;
+                throw new IOException("Invalid inheritance map file line: " + line);
             }
 
             String className = tokens[0];
-            List<String> parents = Arrays.asList(tokens).subList(1, tokens.length - 1);
+            List<String> parents = Arrays.asList(tokens).subList(1, tokens.length);
 
-            inheritanceMap.put(className, new ArrayList<String>(parents));
+            if (classMap == null) {
+                inheritanceMap.put(className, new ArrayList<String>(parents));
+            } else {
+                String remappedClassName = JarRemapper.mapTypeName(className, /*packageMap*/null, classMap, /*defaultIfUnmapped*/null);
+                if (remappedClassName == null) {
+                    throw new IOException("Inheritance map input class not remapped: " + className);
+                }
+
+                ArrayList<String> remappedParents = new ArrayList<String>();
+                for (String parent : parents) {
+                    String remappedParent = JarRemapper.mapTypeName(parent, /*packageMap*/null, classMap, /*defaultIfUnmapped*/null);
+                    if (remappedParent == null) {
+                        throw new IOException("Inheritance map parent class not remapped: " + parent);
+                    }
+
+                    remappedParents.add(remappedParent);
+                }
+
+                inheritanceMap.put(remappedClassName, remappedParents);
+            }
         }
     }
 

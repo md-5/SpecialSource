@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -162,7 +164,9 @@ public class SpecialSource {
             InheritanceMap inheritanceMap = new InheritanceMap();
 
             BufferedReader reader = new BufferedReader(new FileReader((File) options.valueOf("read-inheritance")));
-            inheritanceMap.load(reader);
+
+            BiMap<String, String> inverseClassMap = HashBiMap.create(jarMapping.classes).inverse();
+            inheritanceMap.load(reader, inverseClassMap);
             log("Loaded inheritance map for "+inheritanceMap.inheritanceMap.size()+" classes");
 
             inheritanceProviders.add(inheritanceMap);
@@ -180,8 +184,6 @@ public class SpecialSource {
             Jar jar3 = Jar.init((File) options.valueOf("in-jar"));
 
             inheritanceProviders.add(new JarInheritanceProvider(jar3));
-
-
 
             JarRemapper jarRemapper = new JarRemapper(jarMapping, inheritanceProviders);
             jarRemapper.remapJar(jar3, (File) options.valueOf("out-jar"));
