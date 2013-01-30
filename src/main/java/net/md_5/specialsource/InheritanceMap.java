@@ -10,6 +10,9 @@ public class InheritanceMap {
 
     private final Map<String, ArrayList<String>> inheritanceMap = new HashMap<String, ArrayList<String>>();
 
+    /**
+     * Generate an inheritance map for the given classes
+     */
     public void generate(List<IInheritanceProvider> inheritanceProviders, Collection<String> classes) {
         for (String className : classes) {
             ArrayList<String> parents = getParents(inheritanceProviders, className);
@@ -17,7 +20,19 @@ public class InheritanceMap {
             if (parents == null) {
                 System.out.println("No inheritance information found for "+className);
             } else {
-                inheritanceMap.put(className, parents);
+                ArrayList<String> filteredParents = new ArrayList<String>();
+
+                // Include only classes requested
+                for (String parent: parents) {
+                    if (classes.contains(parent)) {
+                        filteredParents.add(parent);
+                    }
+                }
+
+                // If there are parents we care about, add to map
+                if (filteredParents.size() > 0) {
+                    inheritanceMap.put(className, filteredParents);
+                }
             }
         }
     }
