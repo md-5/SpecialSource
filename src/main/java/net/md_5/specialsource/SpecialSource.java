@@ -150,7 +150,7 @@ public class SpecialSource {
         }
         log(jarMapping.classes.size() + " classes, " + jarMapping.fields.size() + " fields, " + jarMapping.methods.size() + " methods");
 
-        List<IInheritanceProvider> inheritanceProviders = new ArrayList<IInheritanceProvider>();
+        InheritanceProviders inheritanceProviders = new InheritanceProviders();
 
         if (options.has("live-remapped")) {
             inheritanceProviders.add(new RemappedRuntimeInheritanceProvider(ClassLoader.getSystemClassLoader(), !options.has("quiet"), jarMapping));

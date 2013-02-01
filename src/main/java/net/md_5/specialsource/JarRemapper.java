@@ -47,12 +47,12 @@ import org.objectweb.asm.commons.RemappingClassAdapter;
 public class JarRemapper extends Remapper {
 
     private static final int CLASS_LEN = ".class".length();
-    private final List<IInheritanceProvider> inheritanceProviders;
+    private final IInheritanceProvider inheritanceProvider;
     private final JarMapping jarMapping;
 
-    public JarRemapper(JarMapping jarMapping, List<IInheritanceProvider> inheritanceProviders) {
+    public JarRemapper(JarMapping jarMapping, IInheritanceProvider inheritanceProvider) {
         this.jarMapping = jarMapping;
-        this.inheritanceProviders = inheritanceProviders;
+        this.inheritanceProvider = inheritanceProvider;
     }
 
     @Override
@@ -96,19 +96,15 @@ public class JarRemapper extends Remapper {
 
         String mapped = map.get(key);
         if (mapped == null) {
-            // ask each provider for inheritance information on the class, until one responds
-            for (IInheritanceProvider inheritanceProvider : inheritanceProviders) {
-                List<String> parents = inheritanceProvider.getParents(owner);
+            List<String> parents = inheritanceProvider.getParents(owner);
 
-                if (parents != null) {
-                    // climb the inheritance tree
-                    for (String parent : parents) {
-                        mapped = tryClimb(map, type, parent, name);
-                        if (mapped != null) {
-                            return mapped;
-                        }
+            if (parents != null) {
+                // climb the inheritance tree
+                for (String parent : parents) {
+                    mapped = tryClimb(map, type, parent, name);
+                    if (mapped != null) {
+                        return mapped;
                     }
-                    break;
                 }
             }
         }

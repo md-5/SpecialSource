@@ -44,9 +44,9 @@ public class InheritanceMap implements IInheritanceProvider {
     /**
      * Generate an inheritance map for the given classes
      */
-    public void generate(List<IInheritanceProvider> inheritanceProviders, Collection<String> classes) {
+    public void generate(IInheritanceProvider inheritanceProvider, Collection<String> classes) {
         for (String className : classes) {
-            ArrayList<String> parents = getParents(inheritanceProviders, className);
+            List<String> parents = inheritanceProvider.getParents(className);
 
             if (parents == null) {
                 System.out.println("No inheritance information found for "+className);
@@ -66,20 +66,6 @@ public class InheritanceMap implements IInheritanceProvider {
                 }
             }
         }
-    }
-
-    private ArrayList<String> getParents(List<IInheritanceProvider> inheritanceProviders, String className) {
-        for (IInheritanceProvider inheritanceProvider : inheritanceProviders) {
-            // // ask each provider for inheritance information on the class, until one responds
-            // TODO: refactor with JarRemapper tryClimb?
-            List<String> parents = inheritanceProvider.getParents(className);
-
-            if (parents != null) {
-                return (ArrayList<String>) parents;
-            }
-        }
-
-        return null;
     }
 
     public void save(PrintWriter writer) {
