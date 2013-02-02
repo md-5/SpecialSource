@@ -52,6 +52,11 @@ public class JarRemapper extends Remapper {
 
     public JarRemapper(JarMapping jarMapping, IInheritanceProvider inheritanceProvider) {
         this.jarMapping = jarMapping;
+
+        if (inheritanceProvider == null) {
+            inheritanceProvider = InheritanceMap.EMPTY;
+        }
+
         this.inheritanceProvider = inheritanceProvider;
     }
 

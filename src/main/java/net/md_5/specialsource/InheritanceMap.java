@@ -41,6 +41,8 @@ public class InheritanceMap implements IInheritanceProvider {
 
     public final Map<String, ArrayList<String>> inheritanceMap = new HashMap<String, ArrayList<String>>();
 
+    public static final InheritanceMap EMPTY = new InheritanceMap();
+
     /**
      * Generate an inheritance map for the given classes
      */
