@@ -61,6 +61,9 @@ public class JarMapping {
 
         String line;
         while ((line = reader.readLine()) != null) {
+            if (line.startsWith("#") || line.isEmpty()){
+                continue;
+            }
             // TODO: refactor ShadeRelocationSimulator application
 
             if (line.contains(":")) {
