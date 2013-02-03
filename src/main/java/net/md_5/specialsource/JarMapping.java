@@ -63,30 +63,139 @@ public class JarMapping {
         while ((line = reader.readLine()) != null) {
             String[] tokens = line.split(" ");
 
-            // Read .csrg file
-            if (tokens.length == 2) {
-                String oldClassName = shader.shadeClassName(tokens[0]);
-                String newClassName = tokens[1];
-
-                if (oldClassName.endsWith("/")) {
-                    // Special case: mapping an entire hierarchy of classes
-                    packages.put(oldClassName, newClassName);
-                } else {
-                    classes.put(oldClassName, newClassName);
-                }
-            } else if (tokens.length == 3) {
-                String oldClassName = shader.shadeClassName(tokens[0]);
-                String oldFieldName = tokens[1];
-                String newFieldName = tokens[2];
-                fields.put(oldClassName + "/" + oldFieldName, newFieldName);
-            } else if (tokens.length == 4) {
-                String oldClassName = shader.shadeClassName(tokens[0]);
-                String oldMethodName = tokens[1];
-                String oldMethodDescriptor = shader.shadeMethodDescriptor(tokens[2]);
-                String newMethodName = tokens[3];
-                methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
+            if (tokens.length == 0) {
+                continue;
             }
-            // TODO: also support .srg (auto-detect ':' in tokens[0]), and check validity (redundancies match)
+
+            // TODO: refactor ShadeRelocationSimulator application
+
+            if (tokens[0].endsWith(":")) {
+                // standard srg
+                parseSrgLine(tokens, shader);
+            } else {
+                // better 'compact' srg format
+                parseCsrgLine(tokens, shader);
+            }
+        }
+    }
+
+    /**
+     * Parse a 'csrg' mapping format line and populate the data structures
+     */
+    private void parseCsrgLine(String[] tokens, ShadeRelocationSimulator shader) throws IOException {
+         // Read .csrg file
+        if (tokens.length == 2) {
+            String oldClassName = shader.shadeClassName(tokens[0]);
+            String newClassName = tokens[1];
+
+            if (oldClassName.endsWith("/")) {
+                // Special case: mapping an entire hierarchy of classes
+                packages.put(oldClassName, newClassName);
+            } else {
+                classes.put(oldClassName, newClassName);
+            }
+        } else if (tokens.length == 3) {
+            String oldClassName = shader.shadeClassName(tokens[0]);
+            String oldFieldName = tokens[1];
+            String newFieldName = tokens[2];
+            fields.put(oldClassName + "/" + oldFieldName, newFieldName);
+        } else if (tokens.length == 4) {
+            String oldClassName = shader.shadeClassName(tokens[0]);
+            String oldMethodName = tokens[1];
+            String oldMethodDescriptor = shader.shadeMethodDescriptor(tokens[2]);
+            String newMethodName = tokens[3];
+            methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
+        } else {
+            throw new IOException("Invalid csrg file line, token count " + tokens.length);
+        }
+    }
+
+    /**
+     * Parse a standard 'srg' mapping format line and populate the data structures
+     */
+    private void parseSrgLine(String[] tokens, ShadeRelocationSimulator shader) throws IOException {
+        String kind = tokens[0];
+
+        if (kind.equals("CL:")) {
+            String oldClassName = shader.shadeClassName(tokens[1]); // TODO: refactor
+            String newClassName = tokens[2];
+
+            if (classes.containsKey(oldClassName)) {
+                throw new IllegalArgumentException("Duplicate class mapping: " + oldClassName + " -> " + newClassName +
+                    " but already mapped to "+classes.get(oldClassName));
+            }
+
+            classes.put(oldClassName, newClassName);
+        } else if (kind.equals("PK:")) {
+            String oldPackageName = tokens[1];
+            String newPackageName = tokens[2];
+
+            if (packages.containsKey(oldPackageName)) {
+                throw new IllegalArgumentException("Duplicate package mapping: " + oldPackageName + " ->" + newPackageName +
+                    " but already mapped to "+packages.get(oldPackageName));
+            }
+
+            packages.put(oldPackageName, newPackageName);
+        } else if (kind.equals("FD:")) {
+            String oldFull = tokens[1];
+            String newFull = tokens[2];
+
+            // Split the qualified field names into their classes and actual names
+            int splitOld = oldFull.lastIndexOf('/');
+            int splitNew = newFull.lastIndexOf('/');
+            if (splitOld == -1 || splitNew == -1) {
+                throw new IllegalArgumentException("Field name is invalid, not fully-qualified: " + oldFull + " " + newFull);
+            }
+
+            String oldClassName = oldFull.substring(0, splitOld);
+            String oldFieldName = oldFull.substring(splitOld + 1);
+            String newClassName = newFull.substring(0, splitNew);
+            String newFieldName = newFull.substring(splitNew + 1);
+
+            // Validate the redundancies
+            if (!classes.containsKey(oldClassName)) {
+                throw new IllegalArgumentException("Field mapping on an unmapped class: " + oldClassName +
+                    " for field "+oldFieldName);
+            }
+            if (!classes.get(oldClassName).equals(newClassName)) {
+                throw new IllegalArgumentException("Field mapping inconsistent: new class "+newClassName +
+                    " but expected "+classes.get(oldClassName));
+            }
+
+            fields.put(oldClassName + "/" + oldFieldName, newFieldName);
+        } else if (kind.equals("MD:")) {
+            String oldFull = tokens[1];
+            String oldMethodDescriptor = tokens[2];
+            String newFull = tokens[3];
+            String newMethodDescriptor = tokens[4];
+
+            // Split the qualified field names into their classes and actual names TODO: refactor with above
+            int splitOld = oldFull.lastIndexOf('/');
+            int splitNew = newFull.lastIndexOf('/');
+            if (splitOld == -1 || splitNew == -1) {
+                throw new IllegalArgumentException("Field name is invalid, not fully-qualified: " + oldFull + " " + newFull);
+            }
+
+            String oldClassName = oldFull.substring(0, splitOld);
+            String oldMethodName = oldFull.substring(splitOld + 1);
+            String newClassName = newFull.substring(0, splitNew);
+            String newMethodName = newFull.substring(splitNew + 1);
+
+            // Validate the new class name
+            if (!classes.containsKey(oldClassName)) {
+                throw new IllegalArgumentException("Method mapping on an unmapped class: " + oldClassName +
+                    " for field "+oldMethodName);
+            }
+            if (!classes.get(oldClassName).equals(newClassName)) {
+                throw new IllegalArgumentException("Method mapping inconsistent: new class "+newClassName +
+                    " but expected "+classes.get(oldClassName));
+            }
+
+            // TODO: validate newMethodDescriptor instead of completely ignoring it
+
+            methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
+        } else {
+            throw new IllegalArgumentException("Unable to parse srg file, unrecognized mapping type");
         }
     }
 
