@@ -61,20 +61,14 @@ public class JarMapping {
 
         String line;
         while ((line = reader.readLine()) != null) {
-            String[] tokens = line.split(" ");
-
-            if (tokens.length == 0) {
-                continue;
-            }
-
             // TODO: refactor ShadeRelocationSimulator application
 
-            if (tokens[0].endsWith(":")) {
+            if (line.contains(":")) {
                 // standard srg
-                parseSrgLine(tokens, shader);
+                parseSrgLine(line, shader);
             } else {
                 // better 'compact' srg format
-                parseCsrgLine(tokens, shader);
+                parseCsrgLine(line, shader);
             }
         }
     }
@@ -82,8 +76,9 @@ public class JarMapping {
     /**
      * Parse a 'csrg' mapping format line and populate the data structures
      */
-    private void parseCsrgLine(String[] tokens, ShadeRelocationSimulator shader) throws IOException {
-         // Read .csrg file
+    private void parseCsrgLine(String line, ShadeRelocationSimulator shader) throws IOException {
+        String[] tokens = line.split(" ");
+
         if (tokens.length == 2) {
             String oldClassName = shader.shadeClassName(tokens[0]);
             String newClassName = tokens[1];
@@ -106,14 +101,15 @@ public class JarMapping {
             String newMethodName = tokens[3];
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {
-            throw new IOException("Invalid csrg file line, token count " + tokens.length);
+            throw new IOException("Invalid csrg file line, token count " + tokens.length + " unexpected in "+line);
         }
     }
 
     /**
      * Parse a standard 'srg' mapping format line and populate the data structures
      */
-    private void parseSrgLine(String[] tokens, ShadeRelocationSimulator shader) throws IOException {
+    private void parseSrgLine(String line, ShadeRelocationSimulator shader) throws IOException {
+        String[] tokens = line.split(" ");
         String kind = tokens[0];
 
         if (kind.equals("CL:")) {
@@ -122,7 +118,7 @@ public class JarMapping {
 
             if (classes.containsKey(oldClassName)) {
                 throw new IllegalArgumentException("Duplicate class mapping: " + oldClassName + " -> " + newClassName +
-                    " but already mapped to "+classes.get(oldClassName));
+                    " but already mapped to "+classes.get(oldClassName)+" in line="+line);
             }
 
             classes.put(oldClassName, newClassName);
@@ -132,7 +128,7 @@ public class JarMapping {
 
             if (packages.containsKey(oldPackageName)) {
                 throw new IllegalArgumentException("Duplicate package mapping: " + oldPackageName + " ->" + newPackageName +
-                    " but already mapped to "+packages.get(oldPackageName));
+                    " but already mapped to "+packages.get(oldPackageName)+" in line="+line);
             }
 
             packages.put(oldPackageName, newPackageName);
@@ -144,7 +140,8 @@ public class JarMapping {
             int splitOld = oldFull.lastIndexOf('/');
             int splitNew = newFull.lastIndexOf('/');
             if (splitOld == -1 || splitNew == -1) {
-                throw new IllegalArgumentException("Field name is invalid, not fully-qualified: " + oldFull + " " + newFull);
+                throw new IllegalArgumentException("Field name is invalid, not fully-qualified: " + oldFull +
+                        " -> " + newFull + " in line="+line);
             }
 
             String oldClassName = oldFull.substring(0, splitOld);
@@ -155,11 +152,11 @@ public class JarMapping {
             // Validate the redundancies
             if (!classes.containsKey(oldClassName)) {
                 throw new IllegalArgumentException("Field mapping on an unmapped class: " + oldClassName +
-                    " for field "+oldFieldName);
+                    " for field "+oldFieldName+" in line="+line);
             }
             if (!classes.get(oldClassName).equals(newClassName)) {
                 throw new IllegalArgumentException("Field mapping inconsistent: new class "+newClassName +
-                    " but expected "+classes.get(oldClassName));
+                    " but expected "+classes.get(oldClassName)+" in line="+line);
             }
 
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
@@ -173,7 +170,8 @@ public class JarMapping {
             int splitOld = oldFull.lastIndexOf('/');
             int splitNew = newFull.lastIndexOf('/');
             if (splitOld == -1 || splitNew == -1) {
-                throw new IllegalArgumentException("Field name is invalid, not fully-qualified: " + oldFull + " " + newFull);
+                throw new IllegalArgumentException("Field name is invalid, not fully-qualified: " + oldFull +
+                        " -> " + newFull + " in line="+line);
             }
 
             String oldClassName = oldFull.substring(0, splitOld);
@@ -184,18 +182,18 @@ public class JarMapping {
             // Validate the new class name
             if (!classes.containsKey(oldClassName)) {
                 throw new IllegalArgumentException("Method mapping on an unmapped class: " + oldClassName +
-                    " for field "+oldMethodName);
+                    " for field "+oldMethodName+" in line="+line);
             }
             if (!classes.get(oldClassName).equals(newClassName)) {
                 throw new IllegalArgumentException("Method mapping inconsistent: new class "+newClassName +
-                    " but expected "+classes.get(oldClassName));
+                    " but expected "+classes.get(oldClassName)+" in line="+line);
             }
 
             // TODO: validate newMethodDescriptor instead of completely ignoring it
 
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {
-            throw new IllegalArgumentException("Unable to parse srg file, unrecognized mapping type");
+            throw new IllegalArgumentException("Unable to parse srg file, unrecognized mapping type in line="+line);
         }
     }
 
