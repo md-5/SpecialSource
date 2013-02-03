@@ -243,7 +243,7 @@ public class JarMapping {
             String key = oldField.owner + "/" + oldField.name;
             fields.put(key, newField.name);
 
-            if (full || !Objects.equals(oldField.name, newField.name)) {
+            if (full || !oldField.name.equals(newField.name)) {
                 srgWriter.addFieldMap(oldField, newField);
             }
         }
@@ -256,7 +256,7 @@ public class JarMapping {
             MethodDescriptorTransformer methodDescriptorTransformer = new MethodDescriptorTransformer(null, classes);
             String oldDescriptor = methodDescriptorTransformer.transform(oldMethod.descriptor);
 
-            if (full || !Objects.equals(oldMethod.name + " " + oldDescriptor, newMethod.name + " " + newMethod.descriptor)) {
+            if (full || !(oldMethod.name + " " + oldDescriptor).equals(newMethod.name + " " + newMethod.descriptor)) {
                 srgWriter.addMethodMap(oldMethod, newMethod);
             }
         }
