@@ -88,7 +88,7 @@ public class JarMapping {
 
             if (oldClassName.endsWith("/")) {
                 // Special case: mapping an entire hierarchy of classes
-                packages.put(oldClassName, newClassName);
+                packages.put(oldClassName.substring(0, oldClassName.length() - 1), newClassName);
             } else {
                 classes.put(oldClassName, newClassName);
             }
