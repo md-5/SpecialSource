@@ -148,7 +148,7 @@ public class SpecialSource {
             parser.printHelpOn(System.err);
             return;
         }
-        log(jarMapping.classes.size() + " classes, " + jarMapping.fields.size() + " fields, " + jarMapping.methods.size() + " methods");
+        log(jarMapping.packages.size() + " packages, " + jarMapping.classes.size() + " classes, " + jarMapping.fields.size() + " fields, " + jarMapping.methods.size() + " methods");
 
         InheritanceProviders inheritanceProviders = new InheritanceProviders();
 
