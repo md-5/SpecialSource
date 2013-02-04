@@ -172,16 +172,6 @@ public class JarMapping {
             String newClassName = newFull.substring(0, splitNew);
             String newMethodName = newFull.substring(splitNew + 1);
 
-            // Validate the new class name
-            if (!classes.containsKey(oldClassName)) {
-                throw new IllegalArgumentException("Method mapping on an unmapped class: " + oldClassName +
-                    " for field "+oldMethodName+" in line="+line);
-            }
-            if (!classes.get(oldClassName).equals(newClassName)) {
-                throw new IllegalArgumentException("Method mapping inconsistent: new class "+newClassName +
-                    " but expected "+classes.get(oldClassName)+" in line="+line);
-            }
-
             // TODO: validate newMethodDescriptor instead of completely ignoring it
 
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
