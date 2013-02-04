@@ -152,16 +152,6 @@ public class JarMapping {
             String newClassName = newFull.substring(0, splitNew);
             String newFieldName = newFull.substring(splitNew + 1);
 
-            // Validate the redundancies
-            if (!classes.containsKey(oldClassName)) {
-                throw new IllegalArgumentException("Field mapping on an unmapped class: " + oldClassName +
-                    " for field "+oldFieldName+" in line="+line);
-            }
-            if (!classes.get(oldClassName).equals(newClassName)) {
-                throw new IllegalArgumentException("Field mapping inconsistent: new class "+newClassName +
-                    " but expected "+classes.get(oldClassName)+" in line="+line);
-            }
-
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
         } else if (kind.equals("MD:")) {
             String oldFull = tokens[1];
