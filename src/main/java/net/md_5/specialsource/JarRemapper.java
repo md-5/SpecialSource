@@ -47,8 +47,8 @@ import org.objectweb.asm.commons.RemappingClassAdapter;
 public class JarRemapper extends Remapper {
 
     private static final int CLASS_LEN = ".class".length();
-    private final IInheritanceProvider inheritanceProvider;
-    private final JarMapping jarMapping;
+    public final IInheritanceProvider inheritanceProvider;
+    public final JarMapping jarMapping;
 
     public JarRemapper(JarMapping jarMapping, IInheritanceProvider inheritanceProvider) {
         this.jarMapping = jarMapping;
