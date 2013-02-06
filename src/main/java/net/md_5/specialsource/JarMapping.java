@@ -38,12 +38,34 @@ public class JarMapping {
     public final Map<String, String> fields = new HashMap<String, String>();
     public final Map<String, String> methods = new HashMap<String, String>();
 
-    public JarMapping() {
+    public IInheritanceProvider inheritanceProvider = InheritanceMap.EMPTY;
 
+    public JarMapping() {
     }
 
     public JarMapping(BufferedReader reader, ShadeRelocationSimulator shader) throws IOException {
         loadMappings(reader, shader);
+    }
+
+
+    public String tryClimb(Map<String, String> map, NodeType type, String owner, String name) {
+        String key = owner + "/" + name;
+
+        String mapped = map.get(key);
+        if (mapped == null) {
+            List<String> parents = inheritanceProvider.getParents(owner);
+
+            if (parents != null) {
+                // climb the inheritance tree
+                for (String parent : parents) {
+                    mapped = tryClimb(map, type, parent, name);
+                    if (mapped != null) {
+                        return mapped;
+                    }
+                }
+            }
+        }
+        return mapped;
     }
 
     /**

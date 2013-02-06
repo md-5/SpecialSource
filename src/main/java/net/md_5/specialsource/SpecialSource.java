@@ -153,6 +153,7 @@ public class SpecialSource {
         log(jarMapping.packages.size() + " packages, " + jarMapping.classes.size() + " classes, " + jarMapping.fields.size() + " fields, " + jarMapping.methods.size() + " methods");
 
         InheritanceProviders inheritanceProviders = new InheritanceProviders();
+        jarMapping.inheritanceProvider = inheritanceProviders;
 
         if (options.has("live-remapped")) {
             inheritanceProviders.add(new RemappedRuntimeInheritanceProvider(ClassLoader.getSystemClassLoader(), !options.has("quiet"), jarMapping));
@@ -187,7 +188,7 @@ public class SpecialSource {
 
             inheritanceProviders.add(new JarInheritanceProvider(jar3));
 
-            JarRemapper jarRemapper = new JarRemapper(jarMapping, inheritanceProviders);
+            JarRemapper jarRemapper = new JarRemapper(jarMapping);
             jarRemapper.remapJar(jar3, (File) options.valueOf("out-jar"));
         }
 

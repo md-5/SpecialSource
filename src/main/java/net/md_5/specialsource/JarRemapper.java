@@ -47,17 +47,11 @@ import org.objectweb.asm.commons.RemappingClassAdapter;
 public class JarRemapper extends Remapper {
 
     private static final int CLASS_LEN = ".class".length();
-    public final IInheritanceProvider inheritanceProvider;
+
     public final JarMapping jarMapping;
 
-    public JarRemapper(JarMapping jarMapping, IInheritanceProvider inheritanceProvider) {
+    public JarRemapper(JarMapping jarMapping) {
         this.jarMapping = jarMapping;
-
-        if (inheritanceProvider == null) {
-            inheritanceProvider = InheritanceMap.EMPTY;
-        }
-
-        this.inheritanceProvider = inheritanceProvider;
     }
 
     @Override
@@ -92,33 +86,14 @@ public class JarRemapper extends Remapper {
 
     @Override
     public String mapFieldName(String owner, String name, String desc) {
-        String mapped = tryClimb(jarMapping.fields, NodeType.FIELD, owner, name);
+        String mapped = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, owner, name);
         return mapped == null ? name : mapped;
     }
 
-    private String tryClimb(Map<String, String> map, NodeType type, String owner, String name) {
-        String key = owner + "/" + name;
-
-        String mapped = map.get(key);
-        if (mapped == null) {
-            List<String> parents = inheritanceProvider.getParents(owner);
-
-            if (parents != null) {
-                // climb the inheritance tree
-                for (String parent : parents) {
-                    mapped = tryClimb(map, type, parent, name);
-                    if (mapped != null) {
-                        return mapped;
-                    }
-                }
-            }
-        }
-        return mapped;
-    }
 
     @Override
     public String mapMethodName(String owner, String name, String desc) {
-        String mapped = tryClimb(jarMapping.methods, NodeType.METHOD, owner, name + " " + desc);
+        String mapped = jarMapping.tryClimb(jarMapping.methods, NodeType.METHOD, owner, name + " " + desc);
         return mapped == null ? name : mapped;
     }
 
