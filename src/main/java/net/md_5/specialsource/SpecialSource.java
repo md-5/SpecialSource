@@ -92,6 +92,8 @@ public class SpecialSource {
                         .withRequiredArg()
                         .ofType(File.class);
 
+                //acceptsAll(asList("G", "remap-reflect-field"), "Remap reflection calls to getDeclaredField()"); // TODO
+
                 acceptsAll(asList("q", "quiet"), "Quiet mode");
             }
         };
