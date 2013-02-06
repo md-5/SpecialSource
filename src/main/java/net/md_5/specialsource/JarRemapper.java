@@ -175,7 +175,15 @@ public class JarRemapper extends Remapper {
         ClassReader reader = new ClassReader(is);
         ClassWriter wr = new ClassWriter(0);
         RemappingClassAdapter mapper = new RemappingClassAdapter(wr, this);
-        reader.accept(mapper, ClassReader.EXPAND_FRAMES);
+        reader.accept(mapper, ClassReader.EXPAND_FRAMES); // TODO: EXPAND_FRAMES necessary?
+        return wr.toByteArray();
+    }
+
+    public byte[] remapClassFile(byte[] in) {
+        ClassReader reader = new ClassReader(in);
+        ClassWriter wr = new ClassWriter(0);
+        RemappingClassAdapter mapper = new RemappingClassAdapter(wr, this);
+        reader.accept(mapper, ClassReader.EXPAND_FRAMES); // TODO: EXPAND_FRAMES necessary?
         return wr.toByteArray();
     }
 }
