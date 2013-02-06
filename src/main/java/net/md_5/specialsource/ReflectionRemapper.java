@@ -13,11 +13,9 @@ import java.util.List;
 public class ReflectionRemapper {
 
     private JarMapping jarMapping;
-    private IInheritanceProvider inheritanceProvider;
 
-    public ReflectionRemapper(JarMapping jarMapping, IInheritanceProvider inheritanceProvider) {
+    public ReflectionRemapper(JarMapping jarMapping) {
         this.jarMapping = jarMapping;
-        this.inheritanceProvider = inheritanceProvider;
     }
 
     @SuppressWarnings("unchecked")
@@ -80,7 +78,7 @@ public class ReflectionRemapper {
 
         System.out.println("Remapping "+className+"/"+fieldName);
 
-        String newName = jarMapping.fields.get(className + "/" + fieldName); // TODO: tryClimb etc
+        String newName = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, className, fieldName);
         if (newName != null) {
             // Change the string literal to the correct name
             ldcField.cst = newName;
