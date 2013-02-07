@@ -29,7 +29,10 @@
 package net.md_5.specialsource;
 
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,24 +51,37 @@ public class RemapperPreprocessor {
     public boolean debug = false;
 
     private InheritanceMap inheritanceMap;
+    private JarMapping jarMapping;
 
     /**
      *
      * @param inheritanceMap Map to add extracted inheritance information too, or null to not extract inheritance
+     * @param jarMapping Mapping for reflection remapping, or null to not remap reflection
      * @throws IOException
      */
     @SuppressWarnings("unchecked")
-    public RemapperPreprocessor(InheritanceMap inheritanceMap) {
+    public RemapperPreprocessor(InheritanceMap inheritanceMap, JarMapping jarMapping) {
         this.inheritanceMap = inheritanceMap;
+        this.jarMapping = jarMapping;
     }
 
-    public void preprocess(String className, InputStream inputStream) throws IOException {
+    @SuppressWarnings("unchecked")
+    public byte[] preprocess(String className, InputStream inputStream) throws IOException {
         ClassReader classReader = new ClassReader(inputStream);
         ClassNode classNode = new ClassNode();
-        classReader.accept(classNode, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES); // TODO
+        int flags = ClassReader.SKIP_DEBUG;
+        byte[] bytecode = null;
 
+        if (jarMapping == null) {
+            // No reflection remapping - skip the code
+            flags |= ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES;
+        }
+
+        classReader.accept(classNode, flags);
+
+        // Inheritance extraction
         if (inheritanceMap != null) {
-            log("Loading plugin class inheritance for "+className);
+            logI("Loading plugin class inheritance for "+className);
 
             // Get inheritance
             ArrayList<String> parents = new ArrayList<String>();
@@ -77,14 +93,85 @@ public class RemapperPreprocessor {
 
             inheritanceMap.inheritanceMap.put(className.replace('.', '/'), parents);
 
-            log("Inheritance added "+className+" parents "+parents.size());
+            logI("Inheritance added "+className+" parents "+parents.size());
         }
-        // TODO: ReflectionRemapper
+
+        // Reflection remapping
+        if (jarMapping != null) {
+            ClassWriter cw = new ClassWriter(0);
+
+            for (MethodNode methodNode : (List<MethodNode>) classNode.methods) {
+                AbstractInsnNode insn = methodNode.instructions.getFirst();
+                while (insn != null) {
+                    if (insn.getOpcode() == Opcodes.INVOKEVIRTUAL) {
+                        remapGetDeclaredField(insn);
+                    }
+
+                    insn = insn.getNext();
+                }
+            }
+
+            classNode.accept(cw);
+            bytecode = cw.toByteArray();
+        }
+
+        return bytecode;
     }
 
-    private void log(String message) {
+    /**
+     * Replace class.getDeclaredField("string") with a remapped field string
+     * @param insn Method call instruction
+     */
+    private void remapGetDeclaredField(AbstractInsnNode insn) {
+        MethodInsnNode mi = (MethodInsnNode) insn;
+
+        if (!mi.owner.equals("java/lang/Class") || !mi.name.equals("getDeclaredField") || !mi.desc.equals("(Ljava/lang/String;)Ljava/lang/reflect/Field;")) {
+            return;
+        }
+
+        logR("ReflectionRemapper found getDeclaredField!");
+
+        if (insn.getPrevious() == null || insn.getPrevious().getOpcode() != Opcodes.LDC) {
+            logR("- not constant field; skipping");
+            return;
+        }
+        LdcInsnNode ldcField = (LdcInsnNode) insn.getPrevious();
+        if (!(ldcField.cst instanceof String)) {
+            logR("- not field string; skipping: " + ldcField.cst);
+            return;
+        }
+        String fieldName = (String) ldcField.cst;
+
+        if (ldcField.getPrevious() == null || ldcField.getPrevious().getOpcode() != Opcodes.LDC) {
+            logR("- not constant class; skipping: field=" + ldcField.cst);
+            return;
+        }
+        LdcInsnNode ldcClass = (LdcInsnNode) ldcField.getPrevious();
+        if (!(ldcClass.cst instanceof Type)) {
+            logR("- not class type; skipping: field=" + ldcClass.cst + ", class=" + ldcClass.cst);
+            return;
+        }
+        String className = ((Type) ldcClass.cst).getInternalName();
+
+        String newName = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, className, fieldName);
+        logR("Remapping "+className+"/"+fieldName + " -> " + newName);
+
+        if (newName != null) {
+            // Change the string literal to the correct name
+            ldcField.cst = newName;
+            //ldcClass.cst = className; // not remapped here - taken care of by JarRemapper
+        }
+    }
+
+    private void logI(String message) {
         if (debug) {
-            System.out.println("[RemapperPreprocessor] " + message);
+            System.out.println("[Inheritance] " + message);
+        }
+    }
+
+    private void logR(String message) {
+        if (debug) {
+            System.out.println("[ReflectionRemapper] " + message);
         }
     }
 }
