@@ -91,7 +91,7 @@ public class RemapperPreprocessor {
             }
             parents.add(classNode.superName);
 
-            inheritanceMap.inheritanceMap.put(className.replace('.', '/'), parents);
+            inheritanceMap.setParents(className.replace('.', '/'), parents);
 
             logI("Inheritance added "+className+" parents "+parents.size());
         }

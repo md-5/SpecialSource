@@ -170,7 +170,7 @@ public class SpecialSource {
 
             BiMap<String, String> inverseClassMap = HashBiMap.create(jarMapping.classes).inverse();
             inheritanceMap.load(reader, inverseClassMap);
-            log("Loaded inheritance map for "+inheritanceMap.inheritanceMap.size()+" classes");
+            log("Loaded inheritance map for "+inheritanceMap.size()+" classes");
 
             inheritanceProviders.add(inheritanceMap);
         }

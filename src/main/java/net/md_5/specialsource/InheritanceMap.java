@@ -39,7 +39,7 @@ import java.util.*;
 
 public class InheritanceMap implements IInheritanceProvider {
 
-    public final Map<String, ArrayList<String>> inheritanceMap = new HashMap<String, ArrayList<String>>();
+    private final Map<String, ArrayList<String>> inheritanceMap = new HashMap<String, ArrayList<String>>();
 
     public static final InheritanceMap EMPTY = new InheritanceMap();
 
@@ -64,7 +64,7 @@ public class InheritanceMap implements IInheritanceProvider {
 
                 // If there are parents we care about, add to map
                 if (filteredParents.size() > 0) {
-                    inheritanceMap.put(className, filteredParents);
+                    setParents(className, filteredParents);
                 }
             }
         }
@@ -78,7 +78,7 @@ public class InheritanceMap implements IInheritanceProvider {
             writer.print(className);
             writer.print(' ');
 
-            List<String> parents = inheritanceMap.get(className);
+            List<String> parents = getParents(className);
             writer.println(Joiner.on(' ').join(parents));
         }
     }
@@ -97,7 +97,7 @@ public class InheritanceMap implements IInheritanceProvider {
             List<String> parents = Arrays.asList(tokens).subList(1, tokens.length);
 
             if (classMap == null) {
-                inheritanceMap.put(className, new ArrayList<String>(parents));
+                setParents(className, new ArrayList<String>(parents));
             } else {
                 String remappedClassName = JarRemapper.mapTypeName(className, /*packageMap*/null, classMap, /*defaultIfUnmapped*/null);
                 if (remappedClassName == null) {
@@ -114,12 +114,20 @@ public class InheritanceMap implements IInheritanceProvider {
                     remappedParents.add(remappedParent);
                 }
 
-                inheritanceMap.put(remappedClassName, remappedParents);
+                setParents(remappedClassName, remappedParents);
             }
         }
     }
 
     public List<String> getParents(String className) {
         return inheritanceMap.get(className);
+    }
+
+    public void setParents(String className, ArrayList<String> parents) {
+        inheritanceMap.put(className, parents);
+    }
+
+    public int size() {
+        return inheritanceMap.size();
     }
 }
