@@ -33,10 +33,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import org.objectweb.asm.ClassReader;
@@ -59,7 +56,7 @@ public class JarRemapper extends Remapper {
         return mapTypeName(typeName, jarMapping.packages, jarMapping.classes, typeName);
     }
 
-    public static String mapTypeName(String typeName, Map<String, String> packageMap, Map<String, String> classMap, String defaultIfUnmapped) {
+    public static String mapTypeName(String typeName, LinkedHashMap<String, String> packageMap, Map<String, String> classMap, String defaultIfUnmapped) {
         int index = typeName.indexOf('$');
         String key = (index == -1) ? typeName : typeName.substring(0, index);
         String mapped = mapClassName(key, packageMap, classMap);
@@ -70,9 +67,11 @@ public class JarRemapper extends Remapper {
     /**
      * Helper method to map a class name by package (prefix) or class (exact)
      */
-    private static String mapClassName(String className, Map<String, String> packageMap, Map<String, String> classMap) {
+    private static String mapClassName(String className, LinkedHashMap<String, String> packageMap, Map<String, String> classMap) {
         if (packageMap != null) {
-            for (String oldPackage : packageMap.keySet()) {
+            Iterator<String> iter = packageMap.keySet().iterator();
+            while (iter.hasNext()) {
+                String oldPackage = iter.next();
                 if (className.startsWith(oldPackage)) {
                     String newPackage = packageMap.get(oldPackage);
 

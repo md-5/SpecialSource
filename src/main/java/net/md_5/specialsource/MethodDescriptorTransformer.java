@@ -28,13 +28,14 @@
  */
 package net.md_5.specialsource;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class MethodDescriptorTransformer {
-    private Map<String, String> packageMap;
+    private LinkedHashMap<String, String> packageMap;
     private Map<String, String> classMap;
 
-    public MethodDescriptorTransformer(Map<String, String> packageMap, Map<String, String> classMap) {
+    public MethodDescriptorTransformer(LinkedHashMap<String, String> packageMap, Map<String, String> classMap) {
         this.packageMap = packageMap;
         this.classMap = classMap;
     }

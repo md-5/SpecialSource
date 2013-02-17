@@ -33,7 +33,7 @@ import java.util.*;
 
 public class JarMapping {
 
-    public final Map<String, String> packages = new HashMap<String, String>();
+    public final LinkedHashMap<String, String> packages = new LinkedHashMap<String, String>();
     public final Map<String, String> classes = new HashMap<String, String>();
     public final Map<String, String> fields = new HashMap<String, String>();
     public final Map<String, String> methods = new HashMap<String, String>();
