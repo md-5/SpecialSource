@@ -69,13 +69,13 @@ public class JarMapping {
 
         String mapped = map.get(key);
         if (mapped == null) {
-            List<String> parents = inheritanceMap.getParents(owner);
-            if (parents == null && fallbackInheritanceProvider != null) {
+            List<String> parents = null;
+
+            if (inheritanceMap.hasParents(owner)) {
+                parents = inheritanceMap.getParents(owner);
+            } else if (fallbackInheritanceProvider != null) {
                 parents = fallbackInheritanceProvider.getParents(owner);
-                if (parents != null) {
-                    // cache
-                    inheritanceMap.setParents(owner, (ArrayList<String>) parents);
-                }
+                inheritanceMap.setParents(owner, (ArrayList<String>) parents);
             }
 
             if (parents != null) {

@@ -119,6 +119,10 @@ public class InheritanceMap implements IInheritanceProvider {
         }
     }
 
+    public boolean hasParents(String className) {
+        return inheritanceMap.containsKey(className);
+    }
+
     public List<String> getParents(String className) {
         return inheritanceMap.get(className);
     }
