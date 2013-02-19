@@ -40,7 +40,6 @@ import java.util.*;
 public class InheritanceMap implements IInheritanceProvider {
 
     private final Map<String, ArrayList<String>> inheritanceMap = new HashMap<String, ArrayList<String>>();
-    private IInheritanceProvider fallback = null;
 
     public static final InheritanceMap EMPTY = new InheritanceMap();
 
@@ -71,9 +70,6 @@ public class InheritanceMap implements IInheritanceProvider {
         }
     }
 
-    /**
-     * Save inheritance map to disk
-     */
     public void save(PrintWriter writer) {
         List<String> classes = new ArrayList<String>(inheritanceMap.keySet());
         Collections.sort(classes);
@@ -87,9 +83,6 @@ public class InheritanceMap implements IInheritanceProvider {
         }
     }
 
-    /**
-     * Load from disk, optionally remapped and unremapped through a class map
-     */
     public void load(BufferedReader reader, BiMap<String, String> classMap) throws IOException {
         String line;
 
@@ -126,39 +119,15 @@ public class InheritanceMap implements IInheritanceProvider {
         }
     }
 
-    /**
-     * Get the superclass and interfaces implemented by a class
-     */
     public List<String> getParents(String className) {
-        List<String> parents = inheritanceMap.get(className);
-
-        if (parents == null && fallback != null) {
-            parents = fallback.getParents(className);
-            if (parents != null) {
-                // cache
-                setParents(className, (ArrayList<String>) parents);
-            }
-        }
-
-        return parents;
+        return inheritanceMap.get(className);
     }
 
-    /**
-     * Set the superclass and interfaces implemented by a class
-     */
     public void setParents(String className, ArrayList<String> parents) {
         inheritanceMap.put(className, parents);
     }
 
     public int size() {
         return inheritanceMap.size();
-    }
-
-    /**
-     * Set an optional fallback inheritance provider to be consulted when the class is not available
-     * in the inheritance map. Results from the fallback will be cached.
-     */
-    public void setFallback(IInheritanceProvider fallback) {
-        this.fallback = fallback;
     }
 }
