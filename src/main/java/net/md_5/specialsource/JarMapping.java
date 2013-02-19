@@ -38,7 +38,8 @@ public class JarMapping {
     public final Map<String, String> fields = new HashMap<String, String>();
     public final Map<String, String> methods = new HashMap<String, String>();
 
-    public IInheritanceProvider inheritanceProvider = InheritanceMap.EMPTY;
+    private InheritanceMap inheritanceMap = new InheritanceMap();
+    private IInheritanceProvider fallbackInheritanceProvider = null;
 
     public JarMapping() {
     }
@@ -47,13 +48,35 @@ public class JarMapping {
         loadMappings(reader, shader);
     }
 
+    /**
+     * Set the inheritance map used for caching superclass/interfaces. This call be omitted to
+     * use a local cache, or set to your own global cache.
+     */
+    public void setInheritanceMap(InheritanceMap inheritanceMap) {
+        this.inheritanceMap = inheritanceMap;
+    }
+
+    /**
+     * Set the inheritance provider to be consulted if the inheritance map has no information on
+     * the requested class (results will be cached in the inheritance map).
+     */
+    public void setFallbackInheritanceProvider(IInheritanceProvider fallbackInheritanceProvider) {
+        this.fallbackInheritanceProvider = fallbackInheritanceProvider;
+    }
 
     public String tryClimb(Map<String, String> map, NodeType type, String owner, String name) {
         String key = owner + "/" + name;
 
         String mapped = map.get(key);
         if (mapped == null) {
-            List<String> parents = inheritanceProvider.getParents(owner);
+            List<String> parents = inheritanceMap.getParents(owner);
+            if (parents == null && fallbackInheritanceProvider != null) {
+                parents = fallbackInheritanceProvider.getParents(owner);
+                if (parents != null) {
+                    // cache
+                    inheritanceMap.setParents(owner, (ArrayList<String>) parents);
+                }
+            }
 
             if (parents != null) {
                 // climb the inheritance tree
