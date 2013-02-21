@@ -69,7 +69,6 @@ public class ShadeRelocationSimulator {
             String pattern = pair.substring(0, index);
             String shadedPattern = pair.substring(index + 1);
 
-            System.out.println("reloc:"+pattern+" -> "+shadedPattern);
             relocations.put(toInternalName(pattern), toInternalName(shadedPattern));
         }
     }

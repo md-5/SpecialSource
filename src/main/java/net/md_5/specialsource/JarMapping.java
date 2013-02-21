@@ -28,6 +28,8 @@
  */
 package net.md_5.specialsource;
 
+import au.com.bytecode.opencsv.CSVReader;
+
 import java.io.*;
 import java.util.*;
 
@@ -99,6 +101,11 @@ public class JarMapping {
      * Intended for convenient command-line usage.
      */
     public void loadMappings(String spec) throws IOException {
+        if ((new File(spec)).isDirectory()) {
+            loadMappingsDir(new File(spec));
+            return;
+        }
+
         int n = spec.lastIndexOf('@');
         String path;
         ShadeRelocationSimulator shader;
@@ -114,6 +121,55 @@ public class JarMapping {
         BufferedReader reader = new BufferedReader(new FileReader(path));
 
         loadMappings(reader, shader);
+    }
+
+    /**
+     * Load mappings from an MCP directory
+     */
+    public void loadMappingsDir(File dir) throws IOException {
+        if (!dir.isDirectory()) {
+            throw new IllegalArgumentException("loadMappingsDir("+dir+"): not a directory");
+        }
+
+        String sep = System.getProperty("file.separator");
+
+        List<File> srgFiles = new ArrayList<File>();
+
+        File packagedSrg = new File(dir.getPath() + sep + "packaged.srg");
+        File joinedSrg = new File(dir.getPath() + sep + "joined.srg");
+        if (packagedSrg.exists()) {
+            // FML/MCP client/server joined and repackaged
+            srgFiles.add(packagedSrg);
+        } else if (joinedSrg.exists()) {
+            // FML/MCP client/server joined
+            srgFiles.add(joinedSrg);
+        } else {
+            // vanilla MCP separated sides
+            File serverSrg = new File(dir.getPath() + sep + "server.srg");
+            File clientSrg = new File(dir.getPath() + sep + "client.srg");
+            if (serverSrg.exists()) {
+                srgFiles.add(serverSrg);
+            }
+            if (clientSrg.exists()) {
+                srgFiles.add(clientSrg);
+            }
+        }
+
+        if (srgFiles.size() == 0) {
+            throw new IOException("loadMappingsDir("+dir+"): no joined.srg, client.srg, or client.srg found");
+        }
+
+        // TODO: read through csv mappings
+        File fieldsCsv = new File(dir.getPath() + sep + "fields.csv");
+        File methodsCsv = new File(dir.getPath() + sep + "methods.csv");
+
+        for (File srg : srgFiles) {
+            loadMappings(srg);
+        }
+    }
+
+    public void loadMappings(File file) throws IOException {
+        loadMappings(new BufferedReader(new FileReader(file)), null);
     }
 
     /**
@@ -189,7 +245,7 @@ public class JarMapping {
             String oldClassName = shader.shadeClassName(tokens[1]); // TODO: refactor
             String newClassName = tokens[2];
 
-            if (classes.containsKey(oldClassName)) {
+            if (classes.containsKey(oldClassName) && !newClassName.equals(classes.get(oldClassName))) {
                 throw new IllegalArgumentException("Duplicate class mapping: " + oldClassName + " -> " + newClassName +
                     " but already mapped to "+classes.get(oldClassName)+" in line="+line);
             }
@@ -199,7 +255,7 @@ public class JarMapping {
             String oldPackageName = tokens[1];
             String newPackageName = tokens[2];
 
-            if (packages.containsKey(oldPackageName)) {
+            if (packages.containsKey(oldPackageName) && !newPackageName.equals(packages.get(oldPackageName))) {
                 throw new IllegalArgumentException("Duplicate package mapping: " + oldPackageName + " ->" + newPackageName +
                     " but already mapped to "+packages.get(oldPackageName)+" in line="+line);
             }
