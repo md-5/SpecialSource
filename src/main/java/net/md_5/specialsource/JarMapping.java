@@ -269,17 +269,17 @@ public class JarMapping {
                         " -> " + newFull + " in line="+line);
             }
 
-            String oldClassName = oldFull.substring(0, splitOld);
+            String oldClassName = inputTransformer.transformClassName(oldFull.substring(0, splitOld));
             String oldFieldName = oldFull.substring(splitOld + 1);
-            String newClassName = newFull.substring(0, splitNew);
+            //String newClassName = newFull.substring(0, splitNew); // redundant and ignored
             String newFieldName = newFull.substring(splitNew + 1);
 
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
         } else if (kind.equals("MD:")) {
             String oldFull = tokens[1];
-            String oldMethodDescriptor = tokens[2];
+            String oldMethodDescriptor = inputTransformer.transformMethodDescriptor(tokens[2]);
             String newFull = tokens[3];
-            String newMethodDescriptor = tokens[4];
+            //String newMethodDescriptor = tokens[4]; // redundant and ignored
 
             // Split the qualified field names into their classes and actual names TODO: refactor with above
             int splitOld = oldFull.lastIndexOf('/');
@@ -289,12 +289,10 @@ public class JarMapping {
                         " -> " + newFull + " in line="+line);
             }
 
-            String oldClassName = oldFull.substring(0, splitOld);
+            String oldClassName = inputTransformer.transformClassName(oldFull.substring(0, splitOld));
             String oldMethodName = oldFull.substring(splitOld + 1);
-            String newClassName = newFull.substring(0, splitNew);
+            //String newClassName = newFull.substring(0, splitNew); // redundant and ignored
             String newMethodName = newFull.substring(splitNew + 1);
-
-            // TODO: validate newMethodDescriptor instead of completely ignoring it
 
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {
