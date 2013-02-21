@@ -132,21 +132,24 @@ public class SpecialSource {
 
             jarMapping = new JarMapping(visitor1, visitor2, (File) options.valueOf("srg-out"), options.has("compact"), options.has("generate-dupes"));
         } else if (options.has("srg-in")) {
-            // Load mappings, possibly shaded
-            String spec = (String) options.valueOf("srg-in");
-
-            if (options.has("shade-relocation")) {
-                // legacy command-line option support
-                // (new way is filename@... from the command-line, or loadMappings() programmatically)
-                @SuppressWarnings("unchecked")
-                List<String> relocations = (List<String>) options.valuesOf("shade-relocation");
-                spec += "@" + Joiner.on(',').join(relocations);
-            }
+            log("Loading mappings");
 
             jarMapping = new JarMapping();
 
-            log("Loading mappings");
-            jarMapping.loadMappings(spec);
+            @SuppressWarnings("unchecked")
+            List<String> specs = (List<String>) options.valuesOf("srg-in");
+
+            for (String spec : specs) {
+                if (options.has("shade-relocation")) {
+                    // legacy command-line option support
+                    // (new way is filename@... from the command-line, or loadMappings() programmatically)
+                    @SuppressWarnings("unchecked")
+                    List<String> relocations = (List<String>) options.valuesOf("shade-relocation");
+                    spec += "@" + Joiner.on(',').join(relocations);
+                }
+
+                jarMapping.loadMappings(spec);
+            }
         } else {
             System.err.println("No mappings given, first-jar/second-jar or srg-in required");
             parser.printHelpOn(System.err);
