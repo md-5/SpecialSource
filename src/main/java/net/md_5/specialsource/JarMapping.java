@@ -28,8 +28,6 @@
  */
 package net.md_5.specialsource;
 
-import au.com.bytecode.opencsv.CSVReader;
-
 import java.io.*;
 import java.util.*;
 
@@ -46,7 +44,7 @@ public class JarMapping {
     public JarMapping() {
     }
 
-    public JarMapping(BufferedReader reader, ShadeRelocationSimulator shader) throws IOException {
+    public JarMapping(BufferedReader reader, JarMappingInputTransformer shader) throws IOException {
         loadMappings(reader, shader);
     }
 
@@ -108,19 +106,19 @@ public class JarMapping {
 
         int n = spec.lastIndexOf('@');
         String path;
-        ShadeRelocationSimulator shader;
+        JarMappingInputTransformer inputTransformer;
 
         if (n == -1) {
             path = spec;
-            shader = null;
+            inputTransformer = null;
         } else {
             path = spec.substring(0, n);
-            shader = new ShadeRelocationSimulator(spec.substring(n + 1));
+            inputTransformer = new ShadeRelocationSimulator(spec.substring(n + 1));
         }
 
         BufferedReader reader = new BufferedReader(new FileReader(path));
 
-        loadMappings(reader, shader);
+        loadMappings(reader, inputTransformer);
     }
 
     /**
@@ -176,13 +174,12 @@ public class JarMapping {
      * Load a mapping given a .csrg file
      *
      * @param reader Mapping file reader
-     * @param shader Relocation to apply to old class names, or null for no
-     * relocation
+     * @param inputTransformer Transformation to apply to old class names, or null
      * @throws IOException
      */
-    public void loadMappings(BufferedReader reader, ShadeRelocationSimulator shader) throws IOException {
-        if (shader == null) {
-            shader = ShadeRelocationSimulator.IDENTITY;
+    public void loadMappings(BufferedReader reader, JarMappingInputTransformer inputTransformer) throws IOException {
+        if (inputTransformer == null) {
+            inputTransformer = ShadeRelocationSimulator.IDENTITY;
         }
 
         String line;
@@ -190,14 +187,13 @@ public class JarMapping {
             if (line.startsWith("#") || line.isEmpty()){
                 continue;
             }
-            // TODO: refactor ShadeRelocationSimulator application
 
             if (line.contains(":")) {
                 // standard srg
-                parseSrgLine(line, shader);
+                parseSrgLine(line, inputTransformer);
             } else {
                 // better 'compact' srg format
-                parseCsrgLine(line, shader);
+                parseCsrgLine(line, inputTransformer);
             }
         }
     }
@@ -205,11 +201,11 @@ public class JarMapping {
     /**
      * Parse a 'csrg' mapping format line and populate the data structures
      */
-    private void parseCsrgLine(String line, ShadeRelocationSimulator shader) throws IOException {
+    private void parseCsrgLine(String line, JarMappingInputTransformer inputTransformer) throws IOException {
         String[] tokens = line.split(" ");
 
         if (tokens.length == 2) {
-            String oldClassName = shader.shadeClassName(tokens[0]);
+            String oldClassName = inputTransformer.transformClassName(tokens[0]);
             String newClassName = tokens[1];
 
             if (oldClassName.endsWith("/")) {
@@ -219,14 +215,14 @@ public class JarMapping {
                 classes.put(oldClassName, newClassName);
             }
         } else if (tokens.length == 3) {
-            String oldClassName = shader.shadeClassName(tokens[0]);
+            String oldClassName = inputTransformer.transformClassName(tokens[0]);
             String oldFieldName = tokens[1];
             String newFieldName = tokens[2];
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
         } else if (tokens.length == 4) {
-            String oldClassName = shader.shadeClassName(tokens[0]);
+            String oldClassName = inputTransformer.transformClassName(tokens[0]);
             String oldMethodName = tokens[1];
-            String oldMethodDescriptor = shader.shadeMethodDescriptor(tokens[2]);
+            String oldMethodDescriptor = inputTransformer.transformMethodDescriptor(tokens[2]);
             String newMethodName = tokens[3];
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {
@@ -237,12 +233,12 @@ public class JarMapping {
     /**
      * Parse a standard 'srg' mapping format line and populate the data structures
      */
-    private void parseSrgLine(String line, ShadeRelocationSimulator shader) throws IOException {
+    private void parseSrgLine(String line, JarMappingInputTransformer inputTransformer) throws IOException {
         String[] tokens = line.split(" ");
         String kind = tokens[0];
 
         if (kind.equals("CL:")) {
-            String oldClassName = shader.shadeClassName(tokens[1]); // TODO: refactor
+            String oldClassName = inputTransformer.transformClassName(tokens[1]);
             String newClassName = tokens[2];
 
             if (classes.containsKey(oldClassName) && !newClassName.equals(classes.get(oldClassName))) {
