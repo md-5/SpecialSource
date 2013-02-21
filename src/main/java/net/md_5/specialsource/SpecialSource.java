@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import joptsimple.OptionException;
@@ -68,7 +69,8 @@ public class SpecialSource {
 
                 acceptsAll(asList("m", "srg-in"), "Mapping file input")
                         .withRequiredArg()
-                        .ofType(File.class);
+                        .describedAs("path[@relocations...]")
+                        .ofType(String.class);
 
                 acceptsAll(asList("i", "in-jar"), "Input jar to remap")
                         .withRequiredArg()
@@ -131,20 +133,20 @@ public class SpecialSource {
             jarMapping = new JarMapping(visitor1, visitor2, (File) options.valueOf("srg-out"), options.has("compact"), options.has("generate-dupes"));
         } else if (options.has("srg-in")) {
             // Load mappings, possibly shaded
-            ShadeRelocationSimulator shadeRelocationSimulator = null;
+            String spec = (String) options.valueOf("srg-in");
+
             if (options.has("shade-relocation")) {
+                // legacy command-line option support
+                // (new way is filename@... from the command-line, or loadMappings() programmatically)
                 @SuppressWarnings("unchecked")
                 List<String> relocations = (List<String>) options.valuesOf("shade-relocation");
-                shadeRelocationSimulator = new ShadeRelocationSimulator(relocations);
-
-                for (Map.Entry<String, String> entry : shadeRelocationSimulator.relocations.entrySet()) {
-                    log("Relocation: " + entry.getKey() + " -> " + entry.getValue());
-                }
+                spec += "@" + Joiner.on(',').join(relocations);
             }
 
+            jarMapping = new JarMapping();
+
             log("Loading mappings");
-            BufferedReader reader = new BufferedReader(new FileReader((File) options.valueOf("srg-in")));
-            jarMapping = new JarMapping(reader, shadeRelocationSimulator);
+            jarMapping.loadMappings(spec);
         } else {
             System.err.println("No mappings given, first-jar/second-jar or srg-in required");
             parser.printHelpOn(System.err);

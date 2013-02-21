@@ -28,10 +28,7 @@
  */
 package net.md_5.specialsource;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Simulate a small subset of the maven-shade-plugin class relocation
@@ -72,8 +69,13 @@ public class ShadeRelocationSimulator {
             String pattern = pair.substring(0, index);
             String shadedPattern = pair.substring(index + 1);
 
+            System.out.println("reloc:"+pattern+" -> "+shadedPattern);
             relocations.put(toInternalName(pattern), toInternalName(shadedPattern));
         }
+    }
+
+    public ShadeRelocationSimulator(String string) {
+        this(Arrays.asList(string.split(",")));
     }
 
     public String shadeClassName(String className) {

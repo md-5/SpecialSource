@@ -48,6 +48,7 @@ public class JarMapping {
         loadMappings(reader, shader);
     }
 
+
     /**
      * Set the inheritance map used for caching superclass/interfaces. This call be omitted to
      * use a local cache, or set to your own global cache.
@@ -89,6 +90,30 @@ public class JarMapping {
             }
         }
         return mapped;
+    }
+
+    /**
+     * Load mappings given a (path) specification, optionally relocated
+     * through a suffix @oldpath1=newpath1,oldpath2=newpath2...
+     *
+     * Intended for convenient command-line usage.
+     */
+    public void loadMappings(String spec) throws IOException {
+        int n = spec.lastIndexOf('@');
+        String path;
+        ShadeRelocationSimulator shader;
+
+        if (n == -1) {
+            path = spec;
+            shader = null;
+        } else {
+            path = spec.substring(0, n);
+            shader = new ShadeRelocationSimulator(spec.substring(n + 1));
+        }
+
+        BufferedReader reader = new BufferedReader(new FileReader(path));
+
+        loadMappings(reader, shader);
     }
 
     /**
