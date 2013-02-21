@@ -44,7 +44,8 @@ public class JarMapping {
     public JarMapping() {
     }
 
-    public JarMapping(BufferedReader reader, JarMappingInputTransformer shader) throws IOException {
+    @Deprecated
+    public JarMapping(BufferedReader reader, ShadeRelocationSimulator shader) throws IOException {
         loadMappings(reader, shader);
     }
 
@@ -106,7 +107,7 @@ public class JarMapping {
 
         int n = spec.lastIndexOf('@');
         String path;
-        JarMappingInputTransformer inputTransformer;
+        JarMappingLoadTransformer inputTransformer;
 
         if (n == -1) {
             path = spec;
@@ -118,7 +119,7 @@ public class JarMapping {
 
         BufferedReader reader = new BufferedReader(new FileReader(path));
 
-        loadMappings(reader, inputTransformer);
+        loadMappings(reader, inputTransformer, null);
     }
 
     /**
@@ -157,27 +158,43 @@ public class JarMapping {
             throw new IOException("loadMappingsDir("+dir+"): no joined.srg, client.srg, or client.srg found");
         }
 
-        // TODO: read through csv mappings
+        // Read output names through csv mappings, if available
         File fieldsCsv = new File(dir.getPath() + sep + "fields.csv");
         File methodsCsv = new File(dir.getPath() + sep + "methods.csv");
 
+        CSVMappingTransformer outputTransformer;
+
+        if (fieldsCsv.exists() && methodsCsv.exists()) {
+            // they want descriptive "csv" names
+            outputTransformer = new CSVMappingTransformer(fieldsCsv, methodsCsv);
+        } else {
+            // they want numeric "srg" names, for some reason
+            outputTransformer = null;
+        }
+
         for (File srg : srgFiles) {
-            loadMappings(srg);
+            loadMappings(new BufferedReader(new FileReader(srg)), null, outputTransformer);
         }
     }
 
     public void loadMappings(File file) throws IOException {
-        loadMappings(new BufferedReader(new FileReader(file)), null);
+        loadMappings(new BufferedReader(new FileReader(file)), null, null);
+    }
+
+    @Deprecated
+    public void loadMappings(BufferedReader reader, ShadeRelocationSimulator shader) throws IOException {
+        loadMappings(reader, (JarMappingLoadTransformer) shader, null);
     }
 
     /**
      * Load a mapping given a .csrg file
      *
      * @param reader Mapping file reader
-     * @param inputTransformer Transformation to apply to old class names, or null
+     * @param inputTransformer Transformation to apply on input
+     * @param outputTransformer Transformation to apply on output
      * @throws IOException
      */
-    public void loadMappings(BufferedReader reader, JarMappingInputTransformer inputTransformer) throws IOException {
+    public void loadMappings(BufferedReader reader, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer) throws IOException {
         if (inputTransformer == null) {
             inputTransformer = ShadeRelocationSimulator.IDENTITY;
         }
@@ -190,10 +207,10 @@ public class JarMapping {
 
             if (line.contains(":")) {
                 // standard srg
-                parseSrgLine(line, inputTransformer);
+                parseSrgLine(line, inputTransformer, outputTransformer);
             } else {
                 // better 'compact' srg format
-                parseCsrgLine(line, inputTransformer);
+                parseCsrgLine(line, inputTransformer, outputTransformer);
             }
         }
     }
@@ -201,12 +218,12 @@ public class JarMapping {
     /**
      * Parse a 'csrg' mapping format line and populate the data structures
      */
-    private void parseCsrgLine(String line, JarMappingInputTransformer inputTransformer) throws IOException {
+    private void parseCsrgLine(String line, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer) throws IOException {
         String[] tokens = line.split(" ");
 
         if (tokens.length == 2) {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
-            String newClassName = tokens[1];
+            String newClassName = outputTransformer.transformClassName(tokens[1]);
 
             if (oldClassName.endsWith("/")) {
                 // Special case: mapping an entire hierarchy of classes
@@ -216,14 +233,14 @@ public class JarMapping {
             }
         } else if (tokens.length == 3) {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
-            String oldFieldName = tokens[1];
-            String newFieldName = tokens[2];
+            String oldFieldName = inputTransformer.transformFieldName(tokens[1]);
+            String newFieldName = outputTransformer.transformFieldName(tokens[2]);
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
         } else if (tokens.length == 4) {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
-            String oldMethodName = tokens[1];
+            String oldMethodName = inputTransformer.transformMethodName(tokens[1]);
             String oldMethodDescriptor = inputTransformer.transformMethodDescriptor(tokens[2]);
-            String newMethodName = tokens[3];
+            String newMethodName = outputTransformer.transformMethodName(tokens[3]);
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {
             throw new IOException("Invalid csrg file line, token count " + tokens.length + " unexpected in "+line);
@@ -233,13 +250,13 @@ public class JarMapping {
     /**
      * Parse a standard 'srg' mapping format line and populate the data structures
      */
-    private void parseSrgLine(String line, JarMappingInputTransformer inputTransformer) throws IOException {
+    private void parseSrgLine(String line, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer) throws IOException {
         String[] tokens = line.split(" ");
         String kind = tokens[0];
 
         if (kind.equals("CL:")) {
             String oldClassName = inputTransformer.transformClassName(tokens[1]);
-            String newClassName = tokens[2];
+            String newClassName = outputTransformer.transformClassName(tokens[2]);
 
             if (classes.containsKey(oldClassName) && !newClassName.equals(classes.get(oldClassName))) {
                 throw new IllegalArgumentException("Duplicate class mapping: " + oldClassName + " -> " + newClassName +
@@ -248,8 +265,8 @@ public class JarMapping {
 
             classes.put(oldClassName, newClassName);
         } else if (kind.equals("PK:")) {
-            String oldPackageName = tokens[1];
-            String newPackageName = tokens[2];
+            String oldPackageName = inputTransformer.transformClassName(tokens[1]);
+            String newPackageName = outputTransformer.transformClassName(tokens[2]);
 
             if (packages.containsKey(oldPackageName) && !newPackageName.equals(packages.get(oldPackageName))) {
                 throw new IllegalArgumentException("Duplicate package mapping: " + oldPackageName + " ->" + newPackageName +
@@ -270,16 +287,16 @@ public class JarMapping {
             }
 
             String oldClassName = inputTransformer.transformClassName(oldFull.substring(0, splitOld));
-            String oldFieldName = oldFull.substring(splitOld + 1);
+            String oldFieldName = inputTransformer.transformFieldName(oldFull.substring(splitOld + 1));
             //String newClassName = newFull.substring(0, splitNew); // redundant and ignored
-            String newFieldName = newFull.substring(splitNew + 1);
+            String newFieldName = outputTransformer.transformFieldName(newFull.substring(splitNew + 1));
 
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
         } else if (kind.equals("MD:")) {
             String oldFull = tokens[1];
             String oldMethodDescriptor = inputTransformer.transformMethodDescriptor(tokens[2]);
             String newFull = tokens[3];
-            //String newMethodDescriptor = tokens[4]; // redundant and ignored
+            //String newMethodDescriptor = outputTransformer.transformMethodDescriptor(tokens[4]); // redundant and ignored
 
             // Split the qualified field names into their classes and actual names TODO: refactor with above
             int splitOld = oldFull.lastIndexOf('/');
@@ -290,9 +307,9 @@ public class JarMapping {
             }
 
             String oldClassName = inputTransformer.transformClassName(oldFull.substring(0, splitOld));
-            String oldMethodName = oldFull.substring(splitOld + 1);
-            //String newClassName = newFull.substring(0, splitNew); // redundant and ignored
-            String newMethodName = newFull.substring(splitNew + 1);
+            String oldMethodName = inputTransformer.transformMethodName(oldFull.substring(splitOld + 1));
+            //String newClassName = outputTransformer.transformClassName(newFull.substring(0, splitNew)); // redundant and ignored
+            String newMethodName = outputTransformer.transformMethodName(newFull.substring(splitNew + 1));
 
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {

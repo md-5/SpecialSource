@@ -34,7 +34,7 @@ import java.util.*;
  * Simulate a small subset of the maven-shade-plugin class relocation
  * functionality
  */
-public class ShadeRelocationSimulator implements JarMappingInputTransformer {
+public class ShadeRelocationSimulator extends JarMappingLoadTransformer {
 
     public LinkedHashMap<String, String> relocations = new LinkedHashMap<String, String>();
     // No relocations
@@ -77,6 +77,7 @@ public class ShadeRelocationSimulator implements JarMappingInputTransformer {
         this(Arrays.asList(string.split(",")));
     }
 
+    @Override
     public String transformClassName(String className) {
         for (Map.Entry<String, String> entry : relocations.entrySet()) {
             String pattern = entry.getKey();
@@ -93,6 +94,7 @@ public class ShadeRelocationSimulator implements JarMappingInputTransformer {
         return className;
     }
 
+    @Override
     public String transformMethodDescriptor(String oldDescriptor) {
         MethodDescriptorTransformer methodDescriptorTransformer = new MethodDescriptorTransformer(relocations, null);
         return methodDescriptorTransformer.transform(oldDescriptor);
