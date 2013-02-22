@@ -289,6 +289,7 @@ public class JarMapping {
 
             classes.put(oldClassName, newClassName);
         } else if (kind.equals("PK:")) {
+            /* TODO: support .srg's package maps
             String oldPackageName = inputTransformer.transformClassName(tokens[1]);
             String newPackageName = outputTransformer.transformClassName(tokens[2]);
 
@@ -304,6 +305,7 @@ public class JarMapping {
             }
 
             packages.put(oldPackageName, newPackageName);
+            */
         } else if (kind.equals("FD:")) {
             String oldFull = tokens[1];
             String newFull = tokens[2];
