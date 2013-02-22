@@ -94,14 +94,24 @@ public class JarMapping {
     }
 
     /**
-     * Load mappings given a (path) specification, optionally relocated
-     * through a suffix @oldpath1=newpath1,oldpath2=newpath2...
+     * Load mappings given a (path) specification, optionally:
+     * - reversed through a prefix '^'
+     * - relocated through a suffix '@oldpath1=newpath1,oldpath2=newpath2'...
      *
      * Intended for convenient command-line usage.
      */
     public void loadMappings(String spec) throws IOException {
+        boolean reverse;
+
+        if (spec.startsWith("^")) {
+            reverse = true;
+            spec = spec.substring(1);
+        } else {
+            reverse = false;
+        }
+
         if ((new File(spec)).isDirectory()) {
-            loadMappingsDir(new File(spec));
+            loadMappingsDir((new File(spec)), reverse);
             return;
         }
 
@@ -119,13 +129,13 @@ public class JarMapping {
 
         BufferedReader reader = new BufferedReader(new FileReader(path));
 
-        loadMappings(reader, inputTransformer, null);
+        loadMappings(reader, inputTransformer, null, reverse);
     }
 
     /**
      * Load mappings from an MCP directory
      */
-    public void loadMappingsDir(File dir) throws IOException {
+    public void loadMappingsDir(File dir, boolean reverse) throws IOException {
         if (!dir.isDirectory()) {
             throw new IllegalArgumentException("loadMappingsDir("+dir+"): not a directory");
         }
@@ -173,17 +183,17 @@ public class JarMapping {
         }
 
         for (File srg : srgFiles) {
-            loadMappings(new BufferedReader(new FileReader(srg)), null, outputTransformer);
+            loadMappings(new BufferedReader(new FileReader(srg)), null, outputTransformer, reverse);
         }
     }
 
     public void loadMappings(File file) throws IOException {
-        loadMappings(new BufferedReader(new FileReader(file)), null, null);
+        loadMappings(new BufferedReader(new FileReader(file)), null, null, false);
     }
 
     @Deprecated
     public void loadMappings(BufferedReader reader, ShadeRelocationSimulator shader) throws IOException {
-        loadMappings(reader, (JarMappingLoadTransformer) shader, null);
+        loadMappings(reader, (JarMappingLoadTransformer) shader, null, false);
     }
 
     /**
@@ -192,11 +202,15 @@ public class JarMapping {
      * @param reader Mapping file reader
      * @param inputTransformer Transformation to apply on input
      * @param outputTransformer Transformation to apply on output
+     * @param reverse Swap input and output mappings (after applying any input/output transformations)
      * @throws IOException
      */
-    public void loadMappings(BufferedReader reader, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer) throws IOException {
+    public void loadMappings(BufferedReader reader, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer, boolean reverse) throws IOException {
         if (inputTransformer == null) {
             inputTransformer = ShadeRelocationSimulator.IDENTITY;
+        }
+        if (outputTransformer == null) {
+            outputTransformer = ShadeRelocationSimulator.IDENTITY;
         }
 
         String line;
@@ -207,10 +221,10 @@ public class JarMapping {
 
             if (line.contains(":")) {
                 // standard srg
-                parseSrgLine(line, inputTransformer, outputTransformer);
+                parseSrgLine(line, inputTransformer, outputTransformer, reverse);
             } else {
                 // better 'compact' srg format
-                parseCsrgLine(line, inputTransformer, outputTransformer);
+                parseCsrgLine(line, inputTransformer, outputTransformer, reverse);
             }
         }
     }
@@ -218,7 +232,11 @@ public class JarMapping {
     /**
      * Parse a 'csrg' mapping format line and populate the data structures
      */
-    private void parseCsrgLine(String line, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer) throws IOException {
+    private void parseCsrgLine(String line, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer, boolean reverse) throws IOException {
+        if (reverse) {
+            throw new IllegalArgumentException("csrg reversed not supported"); // TODO: reverse csg (need to lookup remapped classes)
+        }
+
         String[] tokens = line.split(" ");
 
         if (tokens.length == 2) {
@@ -250,13 +268,19 @@ public class JarMapping {
     /**
      * Parse a standard 'srg' mapping format line and populate the data structures
      */
-    private void parseSrgLine(String line, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer) throws IOException {
+    private void parseSrgLine(String line, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer, boolean reverse) throws IOException {
         String[] tokens = line.split(" ");
         String kind = tokens[0];
 
         if (kind.equals("CL:")) {
             String oldClassName = inputTransformer.transformClassName(tokens[1]);
             String newClassName = outputTransformer.transformClassName(tokens[2]);
+
+            if (reverse) {
+                String temp = newClassName;
+                newClassName = oldClassName;
+                oldClassName = temp;
+            }
 
             if (classes.containsKey(oldClassName) && !newClassName.equals(classes.get(oldClassName))) {
                 throw new IllegalArgumentException("Duplicate class mapping: " + oldClassName + " -> " + newClassName +
@@ -267,6 +291,12 @@ public class JarMapping {
         } else if (kind.equals("PK:")) {
             String oldPackageName = inputTransformer.transformClassName(tokens[1]);
             String newPackageName = outputTransformer.transformClassName(tokens[2]);
+
+            if (reverse) {
+                String temp = newPackageName;
+                newPackageName = oldPackageName;
+                oldPackageName = temp;
+            }
 
             if (packages.containsKey(oldPackageName) && !newPackageName.equals(packages.get(oldPackageName))) {
                 throw new IllegalArgumentException("Duplicate package mapping: " + oldPackageName + " ->" + newPackageName +
@@ -288,15 +318,23 @@ public class JarMapping {
 
             String oldClassName = inputTransformer.transformClassName(oldFull.substring(0, splitOld));
             String oldFieldName = inputTransformer.transformFieldName(oldFull.substring(splitOld + 1));
-            //String newClassName = newFull.substring(0, splitNew); // redundant and ignored
+            String newClassName = newFull.substring(0, splitNew); // TODO: verify with existing class map? (only used for reverse)
             String newFieldName = outputTransformer.transformFieldName(newFull.substring(splitNew + 1));
+
+            if (reverse) {
+                oldClassName = newClassName;
+
+                String temp = newFieldName;
+                newFieldName = oldFieldName;
+                oldFieldName = temp;
+            }
 
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
         } else if (kind.equals("MD:")) {
             String oldFull = tokens[1];
             String oldMethodDescriptor = inputTransformer.transformMethodDescriptor(tokens[2]);
             String newFull = tokens[3];
-            //String newMethodDescriptor = outputTransformer.transformMethodDescriptor(tokens[4]); // redundant and ignored
+            String newMethodDescriptor = outputTransformer.transformMethodDescriptor(tokens[4]); // TODO: verify with existing class map? (only used for reverse)
 
             // Split the qualified field names into their classes and actual names TODO: refactor with above
             int splitOld = oldFull.lastIndexOf('/');
@@ -308,8 +346,17 @@ public class JarMapping {
 
             String oldClassName = inputTransformer.transformClassName(oldFull.substring(0, splitOld));
             String oldMethodName = inputTransformer.transformMethodName(oldFull.substring(splitOld + 1));
-            //String newClassName = outputTransformer.transformClassName(newFull.substring(0, splitNew)); // redundant and ignored
+            String newClassName = outputTransformer.transformClassName(newFull.substring(0, splitNew)); // TODO: verify with existing class map? (only used for reverse)
             String newMethodName = outputTransformer.transformMethodName(newFull.substring(splitNew + 1));
+
+            if (reverse) {
+                oldClassName = newClassName;
+                oldMethodDescriptor = newMethodDescriptor;
+
+                String temp = newMethodName;
+                newMethodName = oldMethodName;
+                oldMethodName = temp;
+            }
 
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {
