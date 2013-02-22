@@ -94,45 +94,6 @@ public class JarMapping {
     }
 
     /**
-     * Load mappings given a (path) specification, optionally:
-     * - reversed through a prefix '^'
-     * - relocated through a suffix '@oldpath1=newpath1,oldpath2=newpath2'...
-     *
-     * Intended for convenient command-line usage.
-     */
-    public void loadMappings(String spec) throws IOException {
-        boolean reverse;
-
-        if (spec.startsWith("^")) {
-            reverse = true;
-            spec = spec.substring(1);
-        } else {
-            reverse = false;
-        }
-
-        if ((new File(spec)).isDirectory()) {
-            loadMappingsDir((new File(spec)), reverse);
-            return;
-        }
-
-        int n = spec.lastIndexOf('@');
-        String path;
-        JarMappingLoadTransformer inputTransformer;
-
-        if (n == -1) {
-            path = spec;
-            inputTransformer = null;
-        } else {
-            path = spec.substring(0, n);
-            inputTransformer = new ShadeRelocationSimulator(spec.substring(n + 1));
-        }
-
-        BufferedReader reader = new BufferedReader(new FileReader(path));
-
-        loadMappings(reader, inputTransformer, null, reverse);
-    }
-
-    /**
      * Load mappings from an MCP directory
      */
     public void loadMappingsDir(File dir, boolean reverse) throws IOException {

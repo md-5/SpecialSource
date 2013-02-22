@@ -69,8 +69,17 @@ public class SpecialSource {
 
                 acceptsAll(asList("m", "srg-in"), "Mapping file input")
                         .withRequiredArg()
-                        .describedAs("path[@relocations...]")
                         .ofType(String.class);
+
+                acceptsAll(asList("R", "in-shade-relocation", "shade-relocation"), "Simulate maven-shade-plugin relocation patterns on srg-in input names")
+                        .withRequiredArg()
+                        .withValuesSeparatedBy(',');
+
+                acceptsAll(asList("out-shade-relocation"), "Simulate maven-shade-plugin relocation patterns on srg-in output names")
+                        .withRequiredArg()
+                        .withValuesSeparatedBy(',');
+
+                acceptsAll(asList("r", "reverse"), "Reverse input/output names on srg-in");
 
                 acceptsAll(asList("i", "in-jar"), "Input jar to remap")
                         .withRequiredArg()
@@ -79,10 +88,6 @@ public class SpecialSource {
                 acceptsAll(asList("o", "out-jar"), "Output jar to write")
                         .withRequiredArg()
                         .ofType(File.class);
-
-                acceptsAll(asList("R", "shade-relocation"), "Simulate maven-shade-plugin relocation patterns on srg-in")
-                        .withRequiredArg()
-                        .withValuesSeparatedBy(',');
 
                 acceptsAll(asList("l", "live"), "Enable runtime inheritance lookup");
                 acceptsAll(asList("L", "live-remapped"), "Enable runtime inheritance lookup through a mapping");
@@ -136,19 +141,37 @@ public class SpecialSource {
 
             jarMapping = new JarMapping();
 
+            // Optional shade relocation, on input or output names
+            JarMappingLoadTransformer inputTransformer = null;
+            JarMappingLoadTransformer outputTransformer = null;
+
+            if (options.has("in-shade-relocation")) {
+                @SuppressWarnings("unchecked")
+                List<String> relocations = (List<String>) options.valuesOf("in-shade-relocation");
+
+                inputTransformer = new ShadeRelocationSimulator(relocations);
+            }
+
+            if (options.has("out-shade-relocation")) {
+                @SuppressWarnings("unchecked")
+                List<String> relocations = (List<String>) options.valuesOf("out-shade-relocation");
+
+                outputTransformer = new ShadeRelocationSimulator(relocations);
+            }
+
+            boolean reverse = options.has("reverse");
+
+            // Load each mapping
             @SuppressWarnings("unchecked")
-            List<String> specs = (List<String>) options.valuesOf("srg-in");
+            List<String> filenames = (List<String>) options.valuesOf("srg-in");
+            for (String filename : filenames) {
+                File file = new File(filename);
 
-            for (String spec : specs) {
-                if (options.has("shade-relocation")) {
-                    // legacy command-line option support
-                    // (new way is filename@... from the command-line, or loadMappings() programmatically)
-                    @SuppressWarnings("unchecked")
-                    List<String> relocations = (List<String>) options.valuesOf("shade-relocation");
-                    spec += "@" + Joiner.on(',').join(relocations);
+                if (file.isDirectory()) {
+                    jarMapping.loadMappingsDir(file, reverse);
+                } else {
+                    jarMapping.loadMappings(new BufferedReader(new FileReader(file)), inputTransformer, outputTransformer, reverse);
                 }
-
-                jarMapping.loadMappings(spec);
             }
         } else {
             System.err.println("No mappings given, first-jar/second-jar or srg-in required");
