@@ -44,12 +44,6 @@ public class JarMapping {
     public JarMapping() {
     }
 
-    @Deprecated
-    public JarMapping(BufferedReader reader, ShadeRelocationSimulator shader) throws IOException {
-        loadMappings(reader, shader);
-    }
-
-
     /**
      * Set the inheritance map used for caching superclass/interfaces. This call be omitted to
      * use a local cache, or set to your own global cache.
@@ -150,11 +144,6 @@ public class JarMapping {
 
     public void loadMappings(File file) throws IOException {
         loadMappings(new BufferedReader(new FileReader(file)), null, null, false);
-    }
-
-    @Deprecated
-    public void loadMappings(BufferedReader reader, ShadeRelocationSimulator shader) throws IOException {
-        loadMappings(reader, (JarMappingLoadTransformer) shader, null, false);
     }
 
     /**
