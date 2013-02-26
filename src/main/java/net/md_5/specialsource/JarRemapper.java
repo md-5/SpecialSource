@@ -121,6 +121,8 @@ public class JarRemapper extends Remapper {
                         entry = new JarEntry(newName == null ? name : newName + ".class");
 
                     } else {
+                        entry = new JarEntry(name);
+
                         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                         int n;
                         byte[] b = new byte[1 << 15]; // Max class file size
