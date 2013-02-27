@@ -42,15 +42,34 @@ import java.util.Map;
  */
 public class CSVMappingTransformer extends JarMappingLoadTransformer {
 
-    private final Map<String, String> fieldMap;
-    private final Map<String, String> methodMap;
+    private final Map<String, String> fieldMap; // numeric srg name field_### -> descriptive csv name
+    private final Map<String, String> methodMap; // numeric srg name func_### -> descriptive csv name
+    private final Map<String, String> classPackageMap; // class src name -> repackaged full class name
 
-    public CSVMappingTransformer(File fieldsCsv, File methodsCsv) throws IOException {
+    public CSVMappingTransformer(File fieldsCsv, File methodsCsv, File packagesCsv) throws IOException {
         fieldMap = new HashMap<String, String>();
         methodMap = new HashMap<String, String>();
 
         readIntoMap(fieldsCsv, fieldMap);
         readIntoMap(methodsCsv, methodMap);
+
+        if (packagesCsv.exists()) {
+            // repackaged (FML)
+            classPackageMap = new HashMap<String, String>();
+
+            Map<String, String> packages = new HashMap<String, String>();
+            readIntoMap(packagesCsv, packages);
+
+            for (Map.Entry<String, String> entry : packages.entrySet()) {
+                String classSimpleName = entry.getKey();
+                String newPackageName = entry.getValue();
+
+                classPackageMap.put("net/minecraft/src/" + classSimpleName, newPackageName + "/" + classSimpleName);
+            }
+        } else {
+            // flat package (vanilla MCP)
+            classPackageMap = null;
+        }
     }
 
     private void readIntoMap(File file, Map<String, String> map) throws IOException {
@@ -62,16 +81,14 @@ public class CSVMappingTransformer extends JarMappingLoadTransformer {
                 continue;
             }
 
-            if (line.length < 4) {
+            if (line.length < 2) {
                 throw new IllegalArgumentException("Invalid csv line: " + line);
             }
 
-            String numericName = line[0];
-            String descriptiveName = line[1];
-            //String side = line[2];
-            //String javadoc = line[3];
+            String key = line[0];
+            String value = line[1];
 
-            map.put(numericName, descriptiveName);
+            map.put(key, value);
         }
     }
 
@@ -83,5 +100,29 @@ public class CSVMappingTransformer extends JarMappingLoadTransformer {
     @Override
     public String transformMethodName(String methodName) {
         return methodMap.get(methodName);
+    }
+
+    @Override
+    public String transformClassName(String className) {
+        if (classPackageMap == null) {
+            return className;
+        }
+
+        String newPackage = classPackageMap.get(className);
+        if (newPackage == null) {
+            return className;
+        }
+
+        return JarRemapper.mapTypeName(className, null, classPackageMap, className);
+    }
+
+    @Override
+    public String transformMethodDescriptor(String oldDescriptor) {
+        if (classPackageMap == null) {
+            return oldDescriptor;
+        }
+
+        MethodDescriptorTransformer methodDescriptorTransformer = new MethodDescriptorTransformer(null, classPackageMap);
+        return methodDescriptorTransformer.transform(oldDescriptor);
     }
 }

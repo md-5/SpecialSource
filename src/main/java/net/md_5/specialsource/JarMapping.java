@@ -126,14 +126,15 @@ public class JarMapping {
         // Read output names through csv mappings, if available
         File fieldsCsv = new File(dir.getPath() + sep + "fields.csv");
         File methodsCsv = new File(dir.getPath() + sep + "methods.csv");
+        File packagesCsv = new File(dir.getPath() + sep + "packages.csv"); // FML repackaging, optional
 
         CSVMappingTransformer outputTransformer;
 
         if (fieldsCsv.exists() && methodsCsv.exists()) {
             // they want descriptive "csv" names
-            outputTransformer = new CSVMappingTransformer(fieldsCsv, methodsCsv);
+            outputTransformer = new CSVMappingTransformer(fieldsCsv, methodsCsv, packagesCsv);
         } else {
-            // they want numeric "srg" names, for some reason
+            // they want numeric "srg" names, for some reason (TODO: option to override)
             outputTransformer = null;
         }
 
