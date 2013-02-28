@@ -50,10 +50,15 @@ public class CSVMappingTransformer extends JarMappingLoadTransformer {
         fieldMap = new HashMap<String, String>();
         methodMap = new HashMap<String, String>();
 
-        readIntoMap(fieldsCsv, fieldMap);
-        readIntoMap(methodsCsv, methodMap);
+        if (fieldsCsv != null && fieldsCsv.exists()) {
+            readIntoMap(fieldsCsv, fieldMap);
+        }
 
-        if (packagesCsv.exists()) {
+        if (methodsCsv != null && methodsCsv.exists()) {
+            readIntoMap(methodsCsv, methodMap);
+        }
+
+        if (packagesCsv != null && packagesCsv.exists()) {
             // repackaged (FML)
             classPackageMap = new HashMap<String, String>();
 
@@ -94,12 +99,12 @@ public class CSVMappingTransformer extends JarMappingLoadTransformer {
 
     @Override
     public String transformFieldName(String fieldName) {
-        return fieldMap.get(fieldName);
+        return fieldMap.containsKey(fieldName) ? fieldMap.get(fieldName) : fieldName;
     }
 
     @Override
     public String transformMethodName(String methodName) {
-        return methodMap.get(methodName);
+        return methodMap.containsKey(methodName) ? methodMap.get(methodName) : methodName;
     }
 
     @Override

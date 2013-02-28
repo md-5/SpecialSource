@@ -90,7 +90,7 @@ public class JarMapping {
     /**
      * Load mappings from an MCP directory
      */
-    public void loadMappingsDir(String dirname, boolean reverse) throws IOException {
+    public void loadMappingsDir(String dirname, boolean reverse, boolean numeric) throws IOException {
         File dir = new File(dirname);
         if (!URLDownloader.isHTTPURL(dirname) && !dir.isDirectory()) {
             throw new IllegalArgumentException("loadMappingsDir("+dir+"): not a directory");
@@ -120,7 +120,7 @@ public class JarMapping {
             throw new IOException("loadMappingsDir("+dirname+"): no joined.srg, client.srg, or client.srg found");
         }
 
-        // Read output names through csv mappings, if available
+        // Read output names through csv mappings, if available & enabled
         File fieldsCsv = URLDownloader.getLocalFile(dirname + sep + "fields.csv");
         File methodsCsv = URLDownloader.getLocalFile(dirname + sep + "methods.csv");
         File packagesCsv = URLDownloader.getLocalFile(dirname + sep + "packages.csv"); // FML repackaging, optional
@@ -128,10 +128,8 @@ public class JarMapping {
         CSVMappingTransformer outputTransformer;
 
         if (fieldsCsv.exists() && methodsCsv.exists()) {
-            // they want descriptive "csv" names
-            outputTransformer = new CSVMappingTransformer(fieldsCsv, methodsCsv, packagesCsv);
+            outputTransformer = new CSVMappingTransformer(numeric ? null : fieldsCsv, numeric ? null : methodsCsv, packagesCsv);
         } else {
-            // they want numeric "srg" names, for some reason (TODO: option to override)
             outputTransformer = null;
         }
 

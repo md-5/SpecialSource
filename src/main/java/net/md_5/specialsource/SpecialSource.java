@@ -68,6 +68,8 @@ public class SpecialSource {
                         .withRequiredArg()
                         .ofType(String.class);
 
+                acceptsAll(asList("n", "numeric-srg"), "Use numeric .srg mappings (not .csv) with srg-in dir");
+
                 acceptsAll(asList("R", "in-shade-relocation", "shade-relocation"), "Simulate maven-shade-plugin relocation patterns on srg-in input names")
                         .withRequiredArg()
                         .withValuesSeparatedBy(',');
@@ -164,7 +166,7 @@ public class SpecialSource {
             List<String> filenames = (List<String>) options.valuesOf("srg-in");
             for (String filename : filenames) {
                 if (new File(filename).isDirectory() || filename.endsWith("/")) {  // existing local dir or dir URL
-                    jarMapping.loadMappingsDir(filename, reverse);
+                    jarMapping.loadMappingsDir(filename, reverse, options.has("numeric-srg"));
                 } else {
                     jarMapping.loadMappings(new BufferedReader(new FileReader(URLDownloader.getLocalFile(filename))), inputTransformer, outputTransformer, reverse);
                 }
