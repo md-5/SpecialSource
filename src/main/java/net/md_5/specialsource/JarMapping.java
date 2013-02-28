@@ -90,8 +90,9 @@ public class JarMapping {
     /**
      * Load mappings from an MCP directory
      */
-    public void loadMappingsDir(File dir, boolean reverse) throws IOException {
-        if (!dir.isDirectory()) {
+    public void loadMappingsDir(String dirname, boolean reverse) throws IOException {
+        File dir = new File(dirname);
+        if (!URLDownloader.isHTTPURL(dirname) && !dir.isDirectory()) {
             throw new IllegalArgumentException("loadMappingsDir("+dir+"): not a directory");
         }
 
@@ -99,14 +100,14 @@ public class JarMapping {
 
         List<File> srgFiles = new ArrayList<File>();
 
-        File joinedSrg = new File(dir.getPath() + sep + "joined.srg");
+        File joinedSrg = URLDownloader.getLocalFile(dirname + sep + "joined.srg");
         if (joinedSrg.exists()) {
             // FML/MCP client/server joined
             srgFiles.add(joinedSrg);
         } else {
             // vanilla MCP separated sides
-            File serverSrg = new File(dir.getPath() + sep + "server.srg");
-            File clientSrg = new File(dir.getPath() + sep + "client.srg");
+            File serverSrg = URLDownloader.getLocalFile(dirname + sep + "server.srg");
+            File clientSrg = URLDownloader.getLocalFile(dirname + sep + "client.srg");
             if (serverSrg.exists()) {
                 srgFiles.add(serverSrg);
             }
@@ -116,13 +117,13 @@ public class JarMapping {
         }
 
         if (srgFiles.size() == 0) {
-            throw new IOException("loadMappingsDir("+dir+"): no joined.srg, client.srg, or client.srg found");
+            throw new IOException("loadMappingsDir("+dirname+"): no joined.srg, client.srg, or client.srg found");
         }
 
         // Read output names through csv mappings, if available
-        File fieldsCsv = new File(dir.getPath() + sep + "fields.csv");
-        File methodsCsv = new File(dir.getPath() + sep + "methods.csv");
-        File packagesCsv = new File(dir.getPath() + sep + "packages.csv"); // FML repackaging, optional
+        File fieldsCsv = URLDownloader.getLocalFile(dirname + sep + "fields.csv");
+        File methodsCsv = URLDownloader.getLocalFile(dirname + sep + "methods.csv");
+        File packagesCsv = URLDownloader.getLocalFile(dirname + sep + "packages.csv"); // FML repackaging, optional
 
         CSVMappingTransformer outputTransformer;
 

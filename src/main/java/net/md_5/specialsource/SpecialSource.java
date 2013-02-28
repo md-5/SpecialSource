@@ -120,6 +120,7 @@ public class SpecialSource {
         }
 
         JarMapping jarMapping;
+        URLDownloader.verbose = !options.has("quiet");
 
         if (options.has("first-jar") && options.has("second-jar")) {
             // Generate mappings from two otherwise-identical jars
@@ -162,12 +163,10 @@ public class SpecialSource {
             @SuppressWarnings("unchecked")
             List<String> filenames = (List<String>) options.valuesOf("srg-in");
             for (String filename : filenames) {
-                File file = new File(filename);
-
-                if (file.isDirectory()) {
-                    jarMapping.loadMappingsDir(file, reverse);
+                if (new File(filename).isDirectory() || filename.endsWith("/")) {  // existing local dir or dir URL
+                    jarMapping.loadMappingsDir(filename, reverse);
                 } else {
-                    jarMapping.loadMappings(new BufferedReader(new FileReader(file)), inputTransformer, outputTransformer, reverse);
+                    jarMapping.loadMappings(new BufferedReader(new FileReader(URLDownloader.getLocalFile(filename))), inputTransformer, outputTransformer, reverse);
                 }
             }
         } else {
@@ -208,7 +207,6 @@ public class SpecialSource {
                 return;
             }
 
-            URLDownloader.verbose = !options.has("quiet");
             Jar jar3 = Jar.init(URLDownloader.getLocalFile((String) options.valueOf("in-jar")));
 
             inheritanceProviders.add(new JarInheritanceProvider(jar3));

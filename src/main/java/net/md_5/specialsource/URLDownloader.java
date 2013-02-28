@@ -75,16 +75,16 @@ public class URLDownloader {
     }
 
     public static File getLocalFile(String string) throws IOException {
-        if (new File(string).exists()) {
-            return new File(string);
-        }
-
-        if (string.startsWith("http://") || string.startsWith("https://")) {
+        if (isHTTPURL(string)) {
             URLDownloader downloader = new URLDownloader(string);
             return downloader.download();
         } else {
-            throw new FileNotFoundException(string);
+            return new File(string);
         }
+    }
+
+    public static boolean isHTTPURL(String string) {
+        return string.startsWith("http://") || string.startsWith("https://");
     }
 
     // Borrowed from Guava 13 (since we're on Guava 12) - TODO: remove and use Guava after https://github.com/MinecraftForge/FML/commit/937e9a016936195e4dc51f33ab9e8dde52621684
