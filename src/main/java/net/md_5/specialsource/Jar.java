@@ -31,11 +31,9 @@ package net.md_5.specialsource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
@@ -56,8 +54,8 @@ import org.objectweb.asm.tree.ClassNode;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class Jar {
 
-    public final JarFile file;
-    public final String main;
+    private final JarFile file;
+    private final String main;
     private final Set<String> contains = new HashSet<String>();
     private final Map<String, ClassNode> classes = new HashMap<String, ClassNode>();
 
@@ -97,6 +95,22 @@ public class Jar {
             System.out.println(clazz);
             throw new RuntimeException(ex);
         }
+    }
+
+    public String getMain() {
+        return main;
+    }
+
+    public String getFilename() {
+        return file.getName();
+    }
+
+    public InputStream getInputStream(ZipEntry zipEntry) throws IOException {
+        return file.getInputStream(zipEntry);
+    }
+
+    public Enumeration<JarEntry> getEntries() {
+        return file.entries();
     }
 
     public static Jar init(String jar) throws IOException {

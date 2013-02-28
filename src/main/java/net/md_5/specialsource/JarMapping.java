@@ -381,7 +381,7 @@ public class JarMapping {
         if (compact) {
             srgWriter = new CompactSrgWriter(out);
         } else {
-            srgWriter = new SrgWriter(out, oldJar.jar.file.getName(), newJar.jar.file.getName());
+            srgWriter = new SrgWriter(out, oldJar.jar.getFilename(), newJar.jar.getFilename());
         }
 
         for (int i = 0; i < oldJar.classes.size(); i++) {

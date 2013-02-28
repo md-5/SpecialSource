@@ -105,10 +105,10 @@ public class JarRemapper extends Remapper {
             if (jar == null) {
                 return;
             }
-            for (Enumeration<JarEntry> entr = jar.file.entries(); entr.hasMoreElements();) {
+            for (Enumeration<JarEntry> entr = jar.getEntries(); entr.hasMoreElements();) {
                 JarEntry entry = entr.nextElement();
 
-                InputStream is = jar.file.getInputStream(entry);
+                InputStream is = jar.getInputStream(entry);
                 try {
                     String name = entry.getName();
                     byte[] data;

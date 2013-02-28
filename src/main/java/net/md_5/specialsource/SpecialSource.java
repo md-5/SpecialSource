@@ -135,7 +135,7 @@ public class SpecialSource {
             log("Creating jar compare");
             JarComparer visitor1 = new JarComparer(jar1);
             JarComparer visitor2 = new JarComparer(jar2);
-            visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.main, jar2.main));
+            visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.getMain(), jar2.getMain()));
 
             jarMapping = new JarMapping(visitor1, visitor2, (File) options.valueOf("srg-out"), options.has("compact"), options.has("generate-dupes"));
         } else if (options.has("srg-in")) {
