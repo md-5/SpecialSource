@@ -99,12 +99,8 @@ public class JarMapping {
 
         List<File> srgFiles = new ArrayList<File>();
 
-        File packagedSrg = new File(dir.getPath() + sep + "packaged.srg");
         File joinedSrg = new File(dir.getPath() + sep + "joined.srg");
-        if (packagedSrg.exists()) {
-            // FML/MCP client/server joined and repackaged
-            srgFiles.add(packagedSrg);
-        } else if (joinedSrg.exists()) {
+        if (joinedSrg.exists()) {
             // FML/MCP client/server joined
             srgFiles.add(joinedSrg);
         } else {
