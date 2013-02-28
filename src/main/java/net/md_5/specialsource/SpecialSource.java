@@ -29,11 +29,8 @@
 package net.md_5.specialsource;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import joptsimple.OptionException;
@@ -83,7 +80,7 @@ public class SpecialSource {
 
                 acceptsAll(asList("i", "in-jar"), "Input jar to remap")
                         .withRequiredArg()
-                        .ofType(File.class);
+                        .ofType(String.class);
 
                 acceptsAll(asList("o", "out-jar"), "Output jar to write")
                         .withRequiredArg()
@@ -211,11 +208,12 @@ public class SpecialSource {
                 return;
             }
 
-            log("Remapping final jar");
-            Jar jar3 = Jar.init((File) options.valueOf("in-jar"));
+            URLDownloader.verbose = !options.has("quiet");
+            Jar jar3 = Jar.init(URLDownloader.getLocalFile((String) options.valueOf("in-jar")));
 
             inheritanceProviders.add(new JarInheritanceProvider(jar3));
 
+            log("Remapping final jar");
             JarRemapper jarRemapper = new JarRemapper(jarMapping);
             jarRemapper.remapJar(jar3, (File) options.valueOf("out-jar"));
         }
