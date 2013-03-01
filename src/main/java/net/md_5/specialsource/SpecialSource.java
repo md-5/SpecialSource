@@ -51,11 +51,11 @@ public class SpecialSource {
 
                 acceptsAll(asList("a", "first-jar"), "First jar with original names, for generating mapping")
                         .withRequiredArg()
-                        .ofType(File.class);
+                        .ofType(String.class);
 
                 acceptsAll(asList("b", "second-jar"), "Second jar with renamed names, for generating mapping")
                         .withRequiredArg()
-                        .ofType(File.class);
+                        .ofType(String.class);
 
                 acceptsAll(asList("s", "srg-out"), "Mapping file output")
                         .withRequiredArg()
@@ -127,8 +127,8 @@ public class SpecialSource {
         if (options.has("first-jar") && options.has("second-jar")) {
             // Generate mappings from two otherwise-identical jars
             log("Reading jars");
-            Jar jar1 = Jar.init((File) options.valueOf("first-jar"));
-            Jar jar2 = Jar.init((File) options.valueOf("second-jar"));
+            Jar jar1 = Jar.init(URLDownloader.getLocalFile((String) options.valueOf("first-jar")));
+            Jar jar2 = Jar.init(URLDownloader.getLocalFile((String) options.valueOf("second-jar")));
 
             log("Creating jar compare");
             JarComparer visitor1 = new JarComparer(jar1);

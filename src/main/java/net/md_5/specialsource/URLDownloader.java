@@ -48,14 +48,14 @@ public class URLDownloader {
             System.out.println("Downloading "+url);
         }
 
-        url.openConnection();
+        url.openConnection(); // TODO: cache local downloads, and reuse temp files unless forced
         InputStream inputStream = url.openStream();
 
         String path = url.getPath();
         String baseName = URLDownloader.getNameWithoutExtension(path);
         String extension = Files.getFileExtension(path);
 
-        File tempFile = File.createTempFile(baseName, "." + extension);
+        File tempFile = File.createTempFile(baseName, "." + extension); // TODO: use non-random filenames
         FileOutputStream outputStream = new FileOutputStream(tempFile);
 
         byte[] buffer = new byte[4096];
