@@ -71,12 +71,10 @@ public class SpecialSource {
                 acceptsAll(asList("n", "numeric-srg"), "Use numeric .srg mappings (not .csv) with srg-in dir");
 
                 acceptsAll(asList("R", "in-shade-relocation", "shade-relocation"), "Simulate maven-shade-plugin relocation patterns on srg-in input names")
-                        .withRequiredArg()
-                        .withValuesSeparatedBy(',');
+                        .withRequiredArg();
 
                 acceptsAll(asList("out-shade-relocation"), "Simulate maven-shade-plugin relocation patterns on srg-in output names")
-                        .withRequiredArg()
-                        .withValuesSeparatedBy(',');
+                        .withRequiredArg();
 
                 acceptsAll(asList("r", "reverse"), "Reverse input/output names on srg-in");
 
@@ -141,35 +139,17 @@ public class SpecialSource {
 
             jarMapping = new JarMapping();
 
-            // Optional shade relocation, on input or output names
-            JarMappingLoadTransformer inputTransformer = null;
-            JarMappingLoadTransformer outputTransformer = null;
-
-            if (options.has("in-shade-relocation")) {
-                @SuppressWarnings("unchecked")
-                List<String> relocations = (List<String>) options.valuesOf("in-shade-relocation");
-
-                inputTransformer = new ShadeRelocationSimulator(relocations);
-            }
-
-            if (options.has("out-shade-relocation")) {
-                @SuppressWarnings("unchecked")
-                List<String> relocations = (List<String>) options.valuesOf("out-shade-relocation");
-
-                outputTransformer = new ShadeRelocationSimulator(relocations);
-            }
-
+            // Loading options
             boolean reverse = options.has("reverse");
+            boolean numeric = options.has("numeric-srg");
+            String inShadeRelocation = (String) options.valueOf("in-shade-relocation");
+            String outShadeRelocation = (String) options.valueOf("out-shade-relocation");
 
             // Load each mapping
             @SuppressWarnings("unchecked")
             List<String> filenames = (List<String>) options.valuesOf("srg-in");
             for (String filename : filenames) {
-                if (new File(filename).isDirectory() || filename.endsWith("/")) {  // existing local dir or dir URL
-                    jarMapping.loadMappingsDir(filename, reverse, options.has("numeric-srg"));
-                } else {
-                    jarMapping.loadMappings(new BufferedReader(new FileReader(URLDownloader.getLocalFile(filename))), inputTransformer, outputTransformer, reverse);
-                }
+                jarMapping.loadMappings(filename, reverse, numeric, inShadeRelocation, outShadeRelocation);
             }
         } else {
             System.err.println("No mappings given, first-jar/second-jar or srg-in required");

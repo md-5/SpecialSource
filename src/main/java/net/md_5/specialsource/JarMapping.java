@@ -143,6 +143,47 @@ public class JarMapping {
     }
 
     /**
+     *
+     * @param filename A filename of a .srg/.csrg or an MCP directory of .srg+.csv, local or remote
+     * @param reverse Swap input and output mappings
+     * @param numeric When reading mapping directory, ignore .csv
+     * @param inShadeRelocation Apply relocation on mapping input
+     * @param outShadeRelocation Apply relocation on mapping output
+     * @throws IOException
+     */
+    public void loadMappings(String filename, boolean reverse, boolean numeric, String inShadeRelocation, String outShadeRelocation) throws IOException {
+        // Optional shade relocation, on input or output names
+        JarMappingLoadTransformer inputTransformer = null;
+        JarMappingLoadTransformer outputTransformer = null;
+
+        if (inShadeRelocation != null) {
+            inputTransformer = new ShadeRelocationSimulator(inShadeRelocation);
+        }
+
+        if (outShadeRelocation != null) {
+            outputTransformer = new ShadeRelocationSimulator(outShadeRelocation);
+        }
+
+        if (new File(filename).isDirectory() || filename.endsWith("/")) {
+            // Existing local dir or dir URL
+
+            if (inputTransformer != null || outputTransformer != null) {
+                throw new IllegalArgumentException("loadMappings("+filename+"): shade relocation not supported on directories"); // yet
+            }
+
+            loadMappingsDir(filename, reverse, numeric);
+        } else {
+            // File
+
+            if (numeric) {
+                throw new IllegalArgumentException("loadMappings("+filename+"): numeric only supported on directories, not files");
+            }
+
+            loadMappings(new BufferedReader(new FileReader(URLDownloader.getLocalFile(filename))), inputTransformer, outputTransformer, reverse);
+        }
+    }
+
+    /**
      * Load a mapping given a .csrg file
      *
      * @param reader Mapping file reader
