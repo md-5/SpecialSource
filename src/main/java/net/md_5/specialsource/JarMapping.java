@@ -307,7 +307,7 @@ public class JarMapping {
 
             String oldClassName = inputTransformer.transformClassName(oldFull.substring(0, splitOld));
             String oldFieldName = inputTransformer.transformFieldName(oldFull.substring(splitOld + 1));
-            String newClassName = newFull.substring(0, splitNew); // TODO: verify with existing class map? (only used for reverse)
+            String newClassName = outputTransformer.transformClassName(newFull.substring(0, splitNew)); // TODO: verify with existing class map? (only used for reverse)
             String newFieldName = outputTransformer.transformFieldName(newFull.substring(splitNew + 1));
 
             if (reverse) {
