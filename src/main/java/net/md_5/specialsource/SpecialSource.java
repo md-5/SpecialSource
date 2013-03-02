@@ -86,6 +86,9 @@ public class SpecialSource {
                         .withRequiredArg()
                         .ofType(File.class);
 
+
+                acceptsAll(asList("force-redownload"), "Force redownloading remote resources (invalid cache)");
+
                 acceptsAll(asList("l", "live"), "Enable runtime inheritance lookup");
                 acceptsAll(asList("L", "live-remapped"), "Enable runtime inheritance lookup through a mapping");
 
@@ -121,6 +124,7 @@ public class SpecialSource {
 
         JarMapping jarMapping;
         URLDownloader.verbose = !options.has("quiet");
+        URLDownloader.useCache = !options.has("force-redownload");
 
         if (options.has("first-jar") && options.has("second-jar")) {
             // Generate mappings from two otherwise-identical jars

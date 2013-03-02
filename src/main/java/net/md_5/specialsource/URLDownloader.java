@@ -28,6 +28,7 @@
  */
 package net.md_5.specialsource;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.io.Files;
 
 import java.io.*;
@@ -40,28 +41,36 @@ public class URLDownloader {
 
     private URL url;
     public static boolean verbose = true;
+    public static boolean useCache = true;
 
     public URLDownloader(String urlString) throws MalformedURLException {
         this.url = new URL(urlString);
     }
 
     public File download() throws IOException {
+        // Cache to temporary directory
+        String sep = System.getProperty("file.separator");
+        String id = CharMatcher.JAVA_LETTER_OR_DIGIT.or(CharMatcher.anyOf("-_.")).negate().replaceFrom(url.toString(), '_');
+        String cacheFilename = System.getProperty("java.io.tmpdir") + sep + CACHE_FOLDER + sep + id;
+        File file = new File(cacheFilename);
+
+        if (file.exists() && useCache) {
+            if (verbose) {
+                System.out.println("Using cached file "+file.getPath()+" for "+url);
+            }
+
+            return file;
+        }
+
+        // Download
+        file.getParentFile().mkdirs();
         if (verbose) {
             System.out.println("Downloading "+url);
         }
 
-        url.openConnection(); // TODO: cache local downloads, and reuse temp files unless forced
+        url.openConnection();
         InputStream inputStream = url.openStream();
 
-        String path = url.getPath();
-        String baseName = URLDownloader.getNameWithoutExtension(path);
-        String extension = Files.getFileExtension(path);
-
-        // Save to a deterministic filename
-        String sep = System.getProperty("file.separator");
-        String cacheFilename = System.getProperty("java.io.tmpdir") + sep + CACHE_FOLDER + sep + baseName + "." + extension;
-        File file = new File(cacheFilename);
-        file.getParentFile().mkdirs();
 
         FileOutputStream outputStream = new FileOutputStream(file);
 
