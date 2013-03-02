@@ -36,6 +36,8 @@ import java.net.URL;
 
 public class URLDownloader {
 
+    private static String CACHE_FOLDER = "SpecialSource.cache";
+
     private URL url;
     public static boolean verbose = true;
 
@@ -55,8 +57,13 @@ public class URLDownloader {
         String baseName = URLDownloader.getNameWithoutExtension(path);
         String extension = Files.getFileExtension(path);
 
-        File tempFile = File.createTempFile(baseName, "." + extension); // TODO: use non-random filenames
-        FileOutputStream outputStream = new FileOutputStream(tempFile);
+        // Save to a deterministic filename
+        String sep = System.getProperty("file.separator");
+        String cacheFilename = System.getProperty("java.io.tmpdir") + sep + CACHE_FOLDER + sep + baseName + "." + extension;
+        File file = new File(cacheFilename);
+        file.getParentFile().mkdirs();
+
+        FileOutputStream outputStream = new FileOutputStream(file);
 
         byte[] buffer = new byte[4096];
         int n = 0;
@@ -68,10 +75,10 @@ public class URLDownloader {
         outputStream.close();
 
         if (verbose) {
-            System.out.println("Downloaded to "+tempFile.getPath());
+            System.out.println("Downloaded to " + file.getPath());
         }
 
-        return tempFile;
+        return file;
     }
 
     public static File getLocalFile(String string) throws IOException {
