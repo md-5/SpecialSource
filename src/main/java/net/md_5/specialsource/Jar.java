@@ -37,6 +37,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
+
+import com.google.common.base.Joiner;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +47,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
 /**
- * This class wraps a {@link JarFile} enabling quick access to the jar's main
+ * This class wraps one or more {@link JarFile}s enabling quick access to the jar's main
  * class, as well as the ability to get the {@link InputStream} of a class file,
  * and speedy lookups to see if the jar contains the specified class.
  */
@@ -54,9 +56,10 @@ import org.objectweb.asm.tree.ClassNode;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class Jar {
 
-    private final JarFile file;
+    private final List<JarFile> jarFiles;
     private final String main;
     private final String filename;
+    private final LinkedHashMap<String, JarFile> jarForResource;
     private final Set<String> contains = new HashSet<String>();
     private final Map<String, ClassNode> classes = new HashMap<String, ClassNode>();
 
@@ -65,9 +68,14 @@ public class Jar {
     }
 
     public InputStream getResource(String name) throws IOException {
-        ZipEntry e = file.getEntry(name);
+        JarFile jarFile = jarForResource.get(name);
+        if (jarFile == null) {
+            return null;
+        }
 
-        return e == null ? null : file.getInputStream(e);
+        ZipEntry e = jarFile.getEntry(name);
+
+        return e == null ? null : jarFile.getInputStream(e);
     }
 
     public InputStream getClass(String clazz) {
@@ -116,16 +124,45 @@ public class Jar {
     /**
      * Get all filenames in the jar (preserves archive order)
      */
-    public List<String> getEntryNames() {
-        List<String> entryNames = new ArrayList<String>();
+    public Set<String> getEntryNames() {
+        return jarForResource.keySet(); // yes, LinkedHashMap keySet() is ordered even though Set normally is not!
+    }
 
-        for (Enumeration<JarEntry> entr = file.entries(); entr.hasMoreElements();) {
-            JarEntry entry = entr.nextElement();
+    private static LinkedHashMap<String, JarFile> collectJarFiles(List<JarFile> jarFiles) {
+        LinkedHashMap<String, JarFile> jarForResource = new LinkedHashMap<String, JarFile>(); // ordered
 
-            entryNames.add(entry.getName());
+        // map resource filename to jar file it is within
+        for (JarFile jarFile : jarFiles) {
+            for (Enumeration<JarEntry> entr = jarFile.entries(); entr.hasMoreElements();) {
+                JarEntry entry = entr.nextElement();
+                String name = entry.getName();
+
+                /*
+                if (jarForResource.containsKey(name)) {
+                    System.out.println("INFO: overwriting "+entry.getName()+" from "+jarForResource.get(name).getName()+" with "+jarFile.getName());
+                }
+                */
+
+                jarForResource.put(name, jarFile);
+            }
+            // continue through each jar file, overwriting subsequent classes in multiple jars ("jar mods")
         }
 
-        return entryNames;
+        return jarForResource;
+    }
+
+    private static String getMainClassName(Manifest manifest) {
+        if (manifest != null) {
+            Attributes attributes = manifest.getMainAttributes();
+            if (attributes != null) {
+                String mainClassName = attributes.getValue("Main-Class");
+                if (mainClassName != null) {
+                    return mainClassName.replace('.', '/');
+                }
+            }
+        }
+
+        return null;
     }
 
     public static Jar init(String jar) throws IOException {
@@ -134,21 +171,31 @@ public class Jar {
     }
 
     public static Jar init(File file) throws IOException {
-        JarFile jarFile = new JarFile(file);
-        String filename = file.getName();
-        String main = null;
+        List<File> files = new ArrayList<File>();
 
-        Manifest manifest = jarFile.getManifest();
-        if (manifest != null) {
-            Attributes attributes = manifest.getMainAttributes();
-            if (attributes != null) {
-                String mainClassName = attributes.getValue("Main-Class");
-                if (mainClassName != null) {
-                    main = mainClassName.replace('.', '/');
-                }
-            }
+        files.add(file);
+
+        return Jar.init(files);
+    }
+
+    public static Jar init(List<File> files) throws IOException {
+        if (files.size() == 0) {
+            throw new IllegalArgumentException("Jar init requires at least one file");
         }
 
-        return new Jar(jarFile, main, filename);
+        List<JarFile> jarFiles = new ArrayList<JarFile>(files.size());
+        List<String> filenames = new ArrayList<String>();
+
+        for (File file : files) {
+            filenames.add(file.getName());
+            jarFiles.add(new JarFile(file));
+        }
+
+        LinkedHashMap<String, JarFile> jarForResource = collectJarFiles(jarFiles);
+
+        String filename = Joiner.on(" + ").join(filenames);
+        String main = getMainClassName(jarFiles.get(0).getManifest());
+
+        return new Jar(jarFiles, main, filename, jarForResource);
     }
 }

@@ -29,7 +29,9 @@
 package net.md_5.specialsource;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.jar.JarFile;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -78,7 +80,7 @@ public class SpecialSource {
 
                 acceptsAll(asList("r", "reverse"), "Reverse input/output names on srg-in");
 
-                acceptsAll(asList("i", "in-jar"), "Input jar to remap")
+                acceptsAll(asList("i", "in-jar"), "Input jar(s) to remap")
                         .withRequiredArg()
                         .ofType(String.class);
 
@@ -193,7 +195,14 @@ public class SpecialSource {
                 return;
             }
 
-            Jar jar3 = Jar.init(URLDownloader.getLocalFile((String) options.valueOf("in-jar")));
+            @SuppressWarnings("unchecked")
+            List<String> filenames = (List<String>) options.valuesOf("in-jar");
+            List<File> files = new ArrayList<File>();
+            for (String filename : filenames) {
+                files.add(URLDownloader.getLocalFile(filename));
+            }
+
+            Jar jar3 = Jar.init(files);
 
             inheritanceProviders.add(new JarInheritanceProvider(jar3));
 
