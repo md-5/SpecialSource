@@ -56,6 +56,7 @@ public class Jar {
 
     private final JarFile file;
     private final String main;
+    private final String filename;
     private final Set<String> contains = new HashSet<String>();
     private final Map<String, ClassNode> classes = new HashMap<String, ClassNode>();
 
@@ -63,13 +64,20 @@ public class Jar {
         return contains.contains(clazz) ? true : getClass(clazz) != null;
     }
 
+    public InputStream getResource(String name) throws IOException {
+        ZipEntry e = file.getEntry(name);
+
+        return e == null ? null : file.getInputStream(e);
+    }
+
     public InputStream getClass(String clazz) {
         try {
-            ZipEntry e = file.getEntry(clazz + ".class");
-            if (e != null) {
+            InputStream inputStream = getResource(clazz + ".class");
+
+            if (inputStream != null) {
                 contains.add(clazz);
             }
-            return e == null ? null : file.getInputStream(e);
+            return inputStream;
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -102,15 +110,22 @@ public class Jar {
     }
 
     public String getFilename() {
-        return file.getName();
+        return filename;
     }
 
-    public InputStream getInputStream(ZipEntry zipEntry) throws IOException {
-        return file.getInputStream(zipEntry);
-    }
+    /**
+     * Get all filenames in the jar (preserves archive order)
+     */
+    public List<String> getEntryNames() {
+        List<String> entryNames = new ArrayList<String>();
 
-    public Enumeration<JarEntry> getEntries() {
-        return file.entries();
+        for (Enumeration<JarEntry> entr = file.entries(); entr.hasMoreElements();) {
+            JarEntry entry = entr.nextElement();
+
+            entryNames.add(entry.getName());
+        }
+
+        return entryNames;
     }
 
     public static Jar init(String jar) throws IOException {
@@ -120,6 +135,7 @@ public class Jar {
 
     public static Jar init(File file) throws IOException {
         JarFile jarFile = new JarFile(file);
+        String filename = file.getName();
         String main = null;
 
         Manifest manifest = jarFile.getManifest();
@@ -133,6 +149,6 @@ public class Jar {
             }
         }
 
-        return new Jar(jarFile, main);
+        return new Jar(jarFile, main, filename);
     }
 }
