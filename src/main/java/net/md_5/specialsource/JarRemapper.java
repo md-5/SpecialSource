@@ -113,14 +113,18 @@ public class JarRemapper extends Remapper {
                 try {
                     byte[] data;
                     if (name.endsWith(".class")) {
+                        // remap classes
                         name = name.substring(0, name.length() - CLASS_LEN);
 
                         data = remapClassFile(is);
                         String newName = map(name);
 
                         entry = new JarEntry(newName == null ? name : newName + ".class");
-
+                    } else if (name.endsWith(".DSA") || name.endsWith(".SF")) {
+                        // skip signatures
+                        continue;
                     } else {
+                        // copy other resources
                         entry = new JarEntry(name);
 
                         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
