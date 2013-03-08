@@ -28,6 +28,8 @@
  */
 package net.md_5.specialsource;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import lombok.ToString;
 import lombok.libs.org.objectweb.asm.Opcodes;
 
@@ -43,6 +45,7 @@ public class AccessChange {
 
     private int clear; // bits to clear to 0
     private int set; // bits to set to 1 (overrides clear)
+    private int vis; // desired visibility increase
 
     private final static Map<String, Integer> accessCodes = new HashMap<String, Integer>();
 
@@ -72,6 +75,15 @@ public class AccessChange {
         accessCodes.put("deprecated", Opcodes.ACC_DEPRECATED);
     }
 
+    private final static BiMap<Integer, Integer> visibilityOrder = HashBiMap.create();
+
+    static {
+        visibilityOrder.put(Opcodes.ACC_PRIVATE,    100);
+        visibilityOrder.put(0,                      200); // default package-private
+        visibilityOrder.put(Opcodes.ACC_PROTECTED,  300);
+        visibilityOrder.put(Opcodes.ACC_PUBLIC,     400);
+    }
+
     private final static int MASK_ALL_VISIBILITY = Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE | Opcodes.ACC_PROTECTED;
 
     public AccessChange(String s) {
@@ -81,10 +93,9 @@ public class AccessChange {
         }
 
         // Symbol visibility
-        clear = MASK_ALL_VISIBILITY; // always clear lower 3 bits, so visibility can be set below
         String visibilityString = parts[0];
-        set = accessCodes.get(visibilityString);
-        if (set > Opcodes.ACC_PROTECTED) {
+        vis = accessCodes.get(visibilityString);
+        if (vis > Opcodes.ACC_PROTECTED) {
             throw new IllegalArgumentException("Invalid access visibility: " + visibilityString);
         }
 
@@ -114,6 +125,7 @@ public class AccessChange {
     }
 
     public int apply(int access) {
+        access = setVisibility(access, upgradeVisibility(access & MASK_ALL_VISIBILITY, vis));
         access &= ~clear;
         access |= set;
 
@@ -132,5 +144,38 @@ public class AccessChange {
         }
 
         set |= rhs.set;
+    }
+
+    /**
+     * Get modified visibility access, never decreased (either same or higher)
+     *
+     * @param existing The current visibility access
+     * @param desired The new desired target visibility access
+     * @return The greater visibility of the two arguments
+     */
+    private static int upgradeVisibility(int existing, int desired) {
+        if (!visibilityOrder.containsKey(existing) ||  !visibilityOrder.containsKey(desired)) {
+            throw new IllegalArgumentException("Unrecognized visibility: " + existing + " or " + desired);
+        }
+
+        int existingOrder = visibilityOrder.get(existing);
+        int desiredOrder = visibilityOrder.get(desired);
+
+        int newOrder = Math.max(existingOrder, desiredOrder);
+
+        return visibilityOrder.inverse().get(newOrder);
+    }
+
+    /**
+     * Set visibility on access flags, overwriting existing, preserving other flags
+     * @param access
+     * @param visibility
+     * @return
+     */
+    private static int setVisibility(int access, int visibility) {
+        access &= ~MASK_ALL_VISIBILITY;
+        access |= visibility;
+
+        return access;
     }
 }
