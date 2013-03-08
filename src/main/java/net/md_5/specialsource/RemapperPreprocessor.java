@@ -52,6 +52,7 @@ public class RemapperPreprocessor {
 
     private InheritanceMap inheritanceMap;
     private JarMapping jarMapping;
+    private AccessMap accessMap;
 
     /**
      *
@@ -59,25 +60,38 @@ public class RemapperPreprocessor {
      * @param jarMapping Mapping for reflection remapping, or null to not remap reflection
      * @throws IOException
      */
-    @SuppressWarnings("unchecked")
-    public RemapperPreprocessor(InheritanceMap inheritanceMap, JarMapping jarMapping) {
+    public RemapperPreprocessor(InheritanceMap inheritanceMap, JarMapping jarMapping, AccessMap accessMap) {
         this.inheritanceMap = inheritanceMap;
         this.jarMapping = jarMapping;
+        this.accessMap = accessMap;
+    }
+
+    public RemapperPreprocessor(InheritanceMap inheritanceMap, JarMapping jarMapping) {
+        this(inheritanceMap, jarMapping, null);
+    }
+
+    public byte[] preprocess(InputStream inputStream) throws IOException {
+        return preprocess(new ClassReader(inputStream));
+    }
+
+    public byte[] preprocess(byte[] bytecode) throws IOException {
+        return preprocess(new ClassReader(bytecode));
     }
 
     @SuppressWarnings("unchecked")
-    public byte[] preprocess(String className, InputStream inputStream) throws IOException {
-        ClassReader classReader = new ClassReader(inputStream);
+    public byte[] preprocess(ClassReader classReader) {
+        byte[] bytecode = null;
         ClassNode classNode = new ClassNode();
         int flags = ClassReader.SKIP_DEBUG;
-        byte[] bytecode = null;
 
-        if (jarMapping == null) {
-            // No reflection remapping - skip the code
+        if (!isRewritingNeeded()) {
+            // Not rewriting the class - skip the code, not needed
             flags |= ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES;
         }
 
         classReader.accept(classNode, flags);
+
+        String className = classNode.name;
 
         // Inheritance extraction
         if (inheritanceMap != null) {
@@ -96,26 +110,46 @@ public class RemapperPreprocessor {
             logI("Inheritance added "+className+" parents "+parents.size());
         }
 
-        // Reflection remapping
-        if (jarMapping != null) {
-            ClassWriter cw = new ClassWriter(0);
+        if (isRewritingNeeded()) {
+            // Class access
+            if (accessMap != null) {
+                classNode.access = accessMap.applyClassAccess(className, classNode.access);
+            }
 
-            for (MethodNode methodNode : (List<MethodNode>) classNode.methods) {
-                AbstractInsnNode insn = methodNode.instructions.getFirst();
-                while (insn != null) {
-                    if (insn.getOpcode() == Opcodes.INVOKEVIRTUAL) {
-                        remapGetDeclaredField(insn);
-                    }
-
-                    insn = insn.getNext();
+            // Field access
+            if (accessMap != null) {
+                for (FieldNode fieldNode : (List<FieldNode>) classNode.fields) {
+                    fieldNode.access = accessMap.applyFieldAccess(className, fieldNode.name, fieldNode.access);
                 }
             }
 
+            for (MethodNode methodNode : (List<MethodNode>) classNode.methods) {
+                // Method access
+                methodNode.access = accessMap.applyMethodAccess(className, methodNode.name, methodNode.desc, methodNode.access);
+
+                // Reflection remapping
+                if (jarMapping != null) {
+                    AbstractInsnNode insn = methodNode.instructions.getFirst();
+                    while (insn != null) {
+                        if (insn.getOpcode() == Opcodes.INVOKEVIRTUAL) {
+                            remapGetDeclaredField(insn);
+                        }
+
+                        insn = insn.getNext();
+                    }
+                }
+            }
+
+            ClassWriter cw = new ClassWriter(0);
             classNode.accept(cw);
             bytecode = cw.toByteArray();
         }
 
         return bytecode;
+    }
+
+    private boolean isRewritingNeeded() {
+        return jarMapping != null || accessMap != null;
     }
 
     /**

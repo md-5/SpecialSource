@@ -46,9 +46,15 @@ public class JarRemapper extends Remapper {
     private static final int CLASS_LEN = ".class".length();
 
     public final JarMapping jarMapping;
+    public RemapperPreprocessor remapperPreprocessor;
+
+    public JarRemapper(RemapperPreprocessor remapperPreprocessor, JarMapping jarMapping) {
+        this.remapperPreprocessor = remapperPreprocessor;
+        this.jarMapping = jarMapping;
+    }
 
     public JarRemapper(JarMapping jarMapping) {
-        this.jarMapping = jarMapping;
+        this(null, jarMapping);
     }
 
     @Override
@@ -152,18 +158,25 @@ public class JarRemapper extends Remapper {
      * Remap an individual class given an InputStream to its bytecode
      */
     public byte[] remapClassFile(InputStream is) throws IOException {
-        ClassReader reader = new ClassReader(is);
-        ClassWriter wr = new ClassWriter(0);
-        RemappingClassAdapter mapper = new RemappingClassAdapter(wr, this);
-        reader.accept(mapper, ClassReader.EXPAND_FRAMES); // TODO: EXPAND_FRAMES necessary?
-        return wr.toByteArray();
+        return remapClassFile(new ClassReader(is));
     }
 
     public byte[] remapClassFile(byte[] in) {
-        ClassReader reader = new ClassReader(in);
+        return remapClassFile(new ClassReader(in));
+    }
+
+    private byte[] remapClassFile(ClassReader reader) {
+        if (remapperPreprocessor != null) {
+            byte[] pre = remapperPreprocessor.preprocess(reader);
+            if (pre != null) {
+                reader = new ClassReader(pre);
+            }
+        }
+
         ClassWriter wr = new ClassWriter(0);
         RemappingClassAdapter mapper = new RemappingClassAdapter(wr, this);
         reader.accept(mapper, ClassReader.EXPAND_FRAMES); // TODO: EXPAND_FRAMES necessary?
+
         return wr.toByteArray();
     }
 }
