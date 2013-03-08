@@ -125,7 +125,9 @@ public class RemapperPreprocessor {
 
             for (MethodNode methodNode : (List<MethodNode>) classNode.methods) {
                 // Method access
-                methodNode.access = accessMap.applyMethodAccess(className, methodNode.name, methodNode.desc, methodNode.access);
+                if (accessMap != null) {
+                    methodNode.access = accessMap.applyMethodAccess(className, methodNode.name, methodNode.desc, methodNode.access);
+                }
 
                 // Reflection remapping
                 if (jarMapping != null) {
