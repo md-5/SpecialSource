@@ -114,6 +114,7 @@ public class RemapperPreprocessor {
             // Class access
             if (accessMap != null) {
                 classNode.access = accessMap.applyClassAccess(className, classNode.access);
+                // TODO: inner classes?
             }
 
             // Field access

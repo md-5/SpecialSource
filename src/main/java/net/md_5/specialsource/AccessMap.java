@@ -35,6 +35,31 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Access mapper - for modifying access flags on symbols
+ *
+ * Supports loading _at.cfg files in the following format:
+ * - comments beginning with '#' extending to end of line
+ * - symbol pattern, space, then access changes
+ *
+ * Symbol pattern format:
+ * foo              class
+ * foo/bar          field
+ * foo/bar ()desc   method
+ * foo/*            fields in class
+ * foo/* ()desc     methods in class
+ * *                all classes
+ * *<nobr/>/*       all fields
+ * *<nobr/>/*()     all methods
+ * **               all classes, fields, and methods
+ *
+ * Internal ('/') and source ('.') conventions are accepted,
+ * and the space preceding the method descriptor is optional.
+ *
+ * Access change format: visibility (required) + access flags
+ * @see AccessChange
+ *
+ */
 public class AccessMap {
 
     private Map<String, AccessChange> map = new HashMap<String, AccessChange>();
@@ -130,8 +155,9 @@ public class AccessMap {
     public int applyClassAccess(String className, int access) {
         int old = access;
 
-        access = apply(className, access);
+        access = apply("**", access);
         access = apply("*", access);
+        access = apply(className, access);
 
         //System.out.println("AT: class: "+className+" "+old+" -> "+access); // TODO: debug logging
 
@@ -141,6 +167,7 @@ public class AccessMap {
     public int applyFieldAccess(String className, String fieldName, int access) {
         int old = access;
 
+        access = apply("**", access);
         access = apply("*/*", access);
         access = apply(className + "/*", access);
         access = apply(className + "/" + fieldName, access);
@@ -153,6 +180,7 @@ public class AccessMap {
     public int applyMethodAccess(String className, String methodName, String methodDesc,  int access) {
         int old = access;
 
+        access = apply("**", access);
         access = apply("*/* ()", access);
         access = apply(className + "/* ()", access);
         access = apply(className + "/" + methodName + " " + methodDesc, access);

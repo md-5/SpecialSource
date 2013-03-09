@@ -39,6 +39,16 @@ import java.util.Map;
 
 /**
  * Represents symbol access specifiers to be added or removed
+ *
+ * Access change format:
+ *
+ * - visibility upgrade (required)
+ * -- public, protected, private ('*', no change), or default (package-private)
+ * -- additional optional flag(s), preceded by '+' to set, '-' to clear
+ *
+ * Example: public-final+synchronized = upgrade to public, clear final, set synchronized
+ *
+ * @see AccessMap
  */
 @ToString
 public class AccessChange {
@@ -95,6 +105,9 @@ public class AccessChange {
 
         // Symbol visibility
         String visibilityString = parts[0];
+        if (!accessCodes.containsKey(visibilityString)) {
+            throw new IllegalArgumentException("Invalid access visibility: " + visibilityString);
+        }
         vis = accessCodes.get(visibilityString);
         if (vis > Opcodes.ACC_PROTECTED) {
             throw new IllegalArgumentException("Invalid access visibility: " + visibilityString);
