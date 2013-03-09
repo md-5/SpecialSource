@@ -52,6 +52,7 @@ public class AccessChange {
     static {
         accessCodes.put("public", Opcodes.ACC_PUBLIC);
         accessCodes.put("private", Opcodes.ACC_PRIVATE);
+        accessCodes.put("*", Opcodes.ACC_PRIVATE); // lowest access level (no change)
         accessCodes.put("protected", Opcodes.ACC_PROTECTED);
         accessCodes.put("default", 0);
         accessCodes.put("", 0);
