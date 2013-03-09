@@ -59,16 +59,7 @@ public class AccessMap {
                 continue;
             }
 
-            // _at.cfg format:
-            // protected/public/private[+/-modifiers] symbol
-            n = line.indexOf(' ');
-            if (n == -1) {
-                throw new IOException("loadAccessTransformer invalid line: " + line);
-            }
-            String accessString = line.substring(0, n);
-            String symbolString = line.substring(n + 1);
-
-            addAccessChange(symbolString, accessString);
+            addAccessChange(line);
         }
     }
 
@@ -76,8 +67,21 @@ public class AccessMap {
         loadAccessTransformer(new BufferedReader(new FileReader(file)));
     }
 
+    /**
+     * Load an access transformer into this AccessMap.
+     *
+     * @param filename Location of AT data, one of:
+     * - local filename
+     * - remote HTTP URL
+     * - "pattern:" followed by one transformer line
+     * @throws IOException
+     */
     public void loadAccessTransformer(String filename) throws IOException {
-        loadAccessTransformer(URLDownloader.getLocalFile(filename));
+        if (filename.startsWith("pattern:")) {
+            addAccessChange(filename.substring("pattern:".length()));
+        } else {
+            loadAccessTransformer(URLDownloader.getLocalFile(filename));
+        }
     }
 
     /**
@@ -96,6 +100,19 @@ public class AccessMap {
         // (but also possibly with wildcards)
 
         return s;
+    }
+
+    public void addAccessChange(String line) {
+        // _at.cfg format:
+        // protected/public/private[+/-modifiers] symbol
+        int n = line.indexOf(' ');
+        if (n == -1) {
+            throw new IllegalArgumentException("loadAccessTransformer invalid line: " + line);
+        }
+        String accessString = line.substring(0, n);
+        String symbolString = line.substring(n + 1);
+
+        addAccessChange(symbolString, accessString);
     }
 
     public void addAccessChange(String symbolString, String accessString) {
