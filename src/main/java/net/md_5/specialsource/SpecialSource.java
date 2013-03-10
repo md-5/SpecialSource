@@ -70,7 +70,7 @@ public class SpecialSource {
                         .withRequiredArg()
                         .ofType(String.class);
 
-                acceptsAll(asList("n", "numeric-srg"), "Use numeric .srg mappings (not .csv) with srg-in dir");
+                acceptsAll(asList("n", "numeric-srg"), "Use numeric .srg mappings with srg-in dir (num->mcp vs obf->mcp)");
 
                 acceptsAll(asList("R", "in-shade-relocation", "shade-relocation"), "Simulate maven-shade-plugin relocation patterns on srg-in input names")
                         .withRequiredArg();

@@ -89,8 +89,13 @@ public class JarMapping {
 
     /**
      * Load mappings from an MCP directory
+     *
+     * @param dirname MCP directory name, local file or remote URL ending in '/'
+     * @param reverse If true, swap input and output
+     * @param ignoreCsv If true, ignore fields.csv and methods.csv (but not packages.csv)
+     * @param numericSrgNames If true, load numeric "srg" names (num->mcp instead of obf->mcp)
      */
-    public void loadMappingsDir(String dirname, boolean reverse, boolean numeric) throws IOException {
+    private void loadMappingsDir(String dirname, boolean reverse, boolean ignoreCsv, boolean numericSrgNames) throws IOException {
         File dir = new File(dirname);
         if (!URLDownloader.isHTTPURL(dirname) && !dir.isDirectory()) {
             throw new IllegalArgumentException("loadMappingsDir("+dir+"): not a directory");
@@ -126,16 +131,35 @@ public class JarMapping {
         File packagesCsv = URLDownloader.getLocalFile(dirname + sep + "packages.csv"); // FML repackaging, optional
 
         CSVMappingTransformer outputTransformer;
+        JarMappingLoadTransformer inputTransformer;
+
+        if (numericSrgNames) {
+            // Wants numeric "srg" names -> descriptive "csv" names. To accomplish this:
+            // 1. load obf->mcp (descriptive "csv") as chainMappings
+            // 2. load again but chaining input (obf) through mcp, and ignoring csv on output
+            // 3. result: mcp->srg, similar to MCP ./reobfuscate --srgnames
+            JarMapping chainMappings = new JarMapping();
+            chainMappings.loadMappingsDir(dirname, reverse, false/*ignoreCsv*/, false/*numeric*/);
+            inputTransformer = new ChainTransformer(new JarRemapper(chainMappings));
+            ignoreCsv = true; // keep numeric srg as output
+        } else {
+            inputTransformer = null;
+        }
 
         if (fieldsCsv.exists() && methodsCsv.exists()) {
-            outputTransformer = new CSVMappingTransformer(numeric ? null : fieldsCsv, numeric ? null : methodsCsv, packagesCsv);
+            outputTransformer = new CSVMappingTransformer(ignoreCsv ? null : fieldsCsv, ignoreCsv ? null : methodsCsv, packagesCsv);
         } else {
             outputTransformer = null;
         }
 
-        for (File srg : srgFiles) {
-            loadMappings(new BufferedReader(new FileReader(srg)), null, outputTransformer, reverse);
+       for (File srg : srgFiles) {
+            loadMappings(new BufferedReader(new FileReader(srg)), inputTransformer, outputTransformer, reverse);
         }
+    }
+
+    @Deprecated
+    public void loadMappingsDir(String dirname, boolean reverse, boolean ignoreCsv) throws IOException {
+        loadMappingsDir(dirname, reverse, ignoreCsv, false);
     }
 
     public void loadMappings(File file) throws IOException {
@@ -146,12 +170,12 @@ public class JarMapping {
      *
      * @param filename A filename of a .srg/.csrg or an MCP directory of .srg+.csv, local or remote
      * @param reverse Swap input and output mappings
-     * @param numeric When reading mapping directory, ignore .csv
+     * @param numericSrgNames When reading mapping directory, load numeric "srg" instead obfuscated names
      * @param inShadeRelocation Apply relocation on mapping input
      * @param outShadeRelocation Apply relocation on mapping output
      * @throws IOException
      */
-    public void loadMappings(String filename, boolean reverse, boolean numeric, String inShadeRelocation, String outShadeRelocation) throws IOException {
+    public void loadMappings(String filename, boolean reverse, boolean numericSrgNames, String inShadeRelocation, String outShadeRelocation) throws IOException {
         // Optional shade relocation, on input or output names
         JarMappingLoadTransformer inputTransformer = null;
         JarMappingLoadTransformer outputTransformer = null;
@@ -171,11 +195,11 @@ public class JarMapping {
                 throw new IllegalArgumentException("loadMappings("+filename+"): shade relocation not supported on directories"); // yet
             }
 
-            loadMappingsDir(filename, reverse, numeric);
+            loadMappingsDir(filename, reverse, false, numericSrgNames);
         } else {
             // File
 
-            if (numeric) {
+            if (numericSrgNames) {
                 throw new IllegalArgumentException("loadMappings("+filename+"): numeric only supported on directories, not files");
             }
 
@@ -243,9 +267,9 @@ public class JarMapping {
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
         } else if (tokens.length == 4) {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
-            String oldMethodName = inputTransformer.transformMethodName(tokens[0], tokens[1]);
+            String oldMethodName = inputTransformer.transformMethodName(tokens[0], tokens[1], tokens[2]);
             String oldMethodDescriptor = inputTransformer.transformMethodDescriptor(tokens[2]);
-            String newMethodName = outputTransformer.transformMethodName(tokens[0], tokens[3]);
+            String newMethodName = outputTransformer.transformMethodName(tokens[0], tokens[3], tokens[2]);
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {
             throw new IOException("Invalid csrg file line, token count " + tokens.length + " unexpected in "+line);
@@ -332,10 +356,10 @@ public class JarMapping {
             }
 
             String oldClassName = inputTransformer.transformClassName(oldFull.substring(0, splitOld));
-            String oldMethodName = inputTransformer.transformMethodName(oldFull.substring(0, splitOld), oldFull.substring(splitOld + 1));
+            String oldMethodName = inputTransformer.transformMethodName(oldFull.substring(0, splitOld), oldFull.substring(splitOld + 1), tokens[2]);
             String oldMethodDescriptor = inputTransformer.transformMethodDescriptor(tokens[2]);
             String newClassName = outputTransformer.transformClassName(newFull.substring(0, splitNew)); // TODO: verify with existing class map? (only used for reverse)
-            String newMethodName = outputTransformer.transformMethodName(oldFull.substring(0, splitOld), newFull.substring(splitNew + 1));
+            String newMethodName = outputTransformer.transformMethodName(oldFull.substring(0, splitOld), newFull.substring(splitNew + 1), tokens[2]);
             String newMethodDescriptor = outputTransformer.transformMethodDescriptor(tokens[4]); // TODO: verify with existing class map? (only used for reverse)
 
             if (reverse) {

@@ -103,7 +103,7 @@ public class CSVMappingTransformer extends JarMappingLoadTransformer {
     }
 
     @Override
-    public String transformMethodName(String className, String methodName) {
+    public String transformMethodName(String className, String methodName, String methodDescriptor) {
         return methodMap.containsKey(methodName) ? methodMap.get(methodName) : methodName;
     }
 
