@@ -238,14 +238,14 @@ public class JarMapping {
             }
         } else if (tokens.length == 3) {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
-            String oldFieldName = inputTransformer.transformFieldName(tokens[1]);
-            String newFieldName = outputTransformer.transformFieldName(tokens[2]);
+            String oldFieldName = inputTransformer.transformFieldName(tokens[0], tokens[1]);
+            String newFieldName = outputTransformer.transformFieldName(tokens[0], tokens[2]);
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
         } else if (tokens.length == 4) {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
-            String oldMethodName = inputTransformer.transformMethodName(tokens[1]);
+            String oldMethodName = inputTransformer.transformMethodName(tokens[0], tokens[1]);
             String oldMethodDescriptor = inputTransformer.transformMethodDescriptor(tokens[2]);
-            String newMethodName = outputTransformer.transformMethodName(tokens[3]);
+            String newMethodName = outputTransformer.transformMethodName(tokens[0], tokens[3]);
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {
             throw new IOException("Invalid csrg file line, token count " + tokens.length + " unexpected in "+line);
@@ -306,9 +306,9 @@ public class JarMapping {
             }
 
             String oldClassName = inputTransformer.transformClassName(oldFull.substring(0, splitOld));
-            String oldFieldName = inputTransformer.transformFieldName(oldFull.substring(splitOld + 1));
+            String oldFieldName = inputTransformer.transformFieldName(oldFull.substring(0, splitOld), oldFull.substring(splitOld + 1));
             String newClassName = outputTransformer.transformClassName(newFull.substring(0, splitNew)); // TODO: verify with existing class map? (only used for reverse)
-            String newFieldName = outputTransformer.transformFieldName(newFull.substring(splitNew + 1));
+            String newFieldName = outputTransformer.transformFieldName(oldFull.substring(0, splitOld), newFull.substring(splitNew + 1));
 
             if (reverse) {
                 oldClassName = newClassName;
@@ -321,11 +321,9 @@ public class JarMapping {
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
         } else if (kind.equals("MD:")) {
             String oldFull = tokens[1];
-            String oldMethodDescriptor = inputTransformer.transformMethodDescriptor(tokens[2]);
             String newFull = tokens[3];
-            String newMethodDescriptor = outputTransformer.transformMethodDescriptor(tokens[4]); // TODO: verify with existing class map? (only used for reverse)
 
-            // Split the qualified field names into their classes and actual names TODO: refactor with above
+            // Split the qualified field names into their classes and actual names TODO: refactor with below
             int splitOld = oldFull.lastIndexOf('/');
             int splitNew = newFull.lastIndexOf('/');
             if (splitOld == -1 || splitNew == -1) {
@@ -334,9 +332,11 @@ public class JarMapping {
             }
 
             String oldClassName = inputTransformer.transformClassName(oldFull.substring(0, splitOld));
-            String oldMethodName = inputTransformer.transformMethodName(oldFull.substring(splitOld + 1));
+            String oldMethodName = inputTransformer.transformMethodName(oldFull.substring(0, splitOld), oldFull.substring(splitOld + 1));
+            String oldMethodDescriptor = inputTransformer.transformMethodDescriptor(tokens[2]);
             String newClassName = outputTransformer.transformClassName(newFull.substring(0, splitNew)); // TODO: verify with existing class map? (only used for reverse)
-            String newMethodName = outputTransformer.transformMethodName(newFull.substring(splitNew + 1));
+            String newMethodName = outputTransformer.transformMethodName(oldFull.substring(0, splitOld), newFull.substring(splitNew + 1));
+            String newMethodDescriptor = outputTransformer.transformMethodDescriptor(tokens[4]); // TODO: verify with existing class map? (only used for reverse)
 
             if (reverse) {
                 oldClassName = newClassName;

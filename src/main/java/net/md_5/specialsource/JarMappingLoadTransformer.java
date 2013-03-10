@@ -39,11 +39,11 @@ public abstract class JarMappingLoadTransformer {
         return className;
     }
 
-    public String transformFieldName(String fieldName) {
+    public String transformFieldName(String className, String fieldName) {
         return fieldName;
     }
 
-    public String transformMethodName(String methodName) {
+    public String transformMethodName(String className, String methodName) {
         return methodName;
     }
 
