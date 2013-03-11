@@ -143,7 +143,7 @@ public class RemapperPreprocessor {
                 }
             }
 
-            ClassWriter cw = new ClassWriter(0);
+            ClassWriter cw = new ClassWriter(classReader, 0);
             classNode.accept(cw);
             bytecode = cw.toByteArray();
         }
