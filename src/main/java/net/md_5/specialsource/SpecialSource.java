@@ -111,17 +111,18 @@ public class SpecialSource {
             options = parser.parse(args);
         } catch (OptionException ex) {
             System.out.println(ex.getLocalizedMessage());
+            System.exit(-1);
             return;
         }
 
         if (options == null || options.has("?")) {
             try {
                 parser.printHelpOn(System.err);
-                return;
             } catch (IOException ex) {
                 System.out.println(ex.getLocalizedMessage());
-                return;
             }
+            System.exit(-1);
+            return;
         }
 
         JarMapping jarMapping;
@@ -160,6 +161,7 @@ public class SpecialSource {
         } else {
             System.err.println("No mappings given, first-jar/second-jar or srg-in required");
             parser.printHelpOn(System.err);
+            System.exit(-1);
             return;
         }
         log(jarMapping.packages.size() + " packages, " + jarMapping.classes.size() + " classes, " + jarMapping.fields.size() + " fields, " + jarMapping.methods.size() + " methods");
@@ -192,6 +194,7 @@ public class SpecialSource {
             if (!options.has("out-jar")) {
                 System.err.println("No output jar given, in-jar requires out-jar");
                 parser.printHelpOn(System.err);
+                System.exit(-1);
                 return;
             }
 
