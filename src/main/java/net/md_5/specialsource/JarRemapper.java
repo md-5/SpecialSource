@@ -173,7 +173,7 @@ public class JarRemapper extends Remapper {
             }
         }
 
-        ClassWriter wr = new ClassWriter(reader, 0);
+        ClassWriter wr = new ClassWriter(0);
         RemappingClassAdapter mapper = new RemappingClassAdapter(wr, this);
         reader.accept(mapper, ClassReader.EXPAND_FRAMES); // TODO: EXPAND_FRAMES necessary?
 
