@@ -44,6 +44,7 @@ public class URLDownloader {
     public static boolean useCache = true;
 
     public URLDownloader(String urlString) throws MalformedURLException {
+        urlString = urlString.replace('\\', '/'); // Windows paths to URLs - TODO: improve this in JarMapping directory loading
         this.url = new URL(urlString);
     }
 
