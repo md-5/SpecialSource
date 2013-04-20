@@ -26,31 +26,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package net.md_5.specialsource;
+package net.md_5.specialsource.util;
 
 import com.google.common.base.CharMatcher;
 import java.io.*;
-import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import net.md_5.specialsource.SpecialSource;
 
-public class URLDownloader {
+public class FileLocator {
 
-    private static String CACHE_FOLDER = ".ss-cache";
-    private URL url;
     public static boolean useCache = true;
 
-    public URLDownloader(String urlString) throws MalformedURLException {
-        urlString = urlString.replace('\\', '/'); // Windows paths to URLs - TODO: improve this in JarMapping directory loading
-        this.url = new URL(urlString);
-    }
-
-    public File download() throws IOException {
-        // Cache to temporary directory
-        String sep = System.getProperty("file.separator");
+    private static File download(String url) throws IOException {
+        // Create temporary dir in system location
+        File tempDir = File.createTempFile("ss-cache", null);
+        // Create our own cache file here, replacing potentially invalid characters
+        // TODO: Maybe just store the base name or something
         String id = CharMatcher.JAVA_LETTER_OR_DIGIT.or(CharMatcher.anyOf("-_.")).negate().replaceFrom(url.toString(), '_');
-        String cacheFilename = System.getProperty("java.io.tmpdir") + sep + CACHE_FOLDER + sep + id;
-        File file = new File(cacheFilename);
+        File file = new File(tempDir, id);
 
+        // Check cache for a hit
         if (file.exists() && useCache) {
             if (SpecialSource.verbose()) {
                 System.out.println("Using cached file " + file.getPath() + " for " + url);
@@ -59,27 +56,28 @@ public class URLDownloader {
             return file;
         }
 
-        // Download
-        file.getParentFile().mkdirs();
+        // Nope, we need to download it ourselves
         if (SpecialSource.verbose()) {
             System.out.println("Downloading " + url);
         }
 
-        url.openConnection();
-        InputStream inputStream = url.openStream();
-
-
-        FileOutputStream outputStream = new FileOutputStream(file);
-
-        int n;
-        byte[] buffer = new byte[4096];
-        while ((n = inputStream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, n);
+        ReadableByteChannel rbc = null;
+        FileOutputStream fos = null;
+        try {
+            // TODO: Better sollution for cleaning names
+            rbc = Channels.newChannel(new URL(url.replace('\\', '/')).openStream());
+            fos = new FileOutputStream(file);
+            fos.getChannel().transferFrom(rbc, 0, 1 << 24);
+        } finally {
+            if (rbc != null) {
+                rbc.close();
+            }
+            if (fos != null) {
+                fos.close();
+            }
         }
 
-        inputStream.close();
-        outputStream.close();
-
+        // Success!
         if (SpecialSource.verbose()) {
             System.out.println("Downloaded to " + file.getPath());
         }
@@ -87,13 +85,19 @@ public class URLDownloader {
         return file;
     }
 
-    public static File getLocalFile(String string) throws IOException {
-        if (isHTTPURL(string)) {
-            URLDownloader downloader = new URLDownloader(string);
-            return downloader.download();
-        } else {
-            return new File(string);
+    /**
+     * Either download, or get a File object corresponding to the given URL /
+     * file name.
+     *
+     * @param path
+     * @return
+     * @throws IOException
+     */
+    public static File getFile(String path) throws IOException {
+        if (isHTTPURL(path)) {
+            return download(path);
         }
+        return new File(path);
     }
 
     public static boolean isHTTPURL(String string) {

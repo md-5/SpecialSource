@@ -28,6 +28,8 @@
  */
 package net.md_5.specialsource;
 
+import net.md_5.specialsource.util.Pair;
+import net.md_5.specialsource.util.FileLocator;
 import net.md_5.specialsource.provider.JointProvider;
 import net.md_5.specialsource.provider.JarProvider;
 import java.io.*;
@@ -129,13 +131,13 @@ public class SpecialSource {
 
         JarMapping jarMapping;
         verbose = !options.has("quiet");
-        URLDownloader.useCache = !options.has("force-redownload");
+        FileLocator.useCache = !options.has("force-redownload");
 
         if (options.has("first-jar") && options.has("second-jar")) {
             // Generate mappings from two otherwise-identical jars
             log("Reading jars");
-            Jar jar1 = Jar.init(URLDownloader.getLocalFile((String) options.valueOf("first-jar")));
-            Jar jar2 = Jar.init(URLDownloader.getLocalFile((String) options.valueOf("second-jar")));
+            Jar jar1 = Jar.init(FileLocator.getFile((String) options.valueOf("first-jar")));
+            Jar jar2 = Jar.init(FileLocator.getFile((String) options.valueOf("second-jar")));
 
             log("Creating jar compare");
             JarComparer visitor1 = new JarComparer(jar1);
@@ -200,7 +202,7 @@ public class SpecialSource {
             List<String> filenames = (List<String>) options.valuesOf("in-jar");
             List<File> files = new ArrayList<File>();
             for (String filename : filenames) {
-                files.add(URLDownloader.getLocalFile(filename));
+                files.add(FileLocator.getFile(filename));
             }
 
             Jar jar3 = Jar.init(files);

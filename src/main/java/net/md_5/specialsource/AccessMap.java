@@ -28,6 +28,7 @@
  */
 package net.md_5.specialsource;
 
+import net.md_5.specialsource.util.FileLocator;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -98,7 +99,7 @@ public class AccessMap {
         if (filename.startsWith("pattern:")) {
             addAccessChange(filename.substring("pattern:".length()));
         } else {
-            loadAccessTransformer(URLDownloader.getLocalFile(filename));
+            loadAccessTransformer(FileLocator.getFile(filename));
         }
     }
 

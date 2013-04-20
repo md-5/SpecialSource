@@ -28,6 +28,7 @@
  */
 package net.md_5.specialsource;
 
+import net.md_5.specialsource.util.NoDupeList;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;

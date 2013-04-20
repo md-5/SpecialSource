@@ -28,6 +28,7 @@
  */
 package net.md_5.specialsource;
 
+import net.md_5.specialsource.util.FileLocator;
 import net.md_5.specialsource.transformer.MavenShade;
 import net.md_5.specialsource.writer.CompactSearge;
 import net.md_5.specialsource.writer.Searge;
@@ -108,7 +109,7 @@ public class JarMapping {
      */
     private void loadMappingsDir(String dirname, boolean reverse, boolean ignoreCsv, boolean numericSrgNames) throws IOException {
         File dir = new File(dirname);
-        if (!URLDownloader.isHTTPURL(dirname) && !dir.isDirectory()) {
+        if (!FileLocator.isHTTPURL(dirname) && !dir.isDirectory()) {
             throw new IllegalArgumentException("loadMappingsDir(" + dir + "): not a directory");
         }
 
@@ -116,14 +117,14 @@ public class JarMapping {
 
         List<File> srgFiles = new ArrayList<File>();
 
-        File joinedSrg = URLDownloader.getLocalFile(dirname + sep + "joined.srg");
+        File joinedSrg = FileLocator.getFile(dirname + sep + "joined.srg");
         if (joinedSrg.exists()) {
             // FML/MCP client/server joined
             srgFiles.add(joinedSrg);
         } else {
             // vanilla MCP separated sides
-            File serverSrg = URLDownloader.getLocalFile(dirname + sep + "server.srg");
-            File clientSrg = URLDownloader.getLocalFile(dirname + sep + "client.srg");
+            File serverSrg = FileLocator.getFile(dirname + sep + "server.srg");
+            File clientSrg = FileLocator.getFile(dirname + sep + "client.srg");
             if (serverSrg.exists()) {
                 srgFiles.add(serverSrg);
             }
@@ -137,9 +138,9 @@ public class JarMapping {
         }
 
         // Read output names through csv mappings, if available & enabled
-        File fieldsCsv = URLDownloader.getLocalFile(dirname + sep + "fields.csv");
-        File methodsCsv = URLDownloader.getLocalFile(dirname + sep + "methods.csv");
-        File packagesCsv = URLDownloader.getLocalFile(dirname + sep + "packages.csv"); // FML repackaging, optional
+        File fieldsCsv = FileLocator.getFile(dirname + sep + "fields.csv");
+        File methodsCsv = FileLocator.getFile(dirname + sep + "methods.csv");
+        File packagesCsv = FileLocator.getFile(dirname + sep + "packages.csv"); // FML repackaging, optional
 
         MinecraftCodersPack outputTransformer;
         MappingTransformer inputTransformer;
@@ -211,7 +212,7 @@ public class JarMapping {
                 throw new IllegalArgumentException("loadMappings(" + filename + "): numeric only supported on directories, not files");
             }
 
-            loadMappings(new BufferedReader(new FileReader(URLDownloader.getLocalFile(filename))), inputTransformer, outputTransformer, reverse);
+            loadMappings(new BufferedReader(new FileReader(FileLocator.getFile(filename))), inputTransformer, outputTransformer, reverse);
         }
     }
 
