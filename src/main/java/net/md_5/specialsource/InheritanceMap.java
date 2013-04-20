@@ -28,7 +28,7 @@
  */
 package net.md_5.specialsource;
 
-import net.md_5.specialsource.provider.IInheritanceProvider;
+import net.md_5.specialsource.provider.InheritanceProvider;
 import com.google.common.base.Joiner;
 import com.google.common.collect.BiMap;
 
@@ -38,7 +38,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
-public class InheritanceMap implements IInheritanceProvider {
+public class InheritanceMap implements InheritanceProvider {
 
     private final Map<String, ArrayList<String>> inheritanceMap = new HashMap<String, ArrayList<String>>();
     public static final InheritanceMap EMPTY = new InheritanceMap();
@@ -46,9 +46,9 @@ public class InheritanceMap implements IInheritanceProvider {
     /**
      * Generate an inheritance map for the given classes
      */
-    public void generate(IInheritanceProvider inheritanceProvider, Collection<String> classes) {
+    public void generate(InheritanceProvider inheritanceProvider, Collection<String> classes) {
         for (String className : classes) {
-            List<String> parents = inheritanceProvider.getParents(className);
+            Collection<String> parents = inheritanceProvider.getParents(className);
 
             if (parents == null) {
                 System.out.println("No inheritance information found for " + className);

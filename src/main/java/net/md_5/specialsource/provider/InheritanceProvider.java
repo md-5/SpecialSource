@@ -28,9 +28,9 @@
  */
 package net.md_5.specialsource.provider;
 
-import java.util.List;
+import java.util.Collection;
 
-public interface IInheritanceProvider {
+public interface InheritanceProvider {
 
     /**
      * Get the superclass and implemented interfaces of a class
@@ -39,5 +39,5 @@ public interface IInheritanceProvider {
      * @return List of interfaces, or null if no information is available and
      * other providers should be checked
      */
-    List<String> getParents(String className);
+    Collection<String> getParents(String className);
 }

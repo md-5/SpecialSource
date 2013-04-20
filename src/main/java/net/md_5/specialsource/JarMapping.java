@@ -32,7 +32,7 @@ import net.md_5.specialsource.transformer.MavenShade;
 import net.md_5.specialsource.writer.CompactSearge;
 import net.md_5.specialsource.writer.Searge;
 import net.md_5.specialsource.writer.MappingWriter;
-import net.md_5.specialsource.provider.IInheritanceProvider;
+import net.md_5.specialsource.provider.InheritanceProvider;
 import net.md_5.specialsource.transformer.MinecraftCodersPack;
 import net.md_5.specialsource.transformer.MethodDescriptor;
 import net.md_5.specialsource.transformer.ChainingTransformer;
@@ -47,7 +47,7 @@ public class JarMapping {
     public final Map<String, String> fields = new HashMap<String, String>();
     public final Map<String, String> methods = new HashMap<String, String>();
     private InheritanceMap inheritanceMap = new InheritanceMap();
-    private IInheritanceProvider fallbackInheritanceProvider = null;
+    private InheritanceProvider fallbackInheritanceProvider = null;
 
     public JarMapping() {
     }
@@ -65,7 +65,7 @@ public class JarMapping {
      * no information on the requested class (results will be cached in the
      * inheritance map).
      */
-    public void setFallbackInheritanceProvider(IInheritanceProvider fallbackInheritanceProvider) {
+    public void setFallbackInheritanceProvider(InheritanceProvider fallbackInheritanceProvider) {
         this.fallbackInheritanceProvider = fallbackInheritanceProvider;
     }
 
@@ -74,7 +74,7 @@ public class JarMapping {
 
         String mapped = map.get(key);
         if (mapped == null) {
-            List<String> parents = null;
+            Collection<String> parents = null;
 
             if (inheritanceMap.hasParents(owner)) {
                 parents = inheritanceMap.getParents(owner);

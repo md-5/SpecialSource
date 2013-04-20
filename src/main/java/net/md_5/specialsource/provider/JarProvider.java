@@ -31,7 +31,9 @@ package net.md_5.specialsource.provider;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import net.md_5.specialsource.Jar;
 
@@ -39,24 +41,20 @@ import net.md_5.specialsource.Jar;
  * Lookup inheritance from a class given a jar.
  */
 @ToString
-public class JarInheritanceProvider implements IInheritanceProvider {
+@RequiredArgsConstructor
+public class JarProvider implements InheritanceProvider {
 
     private final Jar self;
 
-    public JarInheritanceProvider(Jar self) {
-        this.self = self;
-    }
-
     @Override
-    @SuppressWarnings("unchecked") // Saddens me to see ASM strip vital info like that
-    public List<String> getParents(String owner) {
+    @SuppressWarnings("unchecked")
+    public Collection<String> getParents(String owner) {
         ClassNode node = self.getNode(owner);
         if (node == null) {
             return null;
         }
 
-        List<String> parents = new ArrayList<String>();
-
+        Collection<String> parents = new ArrayList<String>();
         for (String iface : (List<String>) node.interfaces) {
             parents.add(iface);
         }

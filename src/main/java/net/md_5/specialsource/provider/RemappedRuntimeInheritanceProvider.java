@@ -38,7 +38,7 @@ import net.md_5.specialsource.JarRemapper;
  * Lookup class inheritance from classes at runtime, remapped through a
  * JarMapping
  */
-public class RemappedRuntimeInheritanceProvider extends RuntimeInheritanceProvider {
+public class RemappedRuntimeInheritanceProvider extends RuntimeProvider {
 
     private final JarMapping jarMapping;
     private final JarMapping inverseJarMapping;

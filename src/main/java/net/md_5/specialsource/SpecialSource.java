@@ -28,10 +28,10 @@
  */
 package net.md_5.specialsource;
 
-import net.md_5.specialsource.provider.InheritanceProviders;
-import net.md_5.specialsource.provider.JarInheritanceProvider;
+import net.md_5.specialsource.provider.JointProvider;
+import net.md_5.specialsource.provider.JarProvider;
 import net.md_5.specialsource.provider.RemappedRuntimeInheritanceProvider;
-import net.md_5.specialsource.provider.RuntimeInheritanceProvider;
+import net.md_5.specialsource.provider.RuntimeProvider;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -168,7 +168,7 @@ public class SpecialSource {
         }
         log(jarMapping.packages.size() + " packages, " + jarMapping.classes.size() + " classes, " + jarMapping.fields.size() + " fields, " + jarMapping.methods.size() + " methods");
 
-        InheritanceProviders inheritanceProviders = new InheritanceProviders();
+        JointProvider inheritanceProviders = new JointProvider();
         jarMapping.setFallbackInheritanceProvider(inheritanceProviders);
 
         if (options.has("live-remapped")) {
@@ -176,7 +176,7 @@ public class SpecialSource {
         }
 
         if (options.has("live")) {
-            inheritanceProviders.add(new RuntimeInheritanceProvider(ClassLoader.getSystemClassLoader(), !options.has("quiet")));
+            inheritanceProviders.add(new RuntimeProvider(ClassLoader.getSystemClassLoader(), !options.has("quiet")));
         }
 
         if (options.has("read-inheritance")) {
@@ -209,7 +209,7 @@ public class SpecialSource {
 
             Jar jar3 = Jar.init(files);
 
-            inheritanceProviders.add(new JarInheritanceProvider(jar3));
+            inheritanceProviders.add(new JarProvider(jar3));
 
             log("Remapping final jar");
             JarRemapper jarRemapper = new JarRemapper(jarMapping);
@@ -263,5 +263,9 @@ public class SpecialSource {
         if (visitor1.methods.size() != visitor2.methods.size()) {
             throw new IllegalStateException("methods " + visitor1.methods.size() + " != " + visitor2.methods.size());
         }
+    }
+
+    public static boolean verbose() {
+        return true;
     }
 }

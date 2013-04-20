@@ -32,66 +32,54 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Lookup inheritance from a class in a given URLClassLoader.
  */
-public class URLClassLoaderInheritanceProvider implements IInheritanceProvider {
+@RequiredArgsConstructor
+public class ClassLoaderProvider implements InheritanceProvider {
 
-    private final URLClassLoader classLoader;
-    private final boolean verbose;
-
-    public URLClassLoaderInheritanceProvider(URLClassLoader classLoader, boolean verbose) {
-        this.classLoader = classLoader;
-        this.verbose = verbose;
-    }
+    private final ClassLoader classLoader;
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<String> getParents(String owner) {
+    public Collection<String> getParents(String owner) {
+        // TODO: ToInternalName
+        String ownerInternalName = owner.replace('.', '/').concat(".class");
+        InputStream input = classLoader.getResourceAsStream(ownerInternalName);
+        if (input == null) {
+            return null;
+        }
+
         try {
-            String ownerInternalName = owner.replace('.', '/').concat(".class");
-            if (verbose) {
-                System.out.println("URLClassLoaderInheritanceProvider looking up " + ownerInternalName);
-            }
-            URL url = classLoader.findResource(ownerInternalName);
-            if (url == null) {
-                return null;
-            }
-
-            InputStream inputStream = url.openStream();
-            if (inputStream == null) {
-                return null;
-            }
-
-            ClassReader cr = new ClassReader(inputStream);
+            ClassReader cr = new ClassReader(input);
             ClassNode node = new ClassNode();
             cr.accept(node, 0);
 
-            List<String> parents = new ArrayList<String>();
-
+            Collection<String> parents = new HashSet<String>();
             for (String iface : (List<String>) node.interfaces) {
                 parents.add(iface);
-                if (verbose) {
-                    System.out.println(" - " + iface);
-                }
             }
             parents.add(node.superName);
-            if (verbose) {
-                System.out.println(" + " + node.superName);
-            }
 
             return parents;
         } catch (IOException ex) {
-            if (verbose) {
-                System.out.println("URLClassLoaderInheritanceProvider " + owner + " exception: " + ex);
-                ex.printStackTrace();
+            // Just ignore this, means that we couldn't get any lookup for the specified class
+        } finally {
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (IOException ex) {
+                    // Too bad, can't recover from here
+                }
             }
-            return null;
         }
+
+        return null;
     }
 }
