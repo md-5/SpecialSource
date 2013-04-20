@@ -37,10 +37,11 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
-
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import org.objectweb.asm.ClassReader;
@@ -58,16 +59,37 @@ import org.objectweb.asm.tree.ClassNode;
 public class Jar {
 
     private final List<JarFile> jarFiles;
+    @Getter
     private final String main;
+    @Getter
     private final String filename;
     private final LinkedHashMap<String, JarFile> jarForResource;
     private final Set<String> contains = new HashSet<String>();
     private final Map<String, ClassNode> classes = new HashMap<String, ClassNode>();
 
+    /**
+     * Check if this jar contains the given class. Takes the internal name of a
+     * class (/).
+     *
+     * @param clazz
+     * @return
+     */
     public boolean containsClass(String clazz) {
-        return contains.contains(clazz) ? true : getClass(clazz) != null;
+        try {
+            return contains.contains(clazz) ? true : getClass(clazz) != null;
+        } catch (IOException ex) {
+            // IO error - regardless we do not have access to the class, so we can ignore it and move on
+            return false;
+        }
     }
 
+    /**
+     * Get the stream for a file in this jar.
+     *
+     * @param name
+     * @return
+     * @throws IOException
+     */
     public InputStream getResource(String name) throws IOException {
         JarFile jarFile = jarForResource.get(name);
         if (jarFile == null) {
@@ -75,76 +97,84 @@ public class Jar {
         }
 
         ZipEntry e = jarFile.getEntry(name);
-
         return e == null ? null : jarFile.getInputStream(e);
     }
 
-    public InputStream getClass(String clazz) {
-        try {
-            InputStream inputStream = getResource(clazz + ".class");
+    /**
+     * Takes the internal name of a class (/).
+     *
+     * @param clazz
+     * @return
+     * @throws IOException
+     */
+    public InputStream getClass(String clazz) throws IOException {
+        InputStream inputStream = getResource(clazz + ".class");
 
-            if (inputStream != null) {
-                contains.add(clazz);
-            }
-            return inputStream;
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+        if (inputStream != null) {
+            contains.add(clazz);
         }
-    }
-
-    public ClassNode getNode(String clazz) {
-        try {
-            ClassNode cache = classes.get(clazz);
-            if (cache != null) {
-                return cache;
-            }
-            InputStream is = getClass(clazz);
-            if (is != null) {
-                ClassReader cr = new ClassReader(getClass(clazz));
-                ClassNode node = new ClassNode();
-                cr.accept(node, 0);
-                classes.put(clazz, node);
-                return node;
-            } else {
-                return null;
-            }
-        } catch (IOException ex) {
-            System.out.println(clazz);
-            throw new RuntimeException(ex);
-        }
-    }
-
-    public String getMain() {
-        return main;
-    }
-
-    public String getFilename() {
-        return filename;
+        return inputStream;
     }
 
     /**
-     * Get all filenames in the jar (preserves archive order)
+     * Get the {@link ClassNode} object corresponding to this class. Takes the
+     * internal name of a class (/)
+     *
+     * @param clazz
+     * @return
      */
-    public Set<String> getEntryNames() {
-        return jarForResource.keySet(); // yes, LinkedHashMap keySet() is ordered even though Set normally is not!
+    public ClassNode getNode(String clazz) {
+        // Lets try a cache hit
+        ClassNode cache = classes.get(clazz);
+        if (cache != null) {
+            return cache;
+        }
+
+        // No luck, so lets try read it
+        try {
+            InputStream is = getClass(clazz);
+            if (is != null) {
+                // Process it
+                ClassReader cr = new ClassReader(is);
+                ClassNode node = new ClassNode();
+                cr.accept(node, 0);
+                // Add it to the cache 
+                classes.put(clazz, node);
+                return node;
+            }
+        } catch (IOException ex) {
+            // Wrap this in a runtime exception so it can conform easily to interfaces
+            throw new RuntimeException(clazz, ex);
+        }
+
+        // We get here if the class isn't in the jar
+        return null;
     }
 
+    /**
+     * Get all file names in the jar, (archive order is preserved).
+     *
+     * @return
+     */
+    public Set<String> getEntryNames() {
+        return jarForResource.keySet(); // This is safe as LinkedHashMap.keySet is ordered
+    }
+
+    /**
+     * Read and collect jar files so resources can override those in earlier
+     * files.
+     *
+     * @param jarFiles
+     * @return
+     */
     private static LinkedHashMap<String, JarFile> collectJarFiles(List<JarFile> jarFiles) {
-        LinkedHashMap<String, JarFile> jarForResource = new LinkedHashMap<String, JarFile>(); // ordered
-
-        // map resource filename to jar file it is within
+        LinkedHashMap<String, JarFile> jarForResource = new LinkedHashMap<String, JarFile>();
+        // For all jars
         for (JarFile jarFile : jarFiles) {
+            // Get all entries
             for (Enumeration<JarEntry> entr = jarFile.entries(); entr.hasMoreElements();) {
-                JarEntry entry = entr.nextElement();
-                String name = entry.getName();
-
-                /*
-                 if (jarForResource.containsKey(name)) {
-                 System.out.println("INFO: overwriting "+entry.getName()+" from "+jarForResource.get(name).getName()+" with "+jarFile.getName());
-                 }
-                 */
-
-                jarForResource.put(name, jarFile);
+                // Add to list
+                jarForResource.put(entr.nextElement().getName(), jarFile);
             }
             // continue through each jar file, overwriting subsequent classes in multiple jars ("jar mods")
         }
@@ -152,12 +182,19 @@ public class Jar {
         return jarForResource;
     }
 
+    /**
+     * Get the (internal) name of the main class as declared in this manifest.
+     *
+     * @param manifest
+     * @return
+     */
     private static String getMainClassName(Manifest manifest) {
         if (manifest != null) {
             Attributes attributes = manifest.getMainAttributes();
             if (attributes != null) {
                 String mainClassName = attributes.getValue("Main-Class");
                 if (mainClassName != null) {
+                    // TODO: To internal name
                     return mainClassName.replace('.', '/');
                 }
             }
@@ -166,37 +203,58 @@ public class Jar {
         return null;
     }
 
-    public static Jar init(String jar) throws IOException {
-        File file = new File(jar);
-        return init(file);
-    }
-
+    /**
+     * Read a new jar instance from the given file.
+     *
+     * @param file
+     * @return
+     * @throws IOException
+     */
     public static Jar init(File file) throws IOException {
-        List<File> files = new ArrayList<File>();
-
-        files.add(file);
-
-        return Jar.init(files);
+        return init(Collections.singletonList(file));
     }
 
+    /**
+     * Read a new jar instance from the given list of files.
+     *
+     * @param files
+     * @return
+     * @throws IOException
+     */
     public static Jar init(List<File> files) throws IOException {
-        if (files.size() == 0) {
-            throw new IllegalArgumentException("Jar init requires at least one file");
-        }
+        Preconditions.checkArgument(files.size() > 0, "Jar init requires at least one file!");
 
+        // Save some time by resizing these to their target size
         List<JarFile> jarFiles = new ArrayList<JarFile>(files.size());
-        List<String> filenames = new ArrayList<String>();
+        List<String> filenames = new ArrayList<String>(files.size());
 
+        // Populate file names and JarFiles
         for (File file : files) {
             filenames.add(file.getName());
             jarFiles.add(new JarFile(file));
         }
 
         LinkedHashMap<String, JarFile> jarForResource = collectJarFiles(jarFiles);
+        String fileName = Joiner.on(" + ").join(filenames);
 
-        String filename = Joiner.on(" + ").join(filenames);
-        String main = getMainClassName(jarFiles.get(0).getManifest());
+        String main = null;
+        // For each jar
+        for (JarFile jar : jarFiles) {
+            // Get main
+            String newMain = getMainClassName(jar.getManifest());
+            // If they have a main
+            if (newMain != null) {
+                // If we haven't set a main already, then set
+                if (main == null) {
+                    main = newMain;
+                } else {
+                    // Else warn that there are many main classes in the set we have been given
+                    System.err.println("[Warning] Duplicate Main classes for " + fileName);
+                }
+            }
+        }
 
-        return new Jar(jarFiles, main, filename, jarForResource);
+        // Return the new all encompassing jar instance. The file name will be the sum of all names.
+        return new Jar(jarFiles, main, fileName, jarForResource);
     }
 }
