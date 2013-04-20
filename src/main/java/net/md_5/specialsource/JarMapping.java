@@ -29,9 +29,9 @@
 package net.md_5.specialsource;
 
 import net.md_5.specialsource.transformer.MavenShade;
-import net.md_5.specialsource.srg.CompactSrgWriter;
-import net.md_5.specialsource.srg.SrgWriter;
-import net.md_5.specialsource.srg.ISrgWriter;
+import net.md_5.specialsource.writer.CompactSearge;
+import net.md_5.specialsource.writer.Searge;
+import net.md_5.specialsource.writer.MappingWriter;
 import net.md_5.specialsource.provider.IInheritanceProvider;
 import net.md_5.specialsource.transformer.MinecraftCodersPack;
 import net.md_5.specialsource.transformer.MethodDescriptor;
@@ -411,12 +411,8 @@ public class JarMapping {
             out = new PrintWriter(logfile);
         }
 
-        ISrgWriter srgWriter;
-        if (compact) {
-            srgWriter = new CompactSrgWriter(out);
-        } else {
-            srgWriter = new SrgWriter(out, oldJar.jar.getFilename(), newJar.jar.getFilename());
-        }
+        MappingWriter srgWriter = (compact) ? new CompactSearge(oldJar.jar.getFilename(), newJar.jar.getFilename()) : new Searge(oldJar.jar.getFilename(), newJar.jar.getFilename());
+
 
         for (int i = 0; i < oldJar.classes.size(); i++) {
             String oldClass = oldJar.classes.get(i);
@@ -448,6 +444,6 @@ public class JarMapping {
             }
         }
 
-        srgWriter.write();
+        srgWriter.write(out);
     }
 }

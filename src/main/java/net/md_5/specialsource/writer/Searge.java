@@ -26,18 +26,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package net.md_5.specialsource.srg;
+package net.md_5.specialsource.writer;
 
-import java.io.IOException;
+import java.io.Writer;
 import net.md_5.specialsource.Ownable;
 
-public interface ISrgWriter {
+public class Searge extends MappingWriter {
 
-    void addClassMap(String oldClass, String newClass);
+    public Searge(String oldJarName, String newJarName) {
+        super(oldJarName, newJarName);
+    }
 
-    void addFieldMap(Ownable oldField, Ownable newField);
+    @Override
+    public void addClassMap(String oldClass, String newClass) {
+        addLine("CL: " + oldClass + " " + newClass);
+    }
 
-    void addMethodMap(Ownable oldMethod, Ownable newMethod);
+    @Override
+    public void addFieldMap(Ownable oldField, Ownable newField) {
+        addLine("FD: " + oldField.owner + "/" + oldField.name + " " + newField.owner + "/" + newField.name);
+    }
 
-    void write() throws IOException;
+    @Override
+    public void addMethodMap(Ownable oldMethod, Ownable newMethod) {
+        addLine("MD: " + oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor + " " + newMethod.owner + "/" + newMethod.name + " " + newMethod.descriptor);
+    }
 }

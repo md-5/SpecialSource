@@ -26,47 +26,52 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package net.md_5.specialsource.srg;
+package net.md_5.specialsource.writer;
 
-import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import net.md_5.specialsource.Ownable;
 
-public class CompactSrgWriter implements ISrgWriter {
+@RequiredArgsConstructor
+public abstract class MappingWriter {
 
-    private PrintWriter out;
-    private List<String> lines;
+    private static final String HEADER = ""
+            + "# THESE ARE AUTOMATICALLY GENERATED MAPPINGS BETWEEN {0} and {1}\n"
+            + "# THEY WERE GENERATED ON {2} USING Special Source (c) md_5 2012-2013.\n"
+            + "# PLEASE DO NOT REMOVE THIS HEADER!\n";
+    private final List<String> lines = new ArrayList<String>();
+    private final String oldJarName;
+    private final String newJarName;
 
-    public CompactSrgWriter(PrintWriter out) {
-        this.out = out;
-        this.lines = new ArrayList<String>();
-    }
+    public abstract void addClassMap(String oldClass, String newClass);
 
-    @Override
-    public void addClassMap(String oldClass, String newClass) {
-        lines.add(oldClass + " " + newClass);
-    }
+    public abstract void addFieldMap(Ownable oldField, Ownable newField);
 
-    @Override
-    public void addFieldMap(Ownable oldField, Ownable newField) {
-        lines.add(oldField.owner + " " + oldField.name + " " + newField.name);
-    }
+    public abstract void addMethodMap(Ownable oldMethod, Ownable newMethod);
 
-    @Override
-    public void addMethodMap(Ownable oldMethod, Ownable newMethod) {
-        lines.add(oldMethod.owner + " " + oldMethod.name + " " + oldMethod.descriptor + " " + newMethod.name);
-    }
-
-    @Override
-    public void write() throws IOException {
+    public final void write(PrintWriter out) {
+        // Sort lines for easy finding
         Collections.sort(lines);
-
-        for (String s : lines) {
-            out.println(s);
+        // No try with resources for us!
+        try {
+            // Format header
+            out.println(MessageFormat.format(HEADER, oldJarName, newJarName, new Date()));
+            // Write out lines
+            for (String s : lines) {
+                out.println(s);
+            }
+        } finally {
+            // Make sure we close the outputstream in all cases
+            out.close();
         }
-        out.close();
+    }
+
+    protected final void addLine(String line) {
+        lines.add(line);
     }
 }
