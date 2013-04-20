@@ -28,16 +28,15 @@
  */
 package net.md_5.specialsource.transformer;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import net.md_5.specialsource.JarRemapper;
 
-public class MethodDescriptorTransformer {
+public class MethodDescriptor {
 
-    private LinkedHashMap<String, String> packageMap;
+    private Map<String, String> packageMap;
     private Map<String, String> classMap;
 
-    public MethodDescriptorTransformer(LinkedHashMap<String, String> packageMap, Map<String, String> classMap) {
+    public MethodDescriptor(Map<String, String> packageMap, Map<String, String> classMap) {
         this.packageMap = packageMap;
         this.classMap = classMap;
     }

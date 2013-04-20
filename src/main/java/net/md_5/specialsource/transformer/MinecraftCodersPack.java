@@ -29,6 +29,7 @@
 package net.md_5.specialsource.transformer;
 
 import au.com.bytecode.opencsv.CSVReader;
+import com.google.common.base.Preconditions;
 
 import java.io.File;
 import java.io.FileReader;
@@ -38,19 +39,16 @@ import java.util.Map;
 import net.md_5.specialsource.JarRemapper;
 
 /**
- * For reading a .srg through MCP's fields.csv and methods.csv Maps func_### and
- * field_### in input srg to "descriptive" names
+ * For reading a srg through MCP's fields.csv and methods.csv Maps func_### and
+ * field_### in input srg to "descriptive" names.
  */
-public class CSVMappingTransformer extends JarMappingLoadTransformer {
+public class MinecraftCodersPack extends MappingTransformer {
 
-    private final Map<String, String> fieldMap; // numeric srg name field_### -> descriptive csv name
-    private final Map<String, String> methodMap; // numeric srg name func_### -> descriptive csv name
+    private final Map<String, String> fieldMap = new HashMap<String, String>(); // numeric srg name field_### -> descriptive csv name
+    private final Map<String, String> methodMap = new HashMap<String, String>(); // numeric srg name func_### -> descriptive csv name
     private final Map<String, String> classPackageMap; // class src name -> repackaged full class name
 
-    public CSVMappingTransformer(File fieldsCsv, File methodsCsv, File packagesCsv) throws IOException {
-        fieldMap = new HashMap<String, String>();
-        methodMap = new HashMap<String, String>();
-
+    public MinecraftCodersPack(File fieldsCsv, File methodsCsv, File packagesCsv) throws IOException {
         if (fieldsCsv != null && fieldsCsv.exists()) {
             readIntoMap(fieldsCsv, fieldMap);
         }
@@ -65,12 +63,8 @@ public class CSVMappingTransformer extends JarMappingLoadTransformer {
 
             Map<String, String> packages = new HashMap<String, String>();
             readIntoMap(packagesCsv, packages);
-
             for (Map.Entry<String, String> entry : packages.entrySet()) {
-                String classSimpleName = entry.getKey();
-                String newPackageName = entry.getValue();
-
-                classPackageMap.put("net/minecraft/src/" + classSimpleName, newPackageName + "/" + classSimpleName);
+                classPackageMap.put("net/minecraft/src/" + entry.getKey(), entry.getValue() + "/" + entry.getKey());
             }
         } else {
             // flat package (vanilla MCP)
@@ -79,33 +73,40 @@ public class CSVMappingTransformer extends JarMappingLoadTransformer {
     }
 
     private void readIntoMap(File file, Map<String, String> map) throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader(file));
-        String[] line;
+        FileReader fileReader = null;
+        CSVReader csvReader = null;
+        try {
+            fileReader = new FileReader(file);
+            csvReader = new CSVReader(fileReader);
 
-        while ((line = csvReader.readNext()) != null) {
-            if (line.length == 0) {
-                continue;
+            String[] line;
+            while ((line = csvReader.readNext()) != null) {
+                if (line.length == 0) {
+                    continue;
+                }
+                Preconditions.checkArgument(line.length >= 2, "Invalid csv line: %s", (Object) line);
+                map.put(line[0], line[1]);
             }
-
-            if (line.length < 2) {
-                throw new IllegalArgumentException("Invalid csv line: " + line);
+        } finally {
+            if (csvReader != null) {
+                csvReader.close();
             }
-
-            String key = line[0];
-            String value = line[1];
-
-            map.put(key, value);
+            if (fileReader != null) {
+                fileReader.close();
+            }
         }
     }
 
     @Override
     public String transformFieldName(String className, String fieldName) {
-        return fieldMap.containsKey(fieldName) ? fieldMap.get(fieldName) : fieldName;
+        String mapped = fieldMap.get(fieldName);
+        return (mapped != null) ? mapped : fieldName;
     }
 
     @Override
     public String transformMethodName(String className, String methodName, String methodDescriptor) {
-        return methodMap.containsKey(methodName) ? methodMap.get(methodName) : methodName;
+        String mapped = methodMap.get(methodName);
+        return (mapped != null) ? mapped : methodName;
     }
 
     @Override
@@ -114,12 +115,8 @@ public class CSVMappingTransformer extends JarMappingLoadTransformer {
             return className;
         }
 
-        String newPackage = classPackageMap.get(className);
-        if (newPackage == null) {
-            return className;
-        }
-
-        return JarRemapper.mapTypeName(className, null, classPackageMap, className);
+        String mapped = classPackageMap.get(className);
+        return (mapped != null) ? JarRemapper.mapTypeName(className, null, classPackageMap, className) : className;
     }
 
     @Override
@@ -128,7 +125,7 @@ public class CSVMappingTransformer extends JarMappingLoadTransformer {
             return oldDescriptor;
         }
 
-        MethodDescriptorTransformer methodDescriptorTransformer = new MethodDescriptorTransformer(null, classPackageMap);
+        MethodDescriptor methodDescriptorTransformer = new MethodDescriptor(null, classPackageMap);
         return methodDescriptorTransformer.transform(oldDescriptor);
     }
 }

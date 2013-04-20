@@ -31,17 +31,18 @@ package net.md_5.specialsource.transformer;
 import net.md_5.specialsource.JarRemapper;
 
 /**
- * Load a mapping 'chained' through another mapping
+ * Load a mapping 'chained' through another mapping.
  */
-public class ChainTransformer extends JarMappingLoadTransformer {
+public class ChainingTransformer extends MappingTransformer {
 
     private final JarRemapper jarRemapper;
+    private final MethodDescriptor methodTransformer;
 
-    public ChainTransformer(JarRemapper jarRemapper) {
+    public ChainingTransformer(JarRemapper jarRemapper) {
         this.jarRemapper = jarRemapper;
+        this.methodTransformer = new MethodDescriptor(jarRemapper.jarMapping.packages, jarRemapper.jarMapping.classes);
     }
 
-    // TODO: make this less lame
     @Override
     public String transformClassName(String className) {
         return jarRemapper.map(className);
@@ -59,7 +60,6 @@ public class ChainTransformer extends JarMappingLoadTransformer {
 
     @Override
     public String transformMethodDescriptor(String oldDescriptor) {
-        MethodDescriptorTransformer methodDescriptorTransformer = new MethodDescriptorTransformer(jarRemapper.jarMapping.packages, jarRemapper.jarMapping.classes);
-        return methodDescriptorTransformer.transform(oldDescriptor);
+        return methodTransformer.transform(oldDescriptor);
     }
 }

@@ -26,23 +26,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package net.md_5.specialsource;
+package net.md_5.specialsource.transformer;
 
-import net.md_5.specialsource.transformer.MethodDescriptorTransformer;
-import net.md_5.specialsource.transformer.JarMappingLoadTransformer;
 import java.util.*;
 
 /**
  * Simulate a small subset of the maven-shade-plugin class relocation
  * functionality
  */
-public class ShadeRelocationSimulator extends JarMappingLoadTransformer {
+public class MavenShade extends MappingTransformer {
 
     public LinkedHashMap<String, String> relocations = new LinkedHashMap<String, String>();
     // No relocations
-    public static final ShadeRelocationSimulator IDENTITY = new ShadeRelocationSimulator();
+    public static final MavenShade IDENTITY = new MavenShade();
 
-    private ShadeRelocationSimulator() {
+    private MavenShade() {
     }
 
     /**
@@ -50,7 +48,7 @@ public class ShadeRelocationSimulator extends JarMappingLoadTransformer {
      *
      * @param relocations
      */
-    public ShadeRelocationSimulator(Map<String, String> relocations) {
+    public MavenShade(Map<String, String> relocations) {
         for (Map.Entry<String, String> entry : relocations.entrySet()) {
             this.relocations.put(toInternalName(entry.getKey()), toInternalName(entry.getValue()));
         }
@@ -62,7 +60,7 @@ public class ShadeRelocationSimulator extends JarMappingLoadTransformer {
      *
      * @param list
      */
-    public ShadeRelocationSimulator(List<String> list) {
+    public MavenShade(List<String> list) {
         for (String pair : list) {
             int index = pair.indexOf("=");
             if (index == -1) {
@@ -75,7 +73,7 @@ public class ShadeRelocationSimulator extends JarMappingLoadTransformer {
         }
     }
 
-    public ShadeRelocationSimulator(String string) {
+    public MavenShade(String string) {
         this(Arrays.asList(string.split(",")));
     }
 
@@ -98,7 +96,7 @@ public class ShadeRelocationSimulator extends JarMappingLoadTransformer {
 
     @Override
     public String transformMethodDescriptor(String oldDescriptor) {
-        MethodDescriptorTransformer methodDescriptorTransformer = new MethodDescriptorTransformer(relocations, null);
+        MethodDescriptor methodDescriptorTransformer = new MethodDescriptor(relocations, null);
         return methodDescriptorTransformer.transform(oldDescriptor);
     }
 

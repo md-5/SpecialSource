@@ -28,14 +28,15 @@
  */
 package net.md_5.specialsource;
 
+import net.md_5.specialsource.transformer.MavenShade;
 import net.md_5.specialsource.srg.CompactSrgWriter;
 import net.md_5.specialsource.srg.SrgWriter;
 import net.md_5.specialsource.srg.ISrgWriter;
 import net.md_5.specialsource.provider.IInheritanceProvider;
-import net.md_5.specialsource.transformer.CSVMappingTransformer;
-import net.md_5.specialsource.transformer.MethodDescriptorTransformer;
-import net.md_5.specialsource.transformer.ChainTransformer;
-import net.md_5.specialsource.transformer.JarMappingLoadTransformer;
+import net.md_5.specialsource.transformer.MinecraftCodersPack;
+import net.md_5.specialsource.transformer.MethodDescriptor;
+import net.md_5.specialsource.transformer.ChainingTransformer;
+import net.md_5.specialsource.transformer.MappingTransformer;
 import java.io.*;
 import java.util.*;
 
@@ -140,8 +141,8 @@ public class JarMapping {
         File methodsCsv = URLDownloader.getLocalFile(dirname + sep + "methods.csv");
         File packagesCsv = URLDownloader.getLocalFile(dirname + sep + "packages.csv"); // FML repackaging, optional
 
-        CSVMappingTransformer outputTransformer;
-        JarMappingLoadTransformer inputTransformer;
+        MinecraftCodersPack outputTransformer;
+        MappingTransformer inputTransformer;
 
         if (numericSrgNames) {
             // Wants numeric "srg" names -> descriptive "csv" names. To accomplish this:
@@ -150,14 +151,14 @@ public class JarMapping {
             // 3. result: mcp->srg, similar to MCP ./reobfuscate --srgnames
             JarMapping chainMappings = new JarMapping();
             chainMappings.loadMappingsDir(dirname, reverse, false/*ignoreCsv*/, false/*numeric*/);
-            inputTransformer = new ChainTransformer(new JarRemapper(chainMappings));
+            inputTransformer = new ChainingTransformer(new JarRemapper(chainMappings));
             ignoreCsv = true; // keep numeric srg as output
         } else {
             inputTransformer = null;
         }
 
         if (fieldsCsv.exists() && methodsCsv.exists()) {
-            outputTransformer = new CSVMappingTransformer(ignoreCsv ? null : fieldsCsv, ignoreCsv ? null : methodsCsv, packagesCsv);
+            outputTransformer = new MinecraftCodersPack(ignoreCsv ? null : fieldsCsv, ignoreCsv ? null : methodsCsv, packagesCsv);
         } else {
             outputTransformer = null;
         }
@@ -165,11 +166,6 @@ public class JarMapping {
         for (File srg : srgFiles) {
             loadMappings(new BufferedReader(new FileReader(srg)), inputTransformer, outputTransformer, reverse);
         }
-    }
-
-    @Deprecated
-    public void loadMappingsDir(String dirname, boolean reverse, boolean ignoreCsv) throws IOException {
-        loadMappingsDir(dirname, reverse, ignoreCsv, false);
     }
 
     public void loadMappings(File file) throws IOException {
@@ -189,15 +185,15 @@ public class JarMapping {
      */
     public void loadMappings(String filename, boolean reverse, boolean numericSrgNames, String inShadeRelocation, String outShadeRelocation) throws IOException {
         // Optional shade relocation, on input or output names
-        JarMappingLoadTransformer inputTransformer = null;
-        JarMappingLoadTransformer outputTransformer = null;
+        MappingTransformer inputTransformer = null;
+        MappingTransformer outputTransformer = null;
 
         if (inShadeRelocation != null) {
-            inputTransformer = new ShadeRelocationSimulator(inShadeRelocation);
+            inputTransformer = new MavenShade(inShadeRelocation);
         }
 
         if (outShadeRelocation != null) {
-            outputTransformer = new ShadeRelocationSimulator(outShadeRelocation);
+            outputTransformer = new MavenShade(outShadeRelocation);
         }
 
         if (new File(filename).isDirectory() || filename.endsWith("/")) {
@@ -229,12 +225,12 @@ public class JarMapping {
      * input/output transformations)
      * @throws IOException
      */
-    public void loadMappings(BufferedReader reader, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer, boolean reverse) throws IOException {
+    public void loadMappings(BufferedReader reader, MappingTransformer inputTransformer, MappingTransformer outputTransformer, boolean reverse) throws IOException {
         if (inputTransformer == null) {
-            inputTransformer = ShadeRelocationSimulator.IDENTITY;
+            inputTransformer = MavenShade.IDENTITY;
         }
         if (outputTransformer == null) {
-            outputTransformer = ShadeRelocationSimulator.IDENTITY;
+            outputTransformer = MavenShade.IDENTITY;
         }
 
         String line;
@@ -256,7 +252,7 @@ public class JarMapping {
     /**
      * Parse a 'csrg' mapping format line and populate the data structures
      */
-    private void parseCsrgLine(String line, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer, boolean reverse) throws IOException {
+    private void parseCsrgLine(String line, MappingTransformer inputTransformer, MappingTransformer outputTransformer, boolean reverse) throws IOException {
         if (reverse) {
             throw new IllegalArgumentException("csrg reversed not supported"); // TODO: reverse csg (need to lookup remapped classes)
         }
@@ -293,7 +289,7 @@ public class JarMapping {
      * Parse a standard 'srg' mapping format line and populate the data
      * structures
      */
-    private void parseSrgLine(String line, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer, boolean reverse) throws IOException {
+    private void parseSrgLine(String line, MappingTransformer inputTransformer, MappingTransformer outputTransformer, boolean reverse) throws IOException {
         String[] tokens = line.split(" ");
         String kind = tokens[0];
 
@@ -444,7 +440,7 @@ public class JarMapping {
             String key = oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor;
             methods.put(key, newMethod.name);
 
-            MethodDescriptorTransformer methodDescriptorTransformer = new MethodDescriptorTransformer(null, classes);
+            MethodDescriptor methodDescriptorTransformer = new MethodDescriptor(null, classes);
             String oldDescriptor = methodDescriptorTransformer.transform(oldMethod.descriptor);
 
             if (full || !(oldMethod.name + " " + oldDescriptor).equals(newMethod.name + " " + newMethod.descriptor)) {

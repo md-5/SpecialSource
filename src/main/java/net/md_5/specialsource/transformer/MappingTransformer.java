@@ -33,7 +33,7 @@ package net.md_5.specialsource.transformer;
  *
  * TODO: refactor with JarRemapper?
  */
-public abstract class JarMappingLoadTransformer {
+public abstract class MappingTransformer {
 
     public String transformClassName(String className) {
         return className;
