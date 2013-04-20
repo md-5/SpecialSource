@@ -35,6 +35,7 @@ import java.util.ArrayList;
  * Lookup class inheritance from classes loaded at runtime.
  */
 public class RuntimeInheritanceProvider implements IInheritanceProvider {
+
     protected final ClassLoader classLoader;
     protected final boolean verbose;
 

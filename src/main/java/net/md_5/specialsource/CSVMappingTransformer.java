@@ -37,8 +37,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * For reading a .srg through MCP's fields.csv and methods.csv
- * Maps func_### and field_### in input srg to "descriptive" names
+ * For reading a .srg through MCP's fields.csv and methods.csv Maps func_### and
+ * field_### in input srg to "descriptive" names
  */
 public class CSVMappingTransformer extends JarMappingLoadTransformer {
 

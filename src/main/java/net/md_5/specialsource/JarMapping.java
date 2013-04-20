@@ -37,7 +37,6 @@ public class JarMapping {
     public final Map<String, String> classes = new HashMap<String, String>();
     public final Map<String, String> fields = new HashMap<String, String>();
     public final Map<String, String> methods = new HashMap<String, String>();
-
     private InheritanceMap inheritanceMap = new InheritanceMap();
     private IInheritanceProvider fallbackInheritanceProvider = null;
 
@@ -45,16 +44,17 @@ public class JarMapping {
     }
 
     /**
-     * Set the inheritance map used for caching superclass/interfaces. This call be omitted to
-     * use a local cache, or set to your own global cache.
+     * Set the inheritance map used for caching superclass/interfaces. This call
+     * be omitted to use a local cache, or set to your own global cache.
      */
     public void setInheritanceMap(InheritanceMap inheritanceMap) {
         this.inheritanceMap = inheritanceMap;
     }
 
     /**
-     * Set the inheritance provider to be consulted if the inheritance map has no information on
-     * the requested class (results will be cached in the inheritance map).
+     * Set the inheritance provider to be consulted if the inheritance map has
+     * no information on the requested class (results will be cached in the
+     * inheritance map).
      */
     public void setFallbackInheritanceProvider(IInheritanceProvider fallbackInheritanceProvider) {
         this.fallbackInheritanceProvider = fallbackInheritanceProvider;
@@ -92,13 +92,15 @@ public class JarMapping {
      *
      * @param dirname MCP directory name, local file or remote URL ending in '/'
      * @param reverse If true, swap input and output
-     * @param ignoreCsv If true, ignore fields.csv and methods.csv (but not packages.csv)
-     * @param numericSrgNames If true, load numeric "srg" names (num->mcp instead of obf->mcp)
+     * @param ignoreCsv If true, ignore fields.csv and methods.csv (but not
+     * packages.csv)
+     * @param numericSrgNames If true, load numeric "srg" names (num->mcp
+     * instead of obf->mcp)
      */
     private void loadMappingsDir(String dirname, boolean reverse, boolean ignoreCsv, boolean numericSrgNames) throws IOException {
         File dir = new File(dirname);
         if (!URLDownloader.isHTTPURL(dirname) && !dir.isDirectory()) {
-            throw new IllegalArgumentException("loadMappingsDir("+dir+"): not a directory");
+            throw new IllegalArgumentException("loadMappingsDir(" + dir + "): not a directory");
         }
 
         String sep = System.getProperty("file.separator");
@@ -122,7 +124,7 @@ public class JarMapping {
         }
 
         if (srgFiles.size() == 0) {
-            throw new IOException("loadMappingsDir("+dirname+"): no joined.srg, client.srg, or client.srg found");
+            throw new IOException("loadMappingsDir(" + dirname + "): no joined.srg, client.srg, or client.srg found");
         }
 
         // Read output names through csv mappings, if available & enabled
@@ -152,7 +154,7 @@ public class JarMapping {
             outputTransformer = null;
         }
 
-       for (File srg : srgFiles) {
+        for (File srg : srgFiles) {
             loadMappings(new BufferedReader(new FileReader(srg)), inputTransformer, outputTransformer, reverse);
         }
     }
@@ -168,9 +170,11 @@ public class JarMapping {
 
     /**
      *
-     * @param filename A filename of a .srg/.csrg or an MCP directory of .srg+.csv, local or remote
+     * @param filename A filename of a .srg/.csrg or an MCP directory of
+     * .srg+.csv, local or remote
      * @param reverse Swap input and output mappings
-     * @param numericSrgNames When reading mapping directory, load numeric "srg" instead obfuscated names
+     * @param numericSrgNames When reading mapping directory, load numeric "srg"
+     * instead obfuscated names
      * @param inShadeRelocation Apply relocation on mapping input
      * @param outShadeRelocation Apply relocation on mapping output
      * @throws IOException
@@ -192,7 +196,7 @@ public class JarMapping {
             // Existing local dir or dir URL
 
             if (inputTransformer != null || outputTransformer != null) {
-                throw new IllegalArgumentException("loadMappings("+filename+"): shade relocation not supported on directories"); // yet
+                throw new IllegalArgumentException("loadMappings(" + filename + "): shade relocation not supported on directories"); // yet
             }
 
             loadMappingsDir(filename, reverse, false, numericSrgNames);
@@ -200,7 +204,7 @@ public class JarMapping {
             // File
 
             if (numericSrgNames) {
-                throw new IllegalArgumentException("loadMappings("+filename+"): numeric only supported on directories, not files");
+                throw new IllegalArgumentException("loadMappings(" + filename + "): numeric only supported on directories, not files");
             }
 
             loadMappings(new BufferedReader(new FileReader(URLDownloader.getLocalFile(filename))), inputTransformer, outputTransformer, reverse);
@@ -213,7 +217,8 @@ public class JarMapping {
      * @param reader Mapping file reader
      * @param inputTransformer Transformation to apply on input
      * @param outputTransformer Transformation to apply on output
-     * @param reverse Swap input and output mappings (after applying any input/output transformations)
+     * @param reverse Swap input and output mappings (after applying any
+     * input/output transformations)
      * @throws IOException
      */
     public void loadMappings(BufferedReader reader, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer, boolean reverse) throws IOException {
@@ -226,7 +231,7 @@ public class JarMapping {
 
         String line;
         while ((line = reader.readLine()) != null) {
-            if (line.startsWith("#") || line.isEmpty()){
+            if (line.startsWith("#") || line.isEmpty()) {
                 continue;
             }
 
@@ -272,12 +277,13 @@ public class JarMapping {
             String newMethodName = outputTransformer.transformMethodName(tokens[0], tokens[3], tokens[2]);
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {
-            throw new IOException("Invalid csrg file line, token count " + tokens.length + " unexpected in "+line);
+            throw new IOException("Invalid csrg file line, token count " + tokens.length + " unexpected in " + line);
         }
     }
 
     /**
-     * Parse a standard 'srg' mapping format line and populate the data structures
+     * Parse a standard 'srg' mapping format line and populate the data
+     * structures
      */
     private void parseSrgLine(String line, JarMappingLoadTransformer inputTransformer, JarMappingLoadTransformer outputTransformer, boolean reverse) throws IOException {
         String[] tokens = line.split(" ");
@@ -294,29 +300,29 @@ public class JarMapping {
             }
 
             if (classes.containsKey(oldClassName) && !newClassName.equals(classes.get(oldClassName))) {
-                throw new IllegalArgumentException("Duplicate class mapping: " + oldClassName + " -> " + newClassName +
-                    " but already mapped to "+classes.get(oldClassName)+" in line="+line);
+                throw new IllegalArgumentException("Duplicate class mapping: " + oldClassName + " -> " + newClassName
+                        + " but already mapped to " + classes.get(oldClassName) + " in line=" + line);
             }
 
             classes.put(oldClassName, newClassName);
         } else if (kind.equals("PK:")) {
             /* TODO: support .srg's package maps
-            String oldPackageName = inputTransformer.transformClassName(tokens[1]);
-            String newPackageName = outputTransformer.transformClassName(tokens[2]);
+             String oldPackageName = inputTransformer.transformClassName(tokens[1]);
+             String newPackageName = outputTransformer.transformClassName(tokens[2]);
 
-            if (reverse) {
-                String temp = newPackageName;
-                newPackageName = oldPackageName;
-                oldPackageName = temp;
-            }
+             if (reverse) {
+             String temp = newPackageName;
+             newPackageName = oldPackageName;
+             oldPackageName = temp;
+             }
 
-            if (packages.containsKey(oldPackageName) && !newPackageName.equals(packages.get(oldPackageName))) {
-                throw new IllegalArgumentException("Duplicate package mapping: " + oldPackageName + " ->" + newPackageName +
-                    " but already mapped to "+packages.get(oldPackageName)+" in line="+line);
-            }
+             if (packages.containsKey(oldPackageName) && !newPackageName.equals(packages.get(oldPackageName))) {
+             throw new IllegalArgumentException("Duplicate package mapping: " + oldPackageName + " ->" + newPackageName +
+             " but already mapped to "+packages.get(oldPackageName)+" in line="+line);
+             }
 
-            packages.put(oldPackageName, newPackageName);
-            */
+             packages.put(oldPackageName, newPackageName);
+             */
         } else if (kind.equals("FD:")) {
             String oldFull = tokens[1];
             String newFull = tokens[2];
@@ -325,8 +331,8 @@ public class JarMapping {
             int splitOld = oldFull.lastIndexOf('/');
             int splitNew = newFull.lastIndexOf('/');
             if (splitOld == -1 || splitNew == -1) {
-                throw new IllegalArgumentException("Field name is invalid, not fully-qualified: " + oldFull +
-                        " -> " + newFull + " in line="+line);
+                throw new IllegalArgumentException("Field name is invalid, not fully-qualified: " + oldFull
+                        + " -> " + newFull + " in line=" + line);
             }
 
             String oldClassName = inputTransformer.transformClassName(oldFull.substring(0, splitOld));
@@ -351,8 +357,8 @@ public class JarMapping {
             int splitOld = oldFull.lastIndexOf('/');
             int splitNew = newFull.lastIndexOf('/');
             if (splitOld == -1 || splitNew == -1) {
-                throw new IllegalArgumentException("Field name is invalid, not fully-qualified: " + oldFull +
-                        " -> " + newFull + " in line="+line);
+                throw new IllegalArgumentException("Field name is invalid, not fully-qualified: " + oldFull
+                        + " -> " + newFull + " in line=" + line);
             }
 
             String oldClassName = inputTransformer.transformClassName(oldFull.substring(0, splitOld));
@@ -373,7 +379,7 @@ public class JarMapping {
 
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {
-            throw new IllegalArgumentException("Unable to parse srg file, unrecognized mapping type in line="+line);
+            throw new IllegalArgumentException("Unable to parse srg file, unrecognized mapping type in line=" + line);
         }
     }
 

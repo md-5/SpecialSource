@@ -35,6 +35,7 @@ import java.util.List;
  * Lookup inheritance information from multiple sources, in order
  */
 public class InheritanceProviders implements IInheritanceProvider {
+
     private List<IInheritanceProvider> inheritanceProviders;
 
     public InheritanceProviders() {

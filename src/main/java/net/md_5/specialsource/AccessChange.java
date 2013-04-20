@@ -42,11 +42,12 @@ import java.util.Map;
  *
  * Access change format:
  *
- * - visibility upgrade (required)
- * -- public, protected, private ('*', no change), or default (package-private)
- * -- additional optional flag(s), preceded by '+' to set, '-' to clear
+ * - visibility upgrade (required) -- public, protected, private ('*', no
+ * change), or default (package-private) -- additional optional flag(s),
+ * preceded by '+' to set, '-' to clear
  *
- * Example: public-final+synchronized = upgrade to public, clear final, set synchronized
+ * Example: public-final+synchronized = upgrade to public, clear final, set
+ * synchronized
  *
  * @see AccessMap
  */
@@ -56,7 +57,6 @@ public class AccessChange {
     private int clear; // bits to clear to 0
     private int set; // bits to set to 1 (overrides clear)
     private int vis; // desired visibility increase
-
     private final static Map<String, Integer> accessCodes = new HashMap<String, Integer>();
 
     static {
@@ -85,16 +85,14 @@ public class AccessChange {
         accessCodes.put("enum", Opcodes.ACC_ENUM);
         accessCodes.put("deprecated", Opcodes.ACC_DEPRECATED);
     }
-
     private final static BiMap<Integer, Integer> visibilityOrder = HashBiMap.create();
 
     static {
-        visibilityOrder.put(Opcodes.ACC_PRIVATE,    100);
-        visibilityOrder.put(0,                      200); // default package-private
-        visibilityOrder.put(Opcodes.ACC_PROTECTED,  300);
-        visibilityOrder.put(Opcodes.ACC_PUBLIC,     400);
+        visibilityOrder.put(Opcodes.ACC_PRIVATE, 100);
+        visibilityOrder.put(0, 200); // default package-private
+        visibilityOrder.put(Opcodes.ACC_PROTECTED, 300);
+        visibilityOrder.put(Opcodes.ACC_PUBLIC, 400);
     }
-
     private final static int MASK_ALL_VISIBILITY = Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE | Opcodes.ACC_PROTECTED;
 
     public AccessChange(String s) {
@@ -116,7 +114,7 @@ public class AccessChange {
         // Modifiers
         for (int i = 1; i < parts.length; ++i) {
             if (parts[i].length() < 2) {
-                throw new IllegalArgumentException("Invalid modifier length "+parts[i]+" in access string: " + s);
+                throw new IllegalArgumentException("Invalid modifier length " + parts[i] + " in access string: " + s);
             }
 
             // Name
@@ -125,15 +123,20 @@ public class AccessChange {
             int modifier;
 
             if (!accessCodes.containsKey(modifierString)) {
-                throw new IllegalArgumentException("Invalid modifier string "+modifierString+" in access string: " + s);
+                throw new IllegalArgumentException("Invalid modifier string " + modifierString + " in access string: " + s);
             }
             modifier = accessCodes.get(modifierString);
 
             // Toggle
             switch (actionChar) {
-                case '+': set |= modifier; break;
-                case '-': clear |= modifier; break;
-                default: throw new IllegalArgumentException("Invalid action "+actionChar+" in access string: " + s);
+                case '+':
+                    set |= modifier;
+                    break;
+                case '-':
+                    clear |= modifier;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid action " + actionChar + " in access string: " + s);
             }
         }
     }
@@ -168,7 +171,7 @@ public class AccessChange {
      * @return The greater visibility of the two arguments
      */
     private static int upgradeVisibility(int existing, int desired) {
-        if (!visibilityOrder.containsKey(existing) ||  !visibilityOrder.containsKey(desired)) {
+        if (!visibilityOrder.containsKey(existing) || !visibilityOrder.containsKey(desired)) {
             throw new IllegalArgumentException("Unrecognized visibility: " + existing + " or " + desired);
         }
 
@@ -181,7 +184,9 @@ public class AccessChange {
     }
 
     /**
-     * Set visibility on access flags, overwriting existing, preserving other flags
+     * Set visibility on access flags, overwriting existing, preserving other
+     * flags
+     *
      * @param access
      * @param visibility
      * @return

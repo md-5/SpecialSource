@@ -42,6 +42,7 @@ import java.util.List;
  * Lookup inheritance from a class in a given URLClassLoader.
  */
 public class URLClassLoaderInheritanceProvider implements IInheritanceProvider {
+
     private final URLClassLoader classLoader;
     private final boolean verbose;
 
@@ -56,7 +57,7 @@ public class URLClassLoaderInheritanceProvider implements IInheritanceProvider {
         try {
             String ownerInternalName = owner.replace('.', '/').concat(".class");
             if (verbose) {
-                System.out.println("URLClassLoaderInheritanceProvider looking up "+ownerInternalName);
+                System.out.println("URLClassLoaderInheritanceProvider looking up " + ownerInternalName);
             }
             URL url = classLoader.findResource(ownerInternalName);
             if (url == null) {
@@ -77,18 +78,18 @@ public class URLClassLoaderInheritanceProvider implements IInheritanceProvider {
             for (String iface : (List<String>) node.interfaces) {
                 parents.add(iface);
                 if (verbose) {
-                    System.out.println(" - "+iface);
+                    System.out.println(" - " + iface);
                 }
             }
             parents.add(node.superName);
             if (verbose) {
-                System.out.println(" + "+node.superName);
+                System.out.println(" + " + node.superName);
             }
 
             return parents;
         } catch (IOException ex) {
             if (verbose) {
-                System.out.println("URLClassLoaderInheritanceProvider "+owner+" exception: "+ex);
+                System.out.println("URLClassLoaderInheritanceProvider " + owner + " exception: " + ex);
                 ex.printStackTrace();
             }
             return null;

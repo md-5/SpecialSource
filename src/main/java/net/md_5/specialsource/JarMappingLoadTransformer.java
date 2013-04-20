@@ -50,5 +50,4 @@ public abstract class JarMappingLoadTransformer {
     public String transformMethodDescriptor(String oldDescriptor) {
         return oldDescriptor;
     }
-
 }

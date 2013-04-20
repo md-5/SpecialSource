@@ -47,9 +47,10 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
 /**
- * This class wraps one or more {@link JarFile}s enabling quick access to the jar's main
- * class, as well as the ability to get the {@link InputStream} of a class file,
- * and speedy lookups to see if the jar contains the specified class.
+ * This class wraps one or more {@link JarFile}s enabling quick access to the
+ * jar's main class, as well as the ability to get the {@link InputStream} of a
+ * class file, and speedy lookups to see if the jar contains the specified
+ * class.
  */
 @ToString
 @EqualsAndHashCode
@@ -138,10 +139,10 @@ public class Jar {
                 String name = entry.getName();
 
                 /*
-                if (jarForResource.containsKey(name)) {
-                    System.out.println("INFO: overwriting "+entry.getName()+" from "+jarForResource.get(name).getName()+" with "+jarFile.getName());
-                }
-                */
+                 if (jarForResource.containsKey(name)) {
+                 System.out.println("INFO: overwriting "+entry.getName()+" from "+jarForResource.get(name).getName()+" with "+jarFile.getName());
+                 }
+                 */
 
                 jarForResource.put(name, jarFile);
             }

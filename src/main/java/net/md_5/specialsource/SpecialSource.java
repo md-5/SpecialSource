@@ -184,7 +184,7 @@ public class SpecialSource {
 
             BiMap<String, String> inverseClassMap = HashBiMap.create(jarMapping.classes).inverse();
             inheritanceMap.load(reader, inverseClassMap);
-            log("Loaded inheritance map for "+inheritanceMap.size()+" classes");
+            log("Loaded inheritance map for " + inheritanceMap.size() + " classes");
 
             inheritanceProviders.add(inheritanceMap);
         }
@@ -253,13 +253,13 @@ public class SpecialSource {
 
     public static void validate(JarComparer visitor1, JarComparer visitor2) {
         if (visitor1.classes.size() != visitor2.classes.size()) {
-            throw new IllegalStateException("classes "+visitor1.classes.size()+" != "+visitor2.classes.size());
+            throw new IllegalStateException("classes " + visitor1.classes.size() + " != " + visitor2.classes.size());
         }
         if (visitor1.fields.size() != visitor2.fields.size()) {
-            throw new IllegalStateException("fields "+visitor1.fields.size()+" != "+visitor2.fields.size());
+            throw new IllegalStateException("fields " + visitor1.fields.size() + " != " + visitor2.fields.size());
         }
         if (visitor1.methods.size() != visitor2.methods.size()) {
-            throw new IllegalStateException("methods "+visitor1.methods.size()+" != "+visitor2.methods.size());
+            throw new IllegalStateException("methods " + visitor1.methods.size() + " != " + visitor2.methods.size());
         }
     }
 }

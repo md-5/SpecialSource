@@ -40,7 +40,6 @@ import java.util.*;
 public class InheritanceMap implements IInheritanceProvider {
 
     private final Map<String, ArrayList<String>> inheritanceMap = new HashMap<String, ArrayList<String>>();
-
     public static final InheritanceMap EMPTY = new InheritanceMap();
 
     /**
@@ -51,12 +50,12 @@ public class InheritanceMap implements IInheritanceProvider {
             List<String> parents = inheritanceProvider.getParents(className);
 
             if (parents == null) {
-                System.out.println("No inheritance information found for "+className);
+                System.out.println("No inheritance information found for " + className);
             } else {
                 ArrayList<String> filteredParents = new ArrayList<String>();
 
                 // Include only classes requested
-                for (String parent: parents) {
+                for (String parent : parents) {
                     if (classes.contains(parent)) {
                         filteredParents.add(parent);
                     }
@@ -99,14 +98,14 @@ public class InheritanceMap implements IInheritanceProvider {
             if (classMap == null) {
                 setParents(className, new ArrayList<String>(parents));
             } else {
-                String remappedClassName = JarRemapper.mapTypeName(className, /*packageMap*/null, classMap, /*defaultIfUnmapped*/null);
+                String remappedClassName = JarRemapper.mapTypeName(className, /*packageMap*/ null, classMap, /*defaultIfUnmapped*/ null);
                 if (remappedClassName == null) {
                     throw new IOException("Inheritance map input class not remapped: " + className);
                 }
 
                 ArrayList<String> remappedParents = new ArrayList<String>();
                 for (String parent : parents) {
-                    String remappedParent = JarRemapper.mapTypeName(parent, /*packageMap*/null, classMap, /*defaultIfUnmapped*/null);
+                    String remappedParent = JarRemapper.mapTypeName(parent, /*packageMap*/ null, classMap, /*defaultIfUnmapped*/ null);
                     if (remappedParent == null) {
                         throw new IOException("Inheritance map parent class not remapped: " + parent);
                     }

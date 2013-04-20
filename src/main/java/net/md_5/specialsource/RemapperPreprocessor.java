@@ -40,24 +40,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * "Pre-process" a class file, intended to be used before remapping with JarRemapper.
+ * "Pre-process" a class file, intended to be used before remapping with
+ * JarRemapper.
  *
- * Currently includes:
- * - Extracting inheritance
+ * Currently includes: - Extracting inheritance
  */
-
 public class RemapperPreprocessor {
 
     public boolean debug = false;
-
     private InheritanceMap inheritanceMap;
     private JarMapping jarMapping;
     private AccessMap accessMap;
 
     /**
      *
-     * @param inheritanceMap Map to add extracted inheritance information too, or null to not extract inheritance
-     * @param jarMapping Mapping for reflection remapping, or null to not remap reflection
+     * @param inheritanceMap Map to add extracted inheritance information too,
+     * or null to not extract inheritance
+     * @param jarMapping Mapping for reflection remapping, or null to not remap
+     * reflection
      * @throws IOException
      */
     public RemapperPreprocessor(InheritanceMap inheritanceMap, JarMapping jarMapping, AccessMap accessMap) {
@@ -95,7 +95,7 @@ public class RemapperPreprocessor {
 
         // Inheritance extraction
         if (inheritanceMap != null) {
-            logI("Loading plugin class inheritance for "+className);
+            logI("Loading plugin class inheritance for " + className);
 
             // Get inheritance
             ArrayList<String> parents = new ArrayList<String>();
@@ -107,7 +107,7 @@ public class RemapperPreprocessor {
 
             inheritanceMap.setParents(className.replace('.', '/'), parents);
 
-            logI("Inheritance added "+className+" parents "+parents.size());
+            logI("Inheritance added " + className + " parents " + parents.size());
         }
 
         if (isRewritingNeeded()) {
@@ -157,6 +157,7 @@ public class RemapperPreprocessor {
 
     /**
      * Replace class.getDeclaredField("string") with a remapped field string
+     *
      * @param insn Method call instruction
      */
     private void remapGetDeclaredField(AbstractInsnNode insn) {
@@ -191,7 +192,7 @@ public class RemapperPreprocessor {
         String className = ((Type) ldcClass.cst).getInternalName();
 
         String newName = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, className, fieldName);
-        logR("Remapping "+className+"/"+fieldName + " -> " + newName);
+        logR("Remapping " + className + "/" + fieldName + " -> " + newName);
 
         if (newName != null) {
             // Change the string literal to the correct name

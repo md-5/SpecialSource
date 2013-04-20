@@ -40,7 +40,6 @@ public class ChainTransformer extends JarMappingLoadTransformer {
     }
 
     // TODO: make this less lame
-
     @Override
     public String transformClassName(String className) {
         return jarRemapper.map(className);

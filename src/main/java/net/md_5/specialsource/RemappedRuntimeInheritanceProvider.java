@@ -33,9 +33,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Lookup class inheritance from classes at runtime, remapped through a JarMapping
+ * Lookup class inheritance from classes at runtime, remapped through a
+ * JarMapping
  */
 public class RemappedRuntimeInheritanceProvider extends RuntimeInheritanceProvider {
+
     private final JarMapping jarMapping;
     private final JarMapping inverseJarMapping;
 
@@ -63,13 +65,13 @@ public class RemappedRuntimeInheritanceProvider extends RuntimeInheritanceProvid
         String after = JarRemapper.mapTypeName(before, jarMapping.packages, jarMapping.classes, null);
         if (after == null) {
             if (verbose) {
-                System.out.println("RemappedRuntimeInheritanceProvider doesn't know about "+before);
+                System.out.println("RemappedRuntimeInheritanceProvider doesn't know about " + before);
             }
             return null;
         }
 
         if (verbose) {
-            System.out.println("RemappedRuntimeInheritanceProvider getParents "+before+" -> "+after);
+            System.out.println("RemappedRuntimeInheritanceProvider getParents " + before + " -> " + after);
         }
 
         List<String> beforeParents = super.getParents(after);

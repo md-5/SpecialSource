@@ -38,7 +38,6 @@ import java.net.URL;
 public class URLDownloader {
 
     private static String CACHE_FOLDER = "SpecialSource.cache";
-
     private URL url;
     public static boolean verbose = true;
     public static boolean useCache = true;
@@ -57,7 +56,7 @@ public class URLDownloader {
 
         if (file.exists() && useCache) {
             if (verbose) {
-                System.out.println("Using cached file "+file.getPath()+" for "+url);
+                System.out.println("Using cached file " + file.getPath() + " for " + url);
             }
 
             return file;
@@ -66,7 +65,7 @@ public class URLDownloader {
         // Download
         file.getParentFile().mkdirs();
         if (verbose) {
-            System.out.println("Downloading "+url);
+            System.out.println("Downloading " + url);
         }
 
         url.openConnection();
@@ -107,11 +106,13 @@ public class URLDownloader {
     // Borrowed from Guava 13 (since we're on Guava 12) - TODO: remove and use Guava after https://github.com/MinecraftForge/FML/commit/937e9a016936195e4dc51f33ab9e8dde52621684
     /**
      * Returns the file name without its
-     * <a href="http://en.wikipedia.org/wiki/Filename_extension">file extension</a> or path. This is
-     * similar to the {@code basename} unix command. The result does not include the '{@code .}'.
+     * <a href="http://en.wikipedia.org/wiki/Filename_extension">file
+     * extension</a> or path. This is similar to the {@code basename} unix
+     * command. The result does not include the '{@code .}'.
      *
-     * @param file The name of the file to trim the extension from. This can be either a fully
-     *     qualified file name (including a path) or just a file name.
+     * @param file The name of the file to trim the extension from. This can be
+     * either a fully qualified file name (including a path) or just a file
+     * name.
      * @return The file name without its path or extension.
      * @since 14.0
      */

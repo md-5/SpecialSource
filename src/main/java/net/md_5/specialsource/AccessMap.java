@@ -38,25 +38,20 @@ import java.util.Map;
 /**
  * Access mapper - for modifying access flags on symbols
  *
- * Supports loading _at.cfg files in the following format:
- * - comments beginning with '#' extending to end of line
- * - symbol pattern, space, then access changes
+ * Supports loading _at.cfg files in the following format: - comments beginning
+ * with '#' extending to end of line - symbol pattern, space, then access
+ * changes
  *
- * Symbol pattern format:
- * foo              class
- * foo/bar          field
- * foo/bar ()desc   method
- * foo/*            fields in class
- * foo/* ()desc     methods in class
- * *                all classes
- * *<nobr/>/*       all fields
- * *<nobr/>/*()     all methods
- * **               all classes, fields, and methods
+ * Symbol pattern format: foo class foo/bar field foo/bar ()desc method foo/*
+ * fields in class foo/* ()desc methods in class * all classes
+ * *<nobr/>/* all fields
+ * *<nobr/>/*() all methods ** all classes, fields, and methods
  *
- * Internal ('/') and source ('.') conventions are accepted,
- * and the space preceding the method descriptor is optional.
+ * Internal ('/') and source ('.') conventions are accepted, and the space
+ * preceding the method descriptor is optional.
  *
  * Access change format: visibility (required) + access flags
+ *
  * @see AccessChange
  *
  */
@@ -80,7 +75,7 @@ public class AccessMap {
             if (n != -1) {
                 line = line.substring(0, n);
             }
-            if (line.isEmpty()){
+            if (line.isEmpty()) {
                 continue;
             }
 
@@ -95,10 +90,8 @@ public class AccessMap {
     /**
      * Load an access transformer into this AccessMap.
      *
-     * @param filename Location of AT data, one of:
-     * - local filename
-     * - remote HTTP URL
-     * - "pattern:" followed by one transformer line
+     * @param filename Location of AT data, one of: - local filename - remote
+     * HTTP URL - "pattern:" followed by one transformer line
      * @throws IOException
      */
     public void loadAccessTransformer(String filename) throws IOException {
@@ -146,7 +139,7 @@ public class AccessMap {
 
     public void addAccessChange(String key, AccessChange accessChange) {
         if (map.containsKey(key)) {
-            System.out.println("INFO: merging AccessMap "+key+" from "+map.get(key)+" with "+accessChange);
+            System.out.println("INFO: merging AccessMap " + key + " from " + map.get(key) + " with " + accessChange);
             map.get(key).merge(accessChange);
         }
         map.put(key, accessChange);
@@ -177,7 +170,7 @@ public class AccessMap {
         return access;
     }
 
-    public int applyMethodAccess(String className, String methodName, String methodDesc,  int access) {
+    public int applyMethodAccess(String className, String methodName, String methodDesc, int access) {
         int old = access;
 
         access = apply("**", access);

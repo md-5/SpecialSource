@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class MethodDescriptorTransformer {
+
     private LinkedHashMap<String, String> packageMap;
     private Map<String, String> classMap;
 
