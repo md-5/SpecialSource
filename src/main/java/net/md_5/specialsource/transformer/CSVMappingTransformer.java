@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package net.md_5.specialsource;
+package net.md_5.specialsource.transformer;
 
 import au.com.bytecode.opencsv.CSVReader;
 
@@ -35,6 +35,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import net.md_5.specialsource.JarRemapper;
 
 /**
  * For reading a .srg through MCP's fields.csv and methods.csv Maps func_### and

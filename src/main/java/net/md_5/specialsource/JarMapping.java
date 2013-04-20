@@ -28,6 +28,14 @@
  */
 package net.md_5.specialsource;
 
+import net.md_5.specialsource.srg.CompactSrgWriter;
+import net.md_5.specialsource.srg.SrgWriter;
+import net.md_5.specialsource.srg.ISrgWriter;
+import net.md_5.specialsource.provider.IInheritanceProvider;
+import net.md_5.specialsource.transformer.CSVMappingTransformer;
+import net.md_5.specialsource.transformer.MethodDescriptorTransformer;
+import net.md_5.specialsource.transformer.ChainTransformer;
+import net.md_5.specialsource.transformer.JarMappingLoadTransformer;
 import java.io.*;
 import java.util.*;
 

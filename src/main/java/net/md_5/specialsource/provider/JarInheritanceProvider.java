@@ -26,37 +26,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package net.md_5.specialsource;
+package net.md_5.specialsource.provider;
+
+import org.objectweb.asm.tree.ClassNode;
 
 import java.util.ArrayList;
 import java.util.List;
+import lombok.ToString;
+import net.md_5.specialsource.Jar;
 
 /**
- * Lookup inheritance information from multiple sources, in order
+ * Lookup inheritance from a class given a jar.
  */
-public class InheritanceProviders implements IInheritanceProvider {
+@ToString
+public class JarInheritanceProvider implements IInheritanceProvider {
 
-    private List<IInheritanceProvider> inheritanceProviders;
+    private final Jar self;
 
-    public InheritanceProviders() {
-        inheritanceProviders = new ArrayList<IInheritanceProvider>();
-    }
-
-    public void add(IInheritanceProvider inheritanceProvider) {
-        inheritanceProviders.add(inheritanceProvider);
+    public JarInheritanceProvider(Jar self) {
+        this.self = self;
     }
 
     @Override
+    @SuppressWarnings("unchecked") // Saddens me to see ASM strip vital info like that
     public List<String> getParents(String owner) {
-        for (IInheritanceProvider inheritanceProvider : inheritanceProviders) {
-            // ask each provider for inheritance information on the class, until one responds
-            List<String> parents = inheritanceProvider.getParents(owner);
-
-            if (parents != null) {
-                return parents;
-            }
+        ClassNode node = self.getNode(owner);
+        if (node == null) {
+            return null;
         }
 
-        return null;
+        List<String> parents = new ArrayList<String>();
+
+        for (String iface : (List<String>) node.interfaces) {
+            parents.add(iface);
+        }
+        parents.add(node.superName);
+
+        return parents;
     }
 }

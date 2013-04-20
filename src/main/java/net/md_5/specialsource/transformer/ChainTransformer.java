@@ -26,46 +26,40 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package net.md_5.specialsource;
+package net.md_5.specialsource.transformer;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import net.md_5.specialsource.JarRemapper;
 
-public class CompactSrgWriter implements ISrgWriter {
+/**
+ * Load a mapping 'chained' through another mapping
+ */
+public class ChainTransformer extends JarMappingLoadTransformer {
 
-    private PrintWriter out;
-    private List<String> lines;
+    private final JarRemapper jarRemapper;
 
-    public CompactSrgWriter(PrintWriter out) {
-        this.out = out;
-        this.lines = new ArrayList<String>();
+    public ChainTransformer(JarRemapper jarRemapper) {
+        this.jarRemapper = jarRemapper;
+    }
+
+    // TODO: make this less lame
+    @Override
+    public String transformClassName(String className) {
+        return jarRemapper.map(className);
     }
 
     @Override
-    public void addClassMap(String oldClass, String newClass) {
-        lines.add(oldClass + " " + newClass);
+    public String transformFieldName(String className, String fieldName) {
+        return jarRemapper.mapFieldName(className, fieldName, null);
     }
 
     @Override
-    public void addFieldMap(Ownable oldField, Ownable newField) {
-        lines.add(oldField.owner + " " + oldField.name + " " + newField.name);
+    public String transformMethodName(String className, String methodName, String methodDescriptor) {
+        return jarRemapper.mapMethodName(className, methodName, methodDescriptor);
     }
 
     @Override
-    public void addMethodMap(Ownable oldMethod, Ownable newMethod) {
-        lines.add(oldMethod.owner + " " + oldMethod.name + " " + oldMethod.descriptor + " " + newMethod.name);
-    }
-
-    @Override
-    public void write() throws IOException {
-        Collections.sort(lines);
-
-        for (String s : lines) {
-            out.println(s);
-        }
-        out.close();
+    public String transformMethodDescriptor(String oldDescriptor) {
+        MethodDescriptorTransformer methodDescriptorTransformer = new MethodDescriptorTransformer(jarRemapper.jarMapping.packages, jarRemapper.jarMapping.classes);
+        return methodDescriptorTransformer.transform(oldDescriptor);
     }
 }

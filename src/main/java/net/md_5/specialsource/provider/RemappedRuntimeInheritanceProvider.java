@@ -26,11 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package net.md_5.specialsource;
+package net.md_5.specialsource.provider;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import net.md_5.specialsource.JarMapping;
+import net.md_5.specialsource.JarRemapper;
 
 /**
  * Lookup class inheritance from classes at runtime, remapped through a

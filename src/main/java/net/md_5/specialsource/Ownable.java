@@ -37,8 +37,8 @@ import lombok.Data;
 @Data
 public class Ownable {
 
-    final NodeType type;
-    final String owner;
-    final String name;
-    final String descriptor;
+    public final NodeType type;
+    public final String owner;
+    public final String name;
+    public final String descriptor;
 }

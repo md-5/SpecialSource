@@ -28,6 +28,7 @@
  */
 package net.md_5.specialsource;
 
+import net.md_5.specialsource.provider.IInheritanceProvider;
 import com.google.common.base.Joiner;
 import com.google.common.collect.BiMap;
 

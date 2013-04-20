@@ -26,38 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package net.md_5.specialsource;
+package net.md_5.specialsource.provider;
 
-/**
- * Load a mapping 'chained' through another mapping
- */
-public class ChainTransformer extends JarMappingLoadTransformer {
+import java.util.List;
 
-    private final JarRemapper jarRemapper;
+public interface IInheritanceProvider {
 
-    public ChainTransformer(JarRemapper jarRemapper) {
-        this.jarRemapper = jarRemapper;
-    }
-
-    // TODO: make this less lame
-    @Override
-    public String transformClassName(String className) {
-        return jarRemapper.map(className);
-    }
-
-    @Override
-    public String transformFieldName(String className, String fieldName) {
-        return jarRemapper.mapFieldName(className, fieldName, null);
-    }
-
-    @Override
-    public String transformMethodName(String className, String methodName, String methodDescriptor) {
-        return jarRemapper.mapMethodName(className, methodName, methodDescriptor);
-    }
-
-    @Override
-    public String transformMethodDescriptor(String oldDescriptor) {
-        MethodDescriptorTransformer methodDescriptorTransformer = new MethodDescriptorTransformer(jarRemapper.jarMapping.packages, jarRemapper.jarMapping.classes);
-        return methodDescriptorTransformer.transform(oldDescriptor);
-    }
+    /**
+     * Get the superclass and implemented interfaces of a class
+     *
+     * @param className
+     * @return List of interfaces, or null if no information is available and
+     * other providers should be checked
+     */
+    List<String> getParents(String className);
 }

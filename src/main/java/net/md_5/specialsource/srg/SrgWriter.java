@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package net.md_5.specialsource;
+package net.md_5.specialsource.srg;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import net.md_5.specialsource.Ownable;
 
 public class SrgWriter implements ISrgWriter {
 
@@ -72,14 +73,18 @@ public class SrgWriter implements ISrgWriter {
 
     @Override
     public void write() throws IOException {
+        // Sort lines for easy finding
         Collections.sort(lines);
         // No try with resources for us!
         try {
+            // Format header
             out.println(MessageFormat.format(HEADER, oldJarName, newJarName, new Date()));
+            // Write out lines
             for (String s : lines) {
                 out.println(s);
             }
         } finally {
+            // Make sure we close the outputstream in all cases
             out.close();
         }
     }

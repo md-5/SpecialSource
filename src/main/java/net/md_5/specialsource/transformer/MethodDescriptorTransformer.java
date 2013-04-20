@@ -26,10 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package net.md_5.specialsource;
+package net.md_5.specialsource.transformer;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import net.md_5.specialsource.JarRemapper;
 
 public class MethodDescriptorTransformer {
 

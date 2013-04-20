@@ -28,11 +28,13 @@
  */
 package net.md_5.specialsource;
 
+import net.md_5.specialsource.provider.InheritanceProviders;
+import net.md_5.specialsource.provider.JarInheritanceProvider;
+import net.md_5.specialsource.provider.RemappedRuntimeInheritanceProvider;
+import net.md_5.specialsource.provider.RuntimeInheritanceProvider;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.jar.JarFile;
-
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import joptsimple.OptionException;

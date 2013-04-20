@@ -28,6 +28,8 @@
  */
 package net.md_5.specialsource;
 
+import net.md_5.specialsource.transformer.MethodDescriptorTransformer;
+import net.md_5.specialsource.transformer.JarMappingLoadTransformer;
 import java.util.*;
 
 /**

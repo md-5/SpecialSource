@@ -29,15 +29,13 @@
 package net.md_5.specialsource;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.io.Files;
-
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 
 public class URLDownloader {
 
-    private static String CACHE_FOLDER = "SpecialSource.cache";
+    private static String CACHE_FOLDER = ".ss-cache";
     private URL url;
     public static boolean verbose = true;
     public static boolean useCache = true;
@@ -74,8 +72,8 @@ public class URLDownloader {
 
         FileOutputStream outputStream = new FileOutputStream(file);
 
+        int n;
         byte[] buffer = new byte[4096];
-        int n = 0;
         while ((n = inputStream.read(buffer)) != -1) {
             outputStream.write(buffer, 0, n);
         }
@@ -101,24 +99,5 @@ public class URLDownloader {
 
     public static boolean isHTTPURL(String string) {
         return string.startsWith("http://") || string.startsWith("https://");
-    }
-
-    // Borrowed from Guava 13 (since we're on Guava 12) - TODO: remove and use Guava after https://github.com/MinecraftForge/FML/commit/937e9a016936195e4dc51f33ab9e8dde52621684
-    /**
-     * Returns the file name without its
-     * <a href="http://en.wikipedia.org/wiki/Filename_extension">file
-     * extension</a> or path. This is similar to the {@code basename} unix
-     * command. The result does not include the '{@code .}'.
-     *
-     * @param file The name of the file to trim the extension from. This can be
-     * either a fully qualified file name (including a path) or just a file
-     * name.
-     * @return The file name without its path or extension.
-     * @since 14.0
-     */
-    public static String getNameWithoutExtension(String file) {
-        String fileName = new File(file).getName();
-        int dotIndex = fileName.lastIndexOf('.');
-        return (dotIndex == -1) ? fileName : fileName.substring(0, dotIndex);
     }
 }

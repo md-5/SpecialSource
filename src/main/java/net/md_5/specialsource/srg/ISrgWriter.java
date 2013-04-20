@@ -26,41 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package net.md_5.specialsource;
+package net.md_5.specialsource.srg;
 
-import org.objectweb.asm.tree.ClassNode;
+import java.io.IOException;
+import net.md_5.specialsource.Ownable;
 
-import java.util.ArrayList;
-import java.util.List;
-import lombok.ToString;
+public interface ISrgWriter {
 
-/**
- * Lookup inheritance from a class given a jar.
- */
-@ToString
-public class JarInheritanceProvider implements IInheritanceProvider {
+    void addClassMap(String oldClass, String newClass);
 
-    private final Jar self;
+    void addFieldMap(Ownable oldField, Ownable newField);
 
-    public JarInheritanceProvider(Jar self) {
-        this.self = self;
-    }
+    void addMethodMap(Ownable oldMethod, Ownable newMethod);
 
-    @Override
-    @SuppressWarnings("unchecked") // Saddens me to see ASM strip vital info like that
-    public List<String> getParents(String owner) {
-        ClassNode node = self.getNode(owner);
-        if (node == null) {
-            return null;
-        }
-
-        List<String> parents = new ArrayList<String>();
-
-        for (String iface : (List<String>) node.interfaces) {
-            parents.add(iface);
-        }
-        parents.add(node.superName);
-
-        return parents;
-    }
+    void write() throws IOException;
 }

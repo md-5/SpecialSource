@@ -26,18 +26,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package net.md_5.specialsource;
+package net.md_5.specialsource.transformer;
 
-import java.util.List;
+/**
+ * Transform mapping files while loading (only)
+ *
+ * TODO: refactor with JarRemapper?
+ */
+public abstract class JarMappingLoadTransformer {
 
-public interface IInheritanceProvider {
+    public String transformClassName(String className) {
+        return className;
+    }
 
-    /**
-     * Get the superclass and implemented interfaces of a class
-     *
-     * @param className
-     * @return List of interfaces, or null if no information is available and
-     * other providers should be checked
-     */
-    List<String> getParents(String className);
+    public String transformFieldName(String className, String fieldName) {
+        return fieldName;
+    }
+
+    public String transformMethodName(String className, String methodName, String methodDescriptor) {
+        return methodName;
+    }
+
+    public String transformMethodDescriptor(String oldDescriptor) {
+        return oldDescriptor;
+    }
 }
