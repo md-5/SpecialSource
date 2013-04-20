@@ -37,7 +37,6 @@ public class URLDownloader {
 
     private static String CACHE_FOLDER = ".ss-cache";
     private URL url;
-    public static boolean verbose = true;
     public static boolean useCache = true;
 
     public URLDownloader(String urlString) throws MalformedURLException {
@@ -53,7 +52,7 @@ public class URLDownloader {
         File file = new File(cacheFilename);
 
         if (file.exists() && useCache) {
-            if (verbose) {
+            if (SpecialSource.verbose()) {
                 System.out.println("Using cached file " + file.getPath() + " for " + url);
             }
 
@@ -62,7 +61,7 @@ public class URLDownloader {
 
         // Download
         file.getParentFile().mkdirs();
-        if (verbose) {
+        if (SpecialSource.verbose()) {
             System.out.println("Downloading " + url);
         }
 
@@ -81,7 +80,7 @@ public class URLDownloader {
         inputStream.close();
         outputStream.close();
 
-        if (verbose) {
+        if (SpecialSource.verbose()) {
             System.out.println("Downloaded to " + file.getPath());
         }
 

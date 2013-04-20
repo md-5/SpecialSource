@@ -30,8 +30,6 @@ package net.md_5.specialsource;
 
 import net.md_5.specialsource.provider.JointProvider;
 import net.md_5.specialsource.provider.JarProvider;
-import net.md_5.specialsource.provider.RemappedRuntimeInheritanceProvider;
-import net.md_5.specialsource.provider.RuntimeProvider;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,10 +41,12 @@ import joptsimple.OptionSet;
 import org.objectweb.asm.ClassReader;
 
 import static java.util.Arrays.asList;
+import net.md_5.specialsource.provider.ClassLoaderProvider;
 
 public class SpecialSource {
 
     private static OptionSet options;
+    private static boolean verbose;
 
     public static void main(String[] args) throws Exception {
         OptionParser parser = new OptionParser() {
@@ -128,7 +128,7 @@ public class SpecialSource {
         }
 
         JarMapping jarMapping;
-        URLDownloader.verbose = !options.has("quiet");
+        verbose = !options.has("quiet");
         URLDownloader.useCache = !options.has("force-redownload");
 
         if (options.has("first-jar") && options.has("second-jar")) {
@@ -171,12 +171,8 @@ public class SpecialSource {
         JointProvider inheritanceProviders = new JointProvider();
         jarMapping.setFallbackInheritanceProvider(inheritanceProviders);
 
-        if (options.has("live-remapped")) {
-            inheritanceProviders.add(new RemappedRuntimeInheritanceProvider(ClassLoader.getSystemClassLoader(), !options.has("quiet"), jarMapping));
-        }
-
         if (options.has("live")) {
-            inheritanceProviders.add(new RuntimeProvider(ClassLoader.getSystemClassLoader(), !options.has("quiet")));
+            inheritanceProviders.add(new ClassLoaderProvider(ClassLoader.getSystemClassLoader()));
         }
 
         if (options.has("read-inheritance")) {
@@ -266,6 +262,6 @@ public class SpecialSource {
     }
 
     public static boolean verbose() {
-        return true;
+        return verbose;
     }
 }
