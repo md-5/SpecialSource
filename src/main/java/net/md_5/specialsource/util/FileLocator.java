@@ -41,9 +41,12 @@ public class FileLocator {
 
     private static File download(String url) throws IOException {
         // Create temporary dir in system location
-        File tempDir = File.createTempFile("ss-cache", null);
+        File tempDir = new File(System.getProperty("java.io.tmpdir") + File.pathSeparator + "ss-cache");
+        if (!tempDir.exists()) {
+            tempDir.mkdirs();
+        }
+
         // Create our own cache file here, replacing potentially invalid characters
-        // TODO: Maybe just store the base name or something
         String id = CharMatcher.JAVA_LETTER_OR_DIGIT.or(CharMatcher.anyOf("-_.")).negate().replaceFrom(url.toString(), '_');
         File file = new File(tempDir, id);
 
@@ -64,7 +67,7 @@ public class FileLocator {
         ReadableByteChannel rbc = null;
         FileOutputStream fos = null;
         try {
-            // TODO: Better sollution for cleaning names
+            // TODO: Better solution for cleaning names - this extraneous '\' is introduced by path joining on the mcp dir
             rbc = Channels.newChannel(new URL(url.replace('\\', '/')).openStream());
             fos = new FileOutputStream(file);
             fos.getChannel().transferFrom(rbc, 0, 1 << 24);
