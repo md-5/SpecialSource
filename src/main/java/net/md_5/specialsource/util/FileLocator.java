@@ -41,7 +41,7 @@ public class FileLocator {
 
     private static File download(String url) throws IOException {
         // Create temporary dir in system location
-        File tempDir = new File(System.getProperty("java.io.tmpdir") + File.pathSeparator + "ss-cache");
+        File tempDir = new File(System.getProperty("java.io.tmpdir") + File.separator + "ss-cache");
         if (!tempDir.exists()) {
             tempDir.mkdirs();
         }
