@@ -52,7 +52,7 @@ public class FileLocator {
 
         // Check cache for a hit
         if (file.exists() && useCache) {
-            if (SpecialSource.verbose()) {
+            if (true || SpecialSource.verbose()) {
                 System.out.println("Using cached file " + file.getPath() + " for " + url);
             }
 
@@ -60,7 +60,7 @@ public class FileLocator {
         }
 
         // Nope, we need to download it ourselves
-        if (SpecialSource.verbose()) {
+        if (true || SpecialSource.verbose()) {
             System.out.println("Downloading " + url);
         }
 
