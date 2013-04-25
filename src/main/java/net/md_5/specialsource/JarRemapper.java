@@ -36,10 +36,19 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.commons.RemappingClassAdapter;
+import org.objectweb.asm.commons.RemappingFieldAdapter;
+import org.objectweb.asm.tree.ClassNode;
+
+import static org.objectweb.asm.ClassWriter.*;
 
 public class JarRemapper extends Remapper {
 
@@ -163,6 +172,7 @@ public class JarRemapper extends Remapper {
         return remapClassFile(new ClassReader(in));
     }
 
+    @SuppressWarnings("unchecked")
     private byte[] remapClassFile(ClassReader reader) {
         if (remapperPreprocessor != null) {
             byte[] pre = remapperPreprocessor.preprocess(reader);
@@ -171,10 +181,65 @@ public class JarRemapper extends Remapper {
             }
         }
 
-        ClassWriter wr = new ClassWriter(0);
-        RemappingClassAdapter mapper = new RemappingClassAdapter(wr, this);
-        reader.accept(mapper, ClassReader.EXPAND_FRAMES); // TODO: EXPAND_FRAMES necessary?
+        ClassNode node = new ClassNode();
+        RemappingClassAdapter mapper = new RemappingClassAdapter(node, this)
+        {
+            @Override
+            protected MethodVisitor createRemappingMethodAdapter(int access, String newDesc, MethodVisitor sup)
+            {
+                MethodVisitor remap = new UnsortedRemappingMethodAdapter(access, newDesc, sup, remapper);
+                return new MethodVisitor(Opcodes.ASM4, remap)
+                {
+                    @Override
+                    public void visitAttribute(Attribute attr)
+                    {
+                        if (SpecialSource.kill_lvt && attr.type.equals("LocalVariableTable")) return;  
+                        if (SpecialSource.kill_generics && attr.type.equals("LocalVariableTypeTable")) return;                        
+                        if (mv != null) mv.visitAttribute(attr);
+                    }
+                };
+            }
 
+            @Override
+            protected FieldVisitor createRemappingFieldAdapter(FieldVisitor sup)
+            {
+                FieldVisitor remap = new RemappingFieldAdapter(sup, remapper);
+                return new FieldVisitor(Opcodes.ASM4, sup)
+                {
+                    @Override
+                    public void visitAttribute(Attribute attr)
+                    {
+                        if (SpecialSource.kill_lvt && attr.type.equals("LocalVariableTable")) return;
+                        if (SpecialSource.kill_generics && attr.type.equals("LocalVariableTypeTable")) return;                        
+                        if (fv != null) fv.visitAttribute(attr);
+                    }
+                };
+            }
+
+            @Override
+            public void visitSource(String source, String debug)
+            {
+                if (!SpecialSource.kill_source && cv != null)
+                {
+                    cv.visitSource(source, debug);
+                }
+            }
+
+            @Override
+            public void visitAttribute(Attribute attr)
+            {
+                if (SpecialSource.kill_generics && attr.type.equals("Signature")) return;     
+                if (cv != null) cv.visitAttribute(attr); 
+            }
+        };
+        reader.accept(mapper, 0);
+
+        ClassWriter wr = new ClassWriter(COMPUTE_MAXS);
+        node.accept(wr);
+        if (SpecialSource.identifier != null)
+        {
+            wr.newUTF8(SpecialSource.identifier);
+        }
         return wr.toByteArray();
     }
 }

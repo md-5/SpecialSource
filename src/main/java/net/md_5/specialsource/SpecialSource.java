@@ -49,6 +49,10 @@ public class SpecialSource {
 
     private static OptionSet options;
     private static boolean verbose;
+    public static boolean kill_source = false;
+    public static boolean kill_lvt = false;
+    public static boolean kill_generics = false;
+    public static String identifier = null;
 
     public static void main(String[] args) throws Exception {
         OptionParser parser = new OptionParser() {
@@ -108,6 +112,15 @@ public class SpecialSource {
                 //acceptsAll(asList("G", "remap-reflect-field"), "Remap reflection calls to getDeclaredField()"); // TODO
 
                 acceptsAll(asList("q", "quiet"), "Quiet mode");
+
+                acceptsAll(asList("v", "version"), "Displays version information");
+
+                acceptsAll(asList("kill-source"), "Removes the \"SourceFile\" attribute");
+                acceptsAll(asList("kill-lvt"), "Removes the \"LocalVariableTable\" attribute");
+                acceptsAll(asList("kill-generics"), "Removes the \"LocalVariableTypeTable\" and \"Signature\" attributes");
+                acceptsAll(asList("d", "identifier"), "Identifier to place on each class that is transformed, by default, none")
+                        .withRequiredArg()
+                        .ofType(String.class);
             }
         };
 
@@ -129,8 +142,23 @@ public class SpecialSource {
             return;
         }
 
+        if (options.has("version"))
+        {
+            System.out.println("SpecialSource v{something}");
+            return;
+        }
+
         JarMapping jarMapping;
         verbose = !options.has("quiet");
+        kill_source = options.has("kill-source");
+        kill_lvt = options.has("kill-lvt");
+        kill_generics = options.has("kill-generics");
+        
+        if (options.has("identifier"))
+        {
+            identifier = (String)options.valueOf("identifier");
+        }
+
         FileLocator.useCache = !options.has("force-redownload");
 
         if (options.has("first-jar") && options.has("second-jar")) {
