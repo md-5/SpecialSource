@@ -81,7 +81,7 @@ public class JarMapping {
                 parents = inheritanceMap.getParents(owner);
             } else if (fallbackInheritanceProvider != null) {
                 parents = fallbackInheritanceProvider.getParents(owner);
-                inheritanceMap.setParents(owner, (ArrayList<String>) parents);
+                inheritanceMap.setParents(owner, parents);
             }
 
             if (parents != null) {

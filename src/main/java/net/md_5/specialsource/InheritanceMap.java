@@ -127,8 +127,8 @@ public class InheritanceMap implements InheritanceProvider {
         return inheritanceMap.get(className);
     }
 
-    public void setParents(String className, ArrayList<String> parents) {
-        inheritanceMap.put(className, parents);
+    public void setParents(String className, Collection<String> parents) {
+        inheritanceMap.put(className, new ArrayList<String>(parents));
     }
 
     public int size() {
