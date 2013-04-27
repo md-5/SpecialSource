@@ -82,11 +82,11 @@ public class RemapperPreprocessor {
     public byte[] preprocess(ClassReader classReader) {
         byte[] bytecode = null;
         ClassNode classNode = new ClassNode();
-        int flags = ClassReader.SKIP_DEBUG;
+        int flags = 0;
 
         if (!isRewritingNeeded()) {
             // Not rewriting the class - skip the code, not needed
-            flags |= ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES;
+            flags |= ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG;
         }
 
         classReader.accept(classNode, flags);
