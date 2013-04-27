@@ -58,7 +58,9 @@ public class JarProvider implements InheritanceProvider {
         for (String iface : (List<String>) node.interfaces) {
             parents.add(iface);
         }
-        parents.add(node.superName);
+        if (node.superName != null) {
+            parents.add(node.superName);
+        }
 
         return parents;
     }
