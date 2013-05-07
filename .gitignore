@@ -23,6 +23,7 @@
 /bin
 /dist
 /manifest.mf
+/.gradle
 
 # Mac filesystem dust
 /.DS_Store

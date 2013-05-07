@@ -1,0 +1,63 @@
+// to compile
+// $ gradle compileJava
+// to package into a jar
+// $ gradle jar
+// to apply the shadow plugin and generate a jar similair to the maven shaded plugin
+// $ gradle shadow
+// more information can be foudn here
+// Gradle Java Plugin >> http://www.gradle.org/docs/current/userguide/java_plugin.html
+// Garadle Shadow Plugin >> https://github.com/johnrengelman/shadow
+
+
+buildscript {
+    repositories {
+        maven {
+            name 'Gradle Shadow'
+            url 'http://dl.bintray.com/content/johnrengelman/gradle-plugins'
+        }
+    }
+    dependencies {
+        classpath 'org.gradle.plugins:shadow:0.7.3'
+    }
+}
+
+apply plugin: 'shadow'
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+sourceCompatibility = 1.6
+version = '1.6-SNAPSHOT'
+archivesBaseName = 'SpecialSource'
+
+jar {
+    manifest {
+        attributes 'Title': 'SpecialSource', 'Version': version, 'Main-Class' : 'net.md_5.specialsource.SpecialSource'
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+// dirty hack for "provided" keywords
+configurations {
+	provided
+}
+
+sourceSets {
+	main {
+		compileClasspath += configurations.provided
+		test.compileClasspath += configurations.provided
+		test.runtimeClasspath += configurations.provided
+	}
+}
+// end dirty hack
+
+dependencies {
+	compile 'org.ow2.asm:asm-all:4.1'
+	compile 'net.sf.jopt-simple:jopt-simple:4.4'
+	compile 'com.google.guava:guava:14.0.1'
+	compile 'net.sf.opencsv:opencsv:2.3'
+	
+	provided 'org.projectlombok:lombok:0.11.6'
+}
