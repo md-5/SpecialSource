@@ -107,7 +107,7 @@ public class SpecialSource {
                         .ofType(File.class);
                 acceptsAll(asList("h", "read-inheritance"), "Read inheritance map from file")
                         .withRequiredArg()
-                        .ofType(File.class);
+                        .ofType(String.class);
 
                 //acceptsAll(asList("G", "remap-reflect-field"), "Remap reflection calls to getDeclaredField()"); // TODO
 
@@ -208,7 +208,7 @@ public class SpecialSource {
         if (options.has("read-inheritance")) {
             InheritanceMap inheritanceMap = new InheritanceMap();
 
-            BufferedReader reader = new BufferedReader(new FileReader((File) options.valueOf("read-inheritance")));
+            BufferedReader reader = new BufferedReader(new FileReader(FileLocator.getFile((String) options.valueOf("read-inheritance"))));
 
             BiMap<String, String> inverseClassMap = HashBiMap.create(jarMapping.classes).inverse();
             inheritanceMap.load(reader, inverseClassMap);
