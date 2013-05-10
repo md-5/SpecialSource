@@ -70,7 +70,7 @@ public class ClassLoaderProvider implements InheritanceProvider {
             }
 
             return parents;
-        } catch (Throwable ex) {
+        } catch (Exception ex) {
             // Just ignore this, means that we couldn't get any lookup for the specified class
         } finally {
             if (input != null) {
