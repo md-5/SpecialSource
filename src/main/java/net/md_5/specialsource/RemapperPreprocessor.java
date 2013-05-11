@@ -43,7 +43,11 @@ import java.util.List;
  * "Pre-process" a class file, intended to be used before remapping with
  * JarRemapper.
  *
- * Currently includes: - Extracting inheritance
+ * Currently includes:
+ * - Extracting inheritance
+ * - Applying access transformers
+ * - Remapping reflected field string constants
+ * - Remapping reflected class name string constants
  */
 public class RemapperPreprocessor {
 
@@ -51,6 +55,8 @@ public class RemapperPreprocessor {
     private InheritanceMap inheritanceMap;
     private JarMapping jarMapping;
     private AccessMap accessMap;
+    private boolean remapReflectField;
+    private boolean remapReflectClass;
 
     /**
      *
@@ -58,12 +64,15 @@ public class RemapperPreprocessor {
      * or null to not extract inheritance
      * @param jarMapping Mapping for reflection remapping, or null to not remap
      * reflection
+     * @param accessMap Access transformer mappings, or null to not apply AT
      * @throws IOException
      */
     public RemapperPreprocessor(InheritanceMap inheritanceMap, JarMapping jarMapping, AccessMap accessMap) {
         this.inheritanceMap = inheritanceMap;
         this.jarMapping = jarMapping;
         this.accessMap = accessMap;
+        this.remapReflectField = true;
+        this.remapReflectClass = false;
     }
 
     public RemapperPreprocessor(InheritanceMap inheritanceMap, JarMapping jarMapping) {
@@ -76,6 +85,22 @@ public class RemapperPreprocessor {
 
     public byte[] preprocess(byte[] bytecode) throws IOException {
         return preprocess(new ClassReader(bytecode));
+    }
+
+    /**
+     * Enable or disable remapping reflection field string constants.
+     * Requires a jarMapping, enabled by default if present.
+     */
+    public void setRemapReflectField(boolean b) {
+        remapReflectField = b;
+    }
+
+    /**
+     * Enable or disable remapping reflection class name string constants.
+     * Requires a jarMapping.
+     */
+    public void setRemapReflectClass(boolean b) {
+        remapReflectClass = b;
     }
 
     @SuppressWarnings("unchecked")
@@ -134,8 +159,15 @@ public class RemapperPreprocessor {
                 if (jarMapping != null) {
                     AbstractInsnNode insn = methodNode.instructions.getFirst();
                     while (insn != null) {
-                        if (insn.getOpcode() == Opcodes.INVOKEVIRTUAL) {
-                            remapGetDeclaredField(insn);
+                        switch (insn.getOpcode())
+                        {
+                            case Opcodes.INVOKEVIRTUAL:
+                                remapGetDeclaredField(insn);
+                                break;
+
+                            case Opcodes.INVOKESTATIC:
+                                remapClassForName(insn);
+                                break;
                         }
 
                         insn = insn.getNext();
@@ -161,6 +193,10 @@ public class RemapperPreprocessor {
      * @param insn Method call instruction
      */
     private void remapGetDeclaredField(AbstractInsnNode insn) {
+        if (!this.remapReflectField) {
+            return;
+        }
+
         MethodInsnNode mi = (MethodInsnNode) insn;
 
         if (!mi.owner.equals("java/lang/Class") || !mi.name.equals("getDeclaredField") || !mi.desc.equals("(Ljava/lang/String;)Ljava/lang/reflect/Field;")) {
@@ -170,7 +206,7 @@ public class RemapperPreprocessor {
         logR("ReflectionRemapper found getDeclaredField!");
 
         if (insn.getPrevious() == null || insn.getPrevious().getOpcode() != Opcodes.LDC) {
-            logR("- not constant field; skipping");
+            logR("- not constant field; skipping, prev=" + insn.getPrevious());
             return;
         }
         LdcInsnNode ldcField = (LdcInsnNode) insn.getPrevious();
@@ -199,6 +235,46 @@ public class RemapperPreprocessor {
             ldcField.cst = newName;
             //ldcClass.cst = className; // not remapped here - taken care of by JarRemapper
         }
+    }
+
+
+     /**
+     * Replace Class.forName("string") with a remapped field string
+     *
+     * @param insn Method call instruction
+     */
+     private void remapClassForName(AbstractInsnNode insn) {
+         if (!this.remapReflectClass) {
+             return;
+         }
+
+         MethodInsnNode mi = (MethodInsnNode) insn;
+
+         if (!mi.owner.equals("java/lang/Class") || !mi.name.equals("forName") || !mi.desc.equals("(Ljava/lang/String;)Ljava/lang/Class;")) {
+             return;
+         }
+
+         logR("ReflectionRemapped found Class forName!");
+
+         // TODO: refactor with remapGetDeclaredField()
+         if (insn.getPrevious() == null || insn.getPrevious().getOpcode() != Opcodes.LDC) {
+             logR("- not constant field; skipping, prev=" + insn.getPrevious());
+             return;
+         }
+         LdcInsnNode ldcClassName = (LdcInsnNode) insn.getPrevious();
+         if (!(ldcClassName.cst instanceof String)) {
+             logR("- not field string; skipping: " + ldcClassName.cst);
+             return;
+         }
+         String className = (String) ldcClassName.cst;
+
+         String newName = jarMapping.classes.get(className.replace('.', '/')); // TODO: ToInternalName
+         logR("Remapping " + className + " -> " + newName);
+
+         if (newName != null) {
+             // Change the string literal to the correct name
+             ldcClassName.cst = newName.replace('/', '.');
+         }
     }
 
     private void logI(String message) {
