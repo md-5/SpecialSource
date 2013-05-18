@@ -55,6 +55,8 @@ public class JarRemapper extends Remapper {
     private static final int CLASS_LEN = ".class".length();
     public final JarMapping jarMapping;
     public RemapperPreprocessor remapperPreprocessor;
+    private int writerFlags = COMPUTE_MAXS;
+    private int readerFlags = 0;
 
     public JarRemapper(RemapperPreprocessor remapperPreprocessor, JarMapping jarMapping) {
         this.remapperPreprocessor = remapperPreprocessor;
@@ -63,6 +65,17 @@ public class JarRemapper extends Remapper {
 
     public JarRemapper(JarMapping jarMapping) {
         this(null, jarMapping);
+    }
+
+    /**
+     * Enable or disable API-only generation (stripping all code, leaving only symbols).
+     */
+    public void setGenerateAPI(boolean generateAPI) {
+        if (generateAPI) {
+            readerFlags |= ClassReader.SKIP_CODE;
+        } else {
+            readerFlags &= ~ClassReader.SKIP_CODE;
+        }
     }
 
     @Override
@@ -232,9 +245,9 @@ public class JarRemapper extends Remapper {
                 if (cv != null) cv.visitAttribute(attr); 
             }
         };
-        reader.accept(mapper, 0);
+        reader.accept(mapper, readerFlags);
 
-        ClassWriter wr = new ClassWriter(COMPUTE_MAXS);
+        ClassWriter wr = new ClassWriter(writerFlags);
         node.accept(wr);
         if (SpecialSource.identifier != null)
         {
