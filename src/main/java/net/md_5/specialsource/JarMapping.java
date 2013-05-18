@@ -309,21 +309,29 @@ public class JarMapping {
                         + " but already mapped to " + classes.get(oldClassName) + " in line=" + line);
             }
 
-            classes.put(oldClassName, newClassName);
+            if (oldClassName.endsWith("/*") && newClassName.endsWith("/*")) {
+                // extension for remapping class name prefixes
+                oldClassName = oldClassName.substring(0, oldClassName.length() - 1);
+                newClassName = newClassName.substring(0, newClassName.length() - 1);
+
+                packages.put(oldClassName, newClassName);
+            } else {
+                classes.put(oldClassName, newClassName);
+            }
         } else if (kind.equals("PK:")) {
-            /* TODO: support .srg's package maps
+            /* TODO: support .srg's package maps properly - not simply prefix matches(?)
              String oldPackageName = inputTransformer.transformClassName(tokens[1]);
              String newPackageName = outputTransformer.transformClassName(tokens[2]);
 
              if (reverse) {
-             String temp = newPackageName;
-             newPackageName = oldPackageName;
-             oldPackageName = temp;
+                 String temp = newPackageName;
+                 newPackageName = oldPackageName;
+                 oldPackageName = temp;
              }
 
              if (packages.containsKey(oldPackageName) && !newPackageName.equals(packages.get(oldPackageName))) {
-             throw new IllegalArgumentException("Duplicate package mapping: " + oldPackageName + " ->" + newPackageName +
-             " but already mapped to "+packages.get(oldPackageName)+" in line="+line);
+                 throw new IllegalArgumentException("Duplicate package mapping: " + oldPackageName + " ->" + newPackageName +
+                 " but already mapped to "+packages.get(oldPackageName)+" in line="+line);
              }
 
              packages.put(oldPackageName, newPackageName);
