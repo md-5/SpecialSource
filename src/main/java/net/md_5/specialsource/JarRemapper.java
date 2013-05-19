@@ -57,6 +57,7 @@ public class JarRemapper extends Remapper {
     public RemapperPreprocessor remapperPreprocessor;
     private int writerFlags = COMPUTE_MAXS;
     private int readerFlags = 0;
+    private boolean copyResources = true;
 
     public JarRemapper(RemapperPreprocessor remapperPreprocessor, JarMapping jarMapping) {
         this.remapperPreprocessor = remapperPreprocessor;
@@ -68,13 +69,18 @@ public class JarRemapper extends Remapper {
     }
 
     /**
-     * Enable or disable API-only generation (stripping all code, leaving only symbols).
+     * Enable or disable API-only generation.
+     *
+     * If enabled, only symbols will be output to the remapped jar, suitable for use as a library.
+     * Code and resources will be excluded.
      */
     public void setGenerateAPI(boolean generateAPI) {
         if (generateAPI) {
             readerFlags |= ClassReader.SKIP_CODE;
+            copyResources = false;
         } else {
             readerFlags &= ~ClassReader.SKIP_CODE;
+            copyResources = true;
         }
     }
 
@@ -151,6 +157,7 @@ public class JarRemapper extends Remapper {
                         continue;
                     } else {
                         // copy other resources
+                        if (!copyResources) continue; // unless generating an API
                         entry = new JarEntry(name);
 
                         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
