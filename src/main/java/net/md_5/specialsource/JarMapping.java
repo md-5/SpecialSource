@@ -266,6 +266,7 @@ public class JarMapping {
 
             if (oldClassName.endsWith("/")) {
                 // Special case: mapping an entire hierarchy of classes
+                // TODO: support default package, '.' in .srg
                 packages.put(oldClassName.substring(0, oldClassName.length() - 1), newClassName);
             } else {
                 classes.put(oldClassName, newClassName);
@@ -319,23 +320,30 @@ public class JarMapping {
                 classes.put(oldClassName, newClassName);
             }
         } else if (kind.equals("PK:")) {
-            /* TODO: support .srg's package maps properly - not simply prefix matches(?)
-             String oldPackageName = inputTransformer.transformClassName(tokens[1]);
-             String newPackageName = outputTransformer.transformClassName(tokens[2]);
+            String oldPackageName = inputTransformer.transformClassName(tokens[1]);
+            String newPackageName = outputTransformer.transformClassName(tokens[2]);
 
-             if (reverse) {
-                 String temp = newPackageName;
-                 newPackageName = oldPackageName;
-                 oldPackageName = temp;
-             }
+            if (reverse) {
+                String temp = newPackageName;
+                newPackageName = oldPackageName;
+                oldPackageName = temp;
+            }
 
-             if (packages.containsKey(oldPackageName) && !newPackageName.equals(packages.get(oldPackageName))) {
-                 throw new IllegalArgumentException("Duplicate package mapping: " + oldPackageName + " ->" + newPackageName +
-                 " but already mapped to "+packages.get(oldPackageName)+" in line="+line);
-             }
+            // package names always either 1) suffixed with '/', or 2) equal to '.' to signify default package
+            if (!newPackageName.equals(".") && !newPackageName.endsWith("/")) {
+                newPackageName += "/";
+            }
 
-             packages.put(oldPackageName, newPackageName);
-             */
+            if (!oldPackageName.equals(".") && !oldPackageName.endsWith("/")) {
+                oldPackageName += "/";
+            }
+
+            if (packages.containsKey(oldPackageName) && !newPackageName.equals(packages.get(oldPackageName))) {
+                throw new IllegalArgumentException("Duplicate package mapping: " + oldPackageName + " ->" + newPackageName +
+                " but already mapped to "+packages.get(oldPackageName)+" in line="+line);
+            }
+
+            packages.put(oldPackageName, newPackageName);
         } else if (kind.equals("FD:")) {
             String oldFull = tokens[1];
             String newFull = tokens[2];

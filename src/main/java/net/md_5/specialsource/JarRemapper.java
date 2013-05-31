@@ -101,19 +101,52 @@ public class JarRemapper extends Remapper {
      * Helper method to map a class name by package (prefix) or class (exact)
      */
     private static String mapClassName(String className, Map<String, String> packageMap, Map<String, String> classMap) {
+        if (classMap != null && classMap.containsKey(className)) {
+            return classMap.get(className);
+        }
+
         if (packageMap != null) {
             Iterator<String> iter = packageMap.keySet().iterator();
             while (iter.hasNext()) {
                 String oldPackage = iter.next();
-                if (className.startsWith(oldPackage)) {
+                if (matchClassPackage(oldPackage, className)) {
                     String newPackage = packageMap.get(oldPackage);
 
-                    return newPackage + className.substring(oldPackage.length());
+                    return moveClassPackage(newPackage, getSimpleName(oldPackage, className));
                 }
             }
         }
 
-        return classMap != null ? classMap.get(className) : null;
+        return null;
+    }
+
+    private static boolean matchClassPackage(String packageName, String className) {
+        if (packageName.equals(".")) {
+            return isDefaultPackage(className);
+        }
+
+        return className.startsWith(packageName);
+    }
+
+    private static String moveClassPackage(String packageName, String classSimpleName) {
+        if (packageName.equals(".")) {
+            System.out.println("moveClassPackage(.) "+classSimpleName);
+            return classSimpleName;
+        }
+
+        return packageName + classSimpleName;
+    }
+
+    private static boolean isDefaultPackage(String className) {
+        return className.indexOf('/') == -1;
+    }
+
+    private static String getSimpleName(String oldPackage, String className) {
+        if (oldPackage.equals(".")) {
+            return className;
+        }
+
+        return className.substring(oldPackage.length());
     }
 
     @Override
