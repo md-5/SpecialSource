@@ -49,6 +49,7 @@ public class JarMapping {
     public final Map<String, String> methods = new HashMap<String, String>();
     private InheritanceMap inheritanceMap = new InheritanceMap();
     private InheritanceProvider fallbackInheritanceProvider = null;
+    private Set<String> ignoredPackages = new HashSet<String>();
 
     public JarMapping() {
     }
@@ -68,6 +69,24 @@ public class JarMapping {
      */
     public void setFallbackInheritanceProvider(InheritanceProvider fallbackInheritanceProvider) {
         this.fallbackInheritanceProvider = fallbackInheritanceProvider;
+    }
+
+    /**
+     * Add a class name prefix to the mapping ignore list.
+     * Note: this only applies before loading mappings, not after
+     */
+    public void addIgnorePackage(String packageName) {
+        ignoredPackages.add(packageName);
+    }
+
+    private boolean isClassIgnored(String className) {
+        for (String packageName : ignoredPackages) {
+            if (className.startsWith(packageName)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public String tryClimb(Map<String, String> map, NodeType type, String owner, String name) {
@@ -305,6 +324,10 @@ public class JarMapping {
                 oldClassName = temp;
             }
 
+            if (isClassIgnored(oldClassName)) {
+                return;
+            }
+
             if (classes.containsKey(oldClassName) && !newClassName.equals(classes.get(oldClassName))) {
                 throw new IllegalArgumentException("Duplicate class mapping: " + oldClassName + " -> " + newClassName
                         + " but already mapped to " + classes.get(oldClassName) + " in line=" + line);
@@ -388,6 +411,7 @@ public class JarMapping {
             String newClassName = outputTransformer.transformClassName(newFull.substring(0, splitNew)); // TODO: verify with existing class map? (only used for reverse)
             String newMethodName = outputTransformer.transformMethodName(oldFull.substring(0, splitOld), newFull.substring(splitNew + 1), tokens[2]);
             String newMethodDescriptor = outputTransformer.transformMethodDescriptor(tokens[4]); // TODO: verify with existing class map? (only used for reverse)
+            // TODO: support isClassIgnored() on reversed method descriptors
 
             if (reverse) {
                 oldClassName = newClassName;
