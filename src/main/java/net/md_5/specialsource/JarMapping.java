@@ -75,13 +75,14 @@ public class JarMapping {
      * Add a class name prefix to the mapping ignore list.
      * Note: this only applies before loading mappings, not after
      */
-    public void addIgnorePackage(String packageName) {
+    public void addProtectedPackage(String packageName) {
+        SpecialSource.log("Protecting Package: " + packageName);
         ignoredPackages.add(packageName);
     }
 
-    private boolean isClassIgnored(String className) {
+    private boolean isProtectedPackage(String desc) {
         for (String packageName : ignoredPackages) {
-            if (className.startsWith(packageName)) {
+            if (desc.startsWith(packageName)) {
                 return true;
             }
         }
@@ -153,7 +154,7 @@ public class JarMapping {
         }
 
         if (srgFiles.size() == 0) {
-            throw new IOException("loadMappingsDir(" + dirname + "): no joined.srg, client.srg, or client.srg found");
+            throw new IOException("loadMappingsDir(" + dirname + "): no joined.srg, client.srg, or server.srg found");
         }
 
         // Read output names through csv mappings, if available & enabled
@@ -324,7 +325,8 @@ public class JarMapping {
                 oldClassName = temp;
             }
 
-            if (isClassIgnored(oldClassName)) {
+            if (isProtectedPackage(oldClassName)) {
+                SpecialSource.log("Ignored CL: " + oldClassName + " " + newClassName);
                 return;
             }
 
@@ -350,6 +352,11 @@ public class JarMapping {
                 String temp = newPackageName;
                 newPackageName = oldPackageName;
                 oldPackageName = temp;
+            }
+
+            if (isProtectedPackage(oldPackageName)) {
+                SpecialSource.log("Ignored PK: " + oldPackageName + " -> " + newPackageName);
+                return;
             }
 
             // package names always either 1) suffixed with '/', or 2) equal to '.' to signify default package
@@ -392,6 +399,11 @@ public class JarMapping {
                 oldFieldName = temp;
             }
 
+            if (isProtectedPackage(oldClassName)) {
+                SpecialSource.log("Ignored FD: " + oldClassName + "/" + oldFieldName + " -> " +  newFieldName);
+                return;
+            }
+
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
         } else if (kind.equals("MD:")) {
             String oldFull = tokens[1];
@@ -420,6 +432,11 @@ public class JarMapping {
                 String temp = newMethodName;
                 newMethodName = oldMethodName;
                 oldMethodName = temp;
+            }
+
+            if (isProtectedPackage(oldClassName)) {
+                SpecialSource.log("Ignored MD: " + oldClassName + "/" + oldMethodName + " -> " +  newMethodName);
+                return;
             }
 
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
