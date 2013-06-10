@@ -121,6 +121,9 @@ public class SpecialSource {
                 acceptsAll(asList("d", "identifier"), "Identifier to place on each class that is transformed, by default, none")
                         .withRequiredArg()
                         .ofType(String.class);
+                acceptsAll(asList("p", "ignored-packages"), "A comma seperated list of packages that should not be transformed, even if the srg specifies they should")
+                        .withRequiredArg()
+                        .ofType(String.class);
             }
         };
 
@@ -159,6 +162,12 @@ public class SpecialSource {
             identifier = (String)options.valueOf("identifier");
         }
 
+        String[] ignored = new String[0];
+        if (options.has("ignored-packages"))
+        {
+            ignored = ((String)options.valueOf("ignored-packages")).split(",");
+        }
+
         FileLocator.useCache = !options.has("force-redownload");
 
         if (options.has("first-jar") && options.has("second-jar")) {
@@ -173,10 +182,18 @@ public class SpecialSource {
             visit(new Pair<Jar>(jar1, jar2), new Pair<JarComparer>(visitor1, visitor2), new Pair<String>(jar1.getMain(), jar2.getMain()));
 
             jarMapping = new JarMapping(visitor1, visitor2, (File) options.valueOf("srg-out"), options.has("compact"), options.has("generate-dupes"));
+            for (String pkg : ignored)
+            {
+                jarMapping.addProtectedPackage(pkg);
+            }
         } else if (options.has("srg-in")) {
             log("Loading mappings");
 
             jarMapping = new JarMapping();
+            for (String pkg : ignored)
+            {
+                jarMapping.addProtectedPackage(pkg);
+            }
 
             // Loading options
             boolean reverse = options.has("reverse");
@@ -253,7 +270,7 @@ public class SpecialSource {
         }
     }
 
-    private static void log(String message) {
+    public static void log(String message) {
         if (options != null && !options.has("quiet")) {
             System.out.println(message);
         }
