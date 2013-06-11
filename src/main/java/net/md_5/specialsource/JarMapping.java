@@ -49,7 +49,7 @@ public class JarMapping {
     public final Map<String, String> methods = new HashMap<String, String>();
     private InheritanceMap inheritanceMap = new InheritanceMap();
     private InheritanceProvider fallbackInheritanceProvider = null;
-    private Set<String> ignoredPackages = new HashSet<String>();
+    private Set<String> excludedPackages = new HashSet<String>();
 
     public JarMapping() {
     }
@@ -75,13 +75,13 @@ public class JarMapping {
      * Add a class name prefix to the mapping ignore list.
      * Note: this only applies before loading mappings, not after
      */
-    public void addProtectedPackage(String packageName) {
+    public void addExcludedPackage(String packageName) {
         SpecialSource.log("Protecting Package: " + packageName);
-        ignoredPackages.add(packageName);
+        excludedPackages.add(packageName);
     }
 
-    private boolean isProtectedPackage(String desc) {
-        for (String packageName : ignoredPackages) {
+    private boolean isExcludedPackage(String desc) {
+        for (String packageName : excludedPackages) {
             if (desc.startsWith(packageName)) {
                 return true;
             }
@@ -325,7 +325,7 @@ public class JarMapping {
                 oldClassName = temp;
             }
 
-            if (isProtectedPackage(oldClassName)) {
+            if (isExcludedPackage(oldClassName)) {
                 SpecialSource.log("Ignored CL: " + oldClassName + " " + newClassName);
                 return;
             }
@@ -354,7 +354,7 @@ public class JarMapping {
                 oldPackageName = temp;
             }
 
-            if (isProtectedPackage(oldPackageName)) {
+            if (isExcludedPackage(oldPackageName)) {
                 SpecialSource.log("Ignored PK: " + oldPackageName + " -> " + newPackageName);
                 return;
             }
@@ -399,7 +399,7 @@ public class JarMapping {
                 oldFieldName = temp;
             }
 
-            if (isProtectedPackage(oldClassName)) {
+            if (isExcludedPackage(oldClassName)) {
                 SpecialSource.log("Ignored FD: " + oldClassName + "/" + oldFieldName + " -> " +  newFieldName);
                 return;
             }
@@ -434,7 +434,7 @@ public class JarMapping {
                 oldMethodName = temp;
             }
 
-            if (isProtectedPackage(oldClassName)) {
+            if (isExcludedPackage(oldClassName)) {
                 SpecialSource.log("Ignored MD: " + oldClassName + "/" + oldMethodName + " -> " +  newMethodName);
                 return;
             }
