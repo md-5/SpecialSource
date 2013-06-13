@@ -130,7 +130,6 @@ public class JarRemapper extends Remapper {
 
     private static String moveClassPackage(String packageName, String classSimpleName) {
         if (packageName.equals(".")) {
-            System.out.println("moveClassPackage(.) "+classSimpleName);
             return classSimpleName;
         }
 
