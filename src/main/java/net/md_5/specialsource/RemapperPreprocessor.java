@@ -227,12 +227,12 @@ public class RemapperPreprocessor {
         }
         String className = ((Type) ldcClass.cst).getInternalName();
 
-        String newName = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, className, fieldName);
+        Ownable newName = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, className, fieldName);
         logR("Remapping " + className + "/" + fieldName + " -> " + newName);
 
         if (newName != null) {
             // Change the string literal to the correct name
-            ldcField.cst = newName;
+            ldcField.cst = newName.name;
             //ldcClass.cst = className; // not remapped here - taken care of by JarRemapper
         }
     }
