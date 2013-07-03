@@ -39,15 +39,14 @@ import net.md_5.specialsource.transformer.MethodDescriptor;
 import net.md_5.specialsource.transformer.ChainingTransformer;
 import net.md_5.specialsource.transformer.MappingTransformer;
 import java.io.*;
-import java.lang.reflect.Modifier;
 import java.util.*;
 
 public class JarMapping {
 
     public final LinkedHashMap<String, String> packages = new LinkedHashMap<String, String>();
     public final Map<String, String> classes = new HashMap<String, String>();
-    public final Map<String, Ownable> fields = new HashMap<String, Ownable>();
-    public final Map<String, Ownable> methods = new HashMap<String, Ownable>();
+    public final Map<String, String> fields = new HashMap<String, String>();
+    public final Map<String, String> methods = new HashMap<String, String>();
     private InheritanceMap inheritanceMap = new InheritanceMap();
     private InheritanceProvider fallbackInheritanceProvider = null;
     private Set<String> excludedPackages = new HashSet<String>();
@@ -91,14 +90,10 @@ public class JarMapping {
         return false;
     }
 
-    public Ownable tryClimb(Map<String, Ownable> map, NodeType type, String owner, String name) {
+    public String tryClimb(Map<String, String> map, NodeType type, String owner, String name) {
         String key = owner + "/" + name;
 
-        Ownable mapped = map.get(key);
-        if (mapped != null && (Modifier.isPrivate(mapped.getAccess()) || Modifier.isStatic(mapped.getAccess()))) {
-            return null;
-        }
-
+        String mapped = map.get(key);
         if (mapped == null) {
             Collection<String> parents = null;
 
@@ -300,13 +295,13 @@ public class JarMapping {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
             String oldFieldName = inputTransformer.transformFieldName(tokens[0], tokens[1]);
             String newFieldName = outputTransformer.transformFieldName(tokens[0], tokens[2]);
-            fields.put(oldClassName + "/" + oldFieldName, new Ownable(NodeType.FIELD, newFieldName));
+            fields.put(oldClassName + "/" + oldFieldName, newFieldName);
         } else if (tokens.length == 4) {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
             String oldMethodName = inputTransformer.transformMethodName(tokens[0], tokens[1], tokens[2]);
             String oldMethodDescriptor = inputTransformer.transformMethodDescriptor(tokens[2]);
             String newMethodName = outputTransformer.transformMethodName(tokens[0], tokens[3], tokens[2]);
-            methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, new Ownable(NodeType.METHOD, newMethodName));
+            methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {
             throw new IOException("Invalid csrg file line, token count " + tokens.length + " unexpected in " + line);
         }
@@ -409,7 +404,7 @@ public class JarMapping {
                 return;
             }
 
-            fields.put(oldClassName + "/" + oldFieldName, new Ownable(NodeType.FIELD, newFieldName));
+            fields.put(oldClassName + "/" + oldFieldName, newFieldName);
         } else if (kind.equals("MD:")) {
             String oldFull = tokens[1];
             String newFull = tokens[3];
@@ -444,7 +439,7 @@ public class JarMapping {
                 return;
             }
 
-            methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, new Ownable(NodeType.METHOD, newMethodName));
+            methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {
             throw new IllegalArgumentException("Unable to parse srg file, unrecognized mapping type in line=" + line);
         }
@@ -487,7 +482,7 @@ public class JarMapping {
             Ownable oldField = oldJar.fields.get(i);
             Ownable newField = newJar.fields.get(i);
             String key = oldField.owner + "/" + oldField.name;
-            fields.put(key, newField);
+            fields.put(key, newField.name);
 
             if (full || !oldField.name.equals(newField.name)) {
                 srgWriter.addFieldMap(oldField, newField);
@@ -497,7 +492,7 @@ public class JarMapping {
             Ownable oldMethod = oldJar.methods.get(i);
             Ownable newMethod = newJar.methods.get(i);
             String key = oldMethod.owner + "/" + oldMethod.name + " " + oldMethod.descriptor;
-            methods.put(key, newMethod);
+            methods.put(key, newMethod.name);
 
             MethodDescriptor methodDescriptorTransformer = new MethodDescriptor(null, classes);
             String oldDescriptor = methodDescriptorTransformer.transform(oldMethod.descriptor);

@@ -29,23 +29,16 @@
 package net.md_5.specialsource;
 
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 
 /**
  * A class which can be used to represent a field, method, or anything else
  * which has an owner, a name and a descriptor.
  */
 @Data
-@RequiredArgsConstructor
 public class Ownable {
 
     public final NodeType type;
     public final String owner;
     public final String name;
     public final String descriptor;
-    public final int access;
-
-    public Ownable(NodeType type, String name) {
-        this(type, null, name, null, -1);
-    }
 }

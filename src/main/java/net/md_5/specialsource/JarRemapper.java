@@ -150,14 +150,14 @@ public class JarRemapper extends Remapper {
 
     @Override
     public String mapFieldName(String owner, String name, String desc) {
-        Ownable mapped = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, owner, name);
-        return mapped == null ? name : mapped.name;
+        String mapped = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, owner, name);
+        return mapped == null ? name : mapped;
     }
 
     @Override
     public String mapMethodName(String owner, String name, String desc) {
-        Ownable mapped = jarMapping.tryClimb(jarMapping.methods, NodeType.METHOD, owner, name + " " + desc);
-        return mapped == null ? name : mapped.name;
+        String mapped = jarMapping.tryClimb(jarMapping.methods, NodeType.METHOD, owner, name + " " + desc);
+        return mapped == null ? name : mapped;
     }
 
     /**
