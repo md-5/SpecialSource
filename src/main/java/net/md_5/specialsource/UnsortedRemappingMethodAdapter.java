@@ -28,6 +28,7 @@
  */
 package net.md_5.specialsource;
 
+import net.md_5.specialsource.util.NoDupeList;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
@@ -49,16 +50,18 @@ import org.objectweb.asm.commons.RemappingAnnotationAdapter;
 public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Changed LocalVariablesSorter to MethodVisitor
 
     protected final Remapper remapper;
+    private final JarMapping mapping;
 
     public UnsortedRemappingMethodAdapter(final int access, final String desc,
-            final MethodVisitor mv, final Remapper remapper) {
-        this(Opcodes.ASM4, access, desc, mv, remapper);
+            final MethodVisitor mv, final Remapper remapper, JarMapping mapping) {
+        this(Opcodes.ASM4, access, desc, mv, remapper, mapping);
     }
 
     protected UnsortedRemappingMethodAdapter(final int api, final int access, 
-            final String desc, final MethodVisitor mv, final Remapper remapper) {
+            final String desc, final MethodVisitor mv, final Remapper remapper, JarMapping mapping) {
         super(api, mv); //Lex: Removed access, desc
         this.remapper = remapper;
+        this.mapping = mapping;
     }
 
     @Override
@@ -111,15 +114,30 @@ public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Chang
     public void visitFieldInsn(int opcode, String owner, String name,
             String desc) {
         super.visitFieldInsn(opcode, remapper.mapType(owner),
-                remapper.mapFieldName(owner, name, desc),
+                remapper.mapFieldName(owner, name, desc,findAccess(owner, name, desc,mapping.oldJar.fields)),
                 remapper.mapDesc(desc));
+    }
+    
+    private int findAccess(String owner, String name, String desc, NoDupeList<Ownable> search) {
+        Ownable found = null;
+        for (Ownable f : search) {
+            if (f.owner.equals(owner) && f.name.equals(name) && f.descriptor.equals(desc)) {
+                found = f;
+                break;
+            }
+        }
+        if (found == null) {
+            throw new IllegalStateException(String.format("No reverse lookup for %s %s %s", owner, name, desc));
+        }
+        
+        return found.access;
     }
 
     @Override
     public void visitMethodInsn(int opcode, String owner, String name,
             String desc) {
         super.visitMethodInsn(opcode, remapper.mapType(owner),
-                remapper.mapMethodName(owner, name, desc),
+                remapper.mapMethodName(owner, name, desc, findAccess(owner, name, desc, mapping.oldJar.methods)),
                 remapper.mapMethodDesc(desc));
     }
 

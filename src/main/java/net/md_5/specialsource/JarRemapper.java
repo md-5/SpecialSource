@@ -260,7 +260,7 @@ public class JarRemapper extends Remapper {
 
             @Override
             protected MethodVisitor createRemappingMethodAdapter(int access, String newDesc, MethodVisitor sup) {
-                MethodVisitor remap = new UnsortedRemappingMethodAdapter(access, newDesc, sup, remapper);
+                MethodVisitor remap = new UnsortedRemappingMethodAdapter(access, newDesc, sup, remapper, jarMapping);
                 return new MethodVisitor(Opcodes.ASM4, remap) {
                     @Override
                     public void visitAttribute(Attribute attr) {
