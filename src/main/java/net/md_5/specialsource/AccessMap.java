@@ -72,9 +72,10 @@ public class AccessMap {
             if (n != -1) {
                 line = line.substring(0, n);
             }
-            
-            n = n.trim()
-            
+            n = line.lastIndexOf(' ');
+            if (n != -1) {
+                line = line.substring(0, n);
+            }
             if (line.isEmpty()) {
                 continue;
             }
