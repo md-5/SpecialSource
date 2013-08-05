@@ -45,7 +45,6 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.commons.RemappingClassAdapter;
-import org.objectweb.asm.commons.RemappingFieldAdapter;
 import org.objectweb.asm.tree.ClassNode;
 
 import static org.objectweb.asm.ClassWriter.*;
@@ -71,8 +70,8 @@ public class JarRemapper extends Remapper {
     /**
      * Enable or disable API-only generation.
      *
-     * If enabled, only symbols will be output to the remapped jar, suitable for use as a library.
-     * Code and resources will be excluded.
+     * If enabled, only symbols will be output to the remapped jar, suitable for
+     * use as a library. Code and resources will be excluded.
      */
     public void setGenerateAPI(boolean generateAPI) {
         if (generateAPI) {
@@ -150,13 +149,13 @@ public class JarRemapper extends Remapper {
 
     @Override
     public String mapFieldName(String owner, String name, String desc) {
-        String mapped = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, owner, name);
+        String mapped = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, owner, name, 0);
         return mapped == null ? name : mapped;
     }
 
     @Override
-    public String mapMethodName(String owner, String name, String desc) {
-        String mapped = jarMapping.tryClimb(jarMapping.methods, NodeType.METHOD, owner, name + " " + desc);
+    public String mapMethodName(String owner, String name, String desc, int access) {
+        String mapped = jarMapping.tryClimb(jarMapping.methods, NodeType.METHOD, owner, name + " " + desc, access);
         return mapped == null ? name : mapped;
     }
 
@@ -189,7 +188,9 @@ public class JarRemapper extends Remapper {
                         continue;
                     } else {
                         // copy other resources
-                        if (!copyResources) continue; // unless generating an API
+                        if (!copyResources) {
+                            continue; // unless generating an API
+                        }
                         entry = new JarEntry(name);
 
                         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -234,62 +235,78 @@ public class JarRemapper extends Remapper {
         }
 
         ClassNode node = new ClassNode();
-        RemappingClassAdapter mapper = new RemappingClassAdapter(node, this)
-        {
+        RemappingClassAdapter mapper = new RemappingClassAdapter(node, this) {
             @Override
-            protected MethodVisitor createRemappingMethodAdapter(int access, String newDesc, MethodVisitor sup)
-            {
+            public MethodVisitor visitMethod(int access, String name, String desc,
+                    String signature, String[] exceptions) {
+                String newDesc = remapper.mapMethodDesc(desc);
+                MethodVisitor mv = super.visitMethod(access, remapper.mapMethodName(
+                        className, name, desc, access), newDesc, remapper.mapSignature(
+                        signature, false),
+                        exceptions == null ? null : remapper.mapTypes(exceptions));
+                return mv == null ? null : createRemappingMethodAdapter(access,
+                        newDesc, mv);
+            }
+
+            @Override
+            protected MethodVisitor createRemappingMethodAdapter(int access, String newDesc, MethodVisitor sup) {
                 MethodVisitor remap = new UnsortedRemappingMethodAdapter(access, newDesc, sup, remapper);
-                return new MethodVisitor(Opcodes.ASM4, remap)
-                {
+                return new MethodVisitor(Opcodes.ASM4, remap) {
                     @Override
-                    public void visitAttribute(Attribute attr)
-                    {
-                        if (SpecialSource.kill_lvt && attr.type.equals("LocalVariableTable")) return;  
-                        if (SpecialSource.kill_generics && attr.type.equals("LocalVariableTypeTable")) return;                        
-                        if (mv != null) mv.visitAttribute(attr);
+                    public void visitAttribute(Attribute attr) {
+                        if (SpecialSource.kill_lvt && attr.type.equals("LocalVariableTable")) {
+                            return;
+                        }
+                        if (SpecialSource.kill_generics && attr.type.equals("LocalVariableTypeTable")) {
+                            return;
+                        }
+                        if (mv != null) {
+                            mv.visitAttribute(attr);
+                        }
                     }
                 };
             }
 
             @Override
-            protected FieldVisitor createRemappingFieldAdapter(FieldVisitor sup)
-            {
-                FieldVisitor remap = new RemappingFieldAdapter(sup, remapper);
-                return new FieldVisitor(Opcodes.ASM4, sup)
-                {
+            protected FieldVisitor createRemappingFieldAdapter(FieldVisitor sup) {
+                return new FieldVisitor(Opcodes.ASM4, sup) {
                     @Override
-                    public void visitAttribute(Attribute attr)
-                    {
-                        if (SpecialSource.kill_lvt && attr.type.equals("LocalVariableTable")) return;
-                        if (SpecialSource.kill_generics && attr.type.equals("LocalVariableTypeTable")) return;                        
-                        if (fv != null) fv.visitAttribute(attr);
+                    public void visitAttribute(Attribute attr) {
+                        if (SpecialSource.kill_lvt && attr.type.equals("LocalVariableTable")) {
+                            return;
+                        }
+                        if (SpecialSource.kill_generics && attr.type.equals("LocalVariableTypeTable")) {
+                            return;
+                        }
+                        if (fv != null) {
+                            fv.visitAttribute(attr);
+                        }
                     }
                 };
             }
 
             @Override
-            public void visitSource(String source, String debug)
-            {
-                if (!SpecialSource.kill_source && cv != null)
-                {
+            public void visitSource(String source, String debug) {
+                if (!SpecialSource.kill_source && cv != null) {
                     cv.visitSource(source, debug);
                 }
             }
 
             @Override
-            public void visitAttribute(Attribute attr)
-            {
-                if (SpecialSource.kill_generics && attr.type.equals("Signature")) return;     
-                if (cv != null) cv.visitAttribute(attr); 
+            public void visitAttribute(Attribute attr) {
+                if (SpecialSource.kill_generics && attr.type.equals("Signature")) {
+                    return;
+                }
+                if (cv != null) {
+                    cv.visitAttribute(attr);
+                }
             }
         };
         reader.accept(mapper, readerFlags);
 
         ClassWriter wr = new ClassWriter(writerFlags);
         node.accept(wr);
-        if (SpecialSource.identifier != null)
-        {
+        if (SpecialSource.identifier != null) {
             wr.newUTF8(SpecialSource.identifier);
         }
         return wr.toByteArray();

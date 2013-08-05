@@ -227,7 +227,7 @@ public class RemapperPreprocessor {
         }
         String className = ((Type) ldcClass.cst).getInternalName();
 
-        String newName = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, className, fieldName);
+        String newName = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, className, fieldName, 0);
         logR("Remapping " + className + "/" + fieldName + " -> " + newName);
 
         if (newName != null) {

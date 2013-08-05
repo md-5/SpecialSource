@@ -39,6 +39,7 @@ import net.md_5.specialsource.transformer.MethodDescriptor;
 import net.md_5.specialsource.transformer.ChainingTransformer;
 import net.md_5.specialsource.transformer.MappingTransformer;
 import java.io.*;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 public class JarMapping {
@@ -90,11 +91,11 @@ public class JarMapping {
         return false;
     }
 
-    public String tryClimb(Map<String, String> map, NodeType type, String owner, String name) {
+    public String tryClimb(Map<String, String> map, NodeType type, String owner, String name, int access) {
         String key = owner + "/" + name;
 
         String mapped = map.get(key);
-        if (mapped == null) {
+        if (mapped == null && !Modifier.isPrivate(access) && !Modifier.isStatic(access)) {
             Collection<String> parents = null;
 
             if (inheritanceMap.hasParents(owner)) {
@@ -107,7 +108,7 @@ public class JarMapping {
             if (parents != null) {
                 // climb the inheritance tree
                 for (String parent : parents) {
-                    mapped = tryClimb(map, type, parent, name);
+                    mapped = tryClimb(map, type, parent, name, access);
                     if (mapped != null) {
                         return mapped;
                     }
