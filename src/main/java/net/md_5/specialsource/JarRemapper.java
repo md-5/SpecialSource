@@ -148,8 +148,8 @@ public class JarRemapper extends Remapper {
     }
 
     @Override
-    public String mapFieldName(String owner, String name, String desc) {
-        String mapped = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, owner, name, 0);
+    public String mapFieldName(String owner, String name, String desc, int access) {
+        String mapped = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, owner, name, access);
         return mapped == null ? name : mapped;
     }
 
@@ -246,6 +246,16 @@ public class JarRemapper extends Remapper {
                         exceptions == null ? null : remapper.mapTypes(exceptions));
                 return mv == null ? null : createRemappingMethodAdapter(access,
                         newDesc, mv);
+            }
+
+            @Override
+            public FieldVisitor visitField(int access, String name, String desc,
+                    String signature, Object value) {
+                FieldVisitor fv = super.visitField(access,
+                        remapper.mapFieldName(className, name, desc, access),
+                        remapper.mapDesc(desc), remapper.mapSignature(signature, true),
+                        remapper.mapValue(value));
+                return fv == null ? null : createRemappingFieldAdapter(fv);
             }
 
             @Override

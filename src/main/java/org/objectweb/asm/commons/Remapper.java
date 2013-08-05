@@ -183,7 +183,7 @@ public abstract class Remapper {
      * @return new name of the method
      */
     public String mapMethodName(String owner, String name, String desc) {
-        return mapMethodName(owner, name, desc, 0); // Spigot
+        return mapMethodName(owner, name, desc, 0); // SS
     }
     
     // SS Start
@@ -217,8 +217,14 @@ public abstract class Remapper {
      * @return new name of the field.
      */
     public String mapFieldName(String owner, String name, String desc) {
+        return mapFieldName(owner, name, desc, 0); // SS
+    }
+
+    // SS Start
+    public String mapFieldName(String owner, String name, String desc, int access) {
         return name;
     }
+    // SS End
 
     /**
      * Map type name to the new name. Subclasses can override.
