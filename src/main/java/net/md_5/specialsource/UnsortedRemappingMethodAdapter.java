@@ -28,24 +28,32 @@
  */
 package net.md_5.specialsource;
 
+import com.google.common.base.Throwables;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.md_5.specialsource.util.NoDupeList;
 import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.commons.RemappingAnnotationAdapter;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.MethodNode;
 
 /**
  * A {@link LocalVariablesSorter} for type mapping.
- * 
+ *
  * @author Eugene Kuleshov
- * 
- * Edited 04-24-2013 LexManos:
- *  Changed super class to MethodVisitor, using LocalVariablesSorter caused 
- *  the LV indexes to be reassigned improperly. Causing decompiled code to 
- *  not follow a predictable pattern and not coincide with RetroGuard's output.
+ *
+ * Edited 04-24-2013 LexManos: Changed super class to MethodVisitor, using
+ * LocalVariablesSorter caused the LV indexes to be reassigned improperly.
+ * Causing decompiled code to not follow a predictable pattern and not coincide
+ * with RetroGuard's output.
  */
 public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Changed LocalVariablesSorter to MethodVisitor
 
@@ -57,7 +65,7 @@ public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Chang
         this(Opcodes.ASM4, access, desc, mv, remapper, mapping);
     }
 
-    protected UnsortedRemappingMethodAdapter(final int api, final int access, 
+    protected UnsortedRemappingMethodAdapter(final int api, final int access,
             final String desc, final MethodVisitor mv, final Remapper remapper, JarMapping mapping) {
         super(api, mv); //Lex: Removed access, desc
         this.remapper = remapper;
@@ -114,30 +122,58 @@ public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Chang
     public void visitFieldInsn(int opcode, String owner, String name,
             String desc) {
         super.visitFieldInsn(opcode, remapper.mapType(owner),
-                remapper.mapFieldName(owner, name, desc,findAccess(owner, name, desc,mapping.oldJar.fields)),
+                remapper.mapFieldName(owner, name, desc, findAccess(NodeType.FIELD, owner, name, desc, mapping.newJar.fields)),
                 remapper.mapDesc(desc));
     }
-    
-    private int findAccess(String owner, String name, String desc, NoDupeList<Ownable> search) {
-        Ownable found = null;
+
+    private int findAccess(NodeType type, String owner, String name, String desc, NoDupeList<Ownable> search) {
+        int access = -1;
         for (Ownable f : search) {
             if (f.owner.equals(owner) && f.name.equals(name) && f.descriptor.equals(desc)) {
-                found = f;
+                access = f.access;
                 break;
             }
         }
-        if (found == null) {
+
+        // TODO: Proper class repository
+        ClassReader r = null;
+        try {
+            r = new ClassReader(owner);
+        } catch (IOException ex) {
+            Throwables.propagate(ex);
+        }
+        ClassNode n = new ClassNode();
+        r.accept(n, 0);
+        switch (type) {
+            case FIELD:
+                for (FieldNode f : n.fields) {
+                    if (f.name.equals(name) && f.desc.equals(desc)) {
+                        access = f.access;
+                        break;
+                    }
+                }
+                break;
+            case METHOD:
+                for (MethodNode m : n.methods) {
+                    if (m.name.equals(name) && m.desc.equals(desc)) {
+                        access = m.access;
+                    }
+                }
+                break;
+        }
+
+        if (access == -1) {
             throw new IllegalStateException(String.format("No reverse lookup for %s %s %s", owner, name, desc));
         }
-        
-        return found.access;
+
+        return access;
     }
 
     @Override
     public void visitMethodInsn(int opcode, String owner, String name,
             String desc) {
         super.visitMethodInsn(opcode, remapper.mapType(owner),
-                remapper.mapMethodName(owner, name, desc, findAccess(owner, name, desc, mapping.oldJar.methods)),
+                remapper.mapMethodName(owner, name, desc, findAccess(NodeType.METHOD, owner, name, desc, mapping.newJar.methods)),
                 remapper.mapMethodDesc(desc));
     }
 

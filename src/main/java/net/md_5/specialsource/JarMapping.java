@@ -453,7 +453,7 @@ public class JarMapping {
     public JarMapping(JarComparer oldJar, JarComparer newJar, File logFile, boolean compact) throws IOException {
         this(oldJar, newJar, logFile, compact, false);
     }
-    public JarComparer oldJar;
+    public JarComparer newJar;
 
     /**
      * Generate a mapping given an original jar and renamed jar
@@ -468,7 +468,7 @@ public class JarMapping {
     public JarMapping(JarComparer oldJar, JarComparer newJar, File logfile, boolean compact, boolean full) throws IOException {
         SpecialSource.validate(oldJar, newJar);
 
-        this.oldJar = oldJar;
+        this.newJar = newJar;
 
         PrintWriter out;
         if (logfile == null) {
