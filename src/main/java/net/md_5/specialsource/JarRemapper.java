@@ -36,6 +36,8 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import net.md_5.specialsource.repo.ClassRepository;
+import net.md_5.specialsource.repo.JarRepository;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Attribute;
@@ -164,6 +166,7 @@ public class JarRemapper extends Remapper {
      */
     public void remapJar(Jar jar, File target) throws IOException {
         JarOutputStream out = new JarOutputStream(new FileOutputStream(target));
+        ClassRepository repo = new JarRepository(jar);
         try {
             if (jar == null) {
                 return;
@@ -179,7 +182,7 @@ public class JarRemapper extends Remapper {
                         // remap classes
                         name = name.substring(0, name.length() - CLASS_LEN);
 
-                        data = remapClassFile(is);
+                        data = remapClassFile(is, repo);
                         String newName = map(name);
 
                         entry = new JarEntry(newName == null ? name : newName + ".class");
@@ -217,16 +220,12 @@ public class JarRemapper extends Remapper {
     /**
      * Remap an individual class given an InputStream to its bytecode
      */
-    public byte[] remapClassFile(InputStream is) throws IOException {
-        return remapClassFile(new ClassReader(is));
-    }
-
-    public byte[] remapClassFile(byte[] in) {
-        return remapClassFile(new ClassReader(in));
+    public byte[] remapClassFile(InputStream is, ClassRepository repo) throws IOException {
+        return remapClassFile(new ClassReader(is), repo);
     }
 
     @SuppressWarnings("unchecked")
-    private byte[] remapClassFile(ClassReader reader) {
+    private byte[] remapClassFile(ClassReader reader, final ClassRepository repo) {
         if (remapperPreprocessor != null) {
             byte[] pre = remapperPreprocessor.preprocess(reader);
             if (pre != null) {
@@ -260,7 +259,7 @@ public class JarRemapper extends Remapper {
 
             @Override
             protected MethodVisitor createRemappingMethodAdapter(int access, String newDesc, MethodVisitor sup) {
-                MethodVisitor remap = new UnsortedRemappingMethodAdapter(access, newDesc, sup, remapper, jarMapping);
+                MethodVisitor remap = new UnsortedRemappingMethodAdapter(access, newDesc, sup, remapper, repo);
                 return new MethodVisitor(Opcodes.ASM4, remap) {
                     @Override
                     public void visitAttribute(Attribute attr) {

@@ -28,13 +28,9 @@
  */
 package net.md_5.specialsource;
 
-import com.google.common.base.Throwables;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import net.md_5.specialsource.util.NoDupeList;
+import net.md_5.specialsource.repo.ClassRepository;
+import net.md_5.specialsource.repo.RuntimeRepository;
 import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -58,18 +54,18 @@ import org.objectweb.asm.tree.MethodNode;
 public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Changed LocalVariablesSorter to MethodVisitor
 
     protected final Remapper remapper;
-    private final JarMapping mapping;
+    private final ClassRepository classRepo;
 
     public UnsortedRemappingMethodAdapter(final int access, final String desc,
-            final MethodVisitor mv, final Remapper remapper, JarMapping mapping) {
-        this(Opcodes.ASM4, access, desc, mv, remapper, mapping);
+            final MethodVisitor mv, final Remapper remapper, ClassRepository classRepo) {
+        this(Opcodes.ASM4, access, desc, mv, remapper, classRepo);
     }
 
     protected UnsortedRemappingMethodAdapter(final int api, final int access,
-            final String desc, final MethodVisitor mv, final Remapper remapper, JarMapping mapping) {
+            final String desc, final MethodVisitor mv, final Remapper remapper, ClassRepository classRepo) {
         super(api, mv); //Lex: Removed access, desc
         this.remapper = remapper;
-        this.mapping = mapping;
+        this.classRepo = classRepo;
     }
 
     @Override
@@ -122,48 +118,44 @@ public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Chang
     public void visitFieldInsn(int opcode, String owner, String name,
             String desc) {
         super.visitFieldInsn(opcode, remapper.mapType(owner),
-                remapper.mapFieldName(owner, name, desc, findAccess(NodeType.FIELD, owner, name, desc, mapping.newJar.fields)),
+                remapper.mapFieldName(owner, name, desc, findAccess(NodeType.FIELD, owner, name, desc)),
                 remapper.mapDesc(desc));
     }
 
-    private int findAccess(NodeType type, String owner, String name, String desc, NoDupeList<Ownable> search) {
+    private int findAccess(NodeType type, String owner, String name, String desc, ClassRepository repo) {
         int access = -1;
-        for (Ownable f : search) {
-            if (f.owner.equals(owner) && f.name.equals(name) && f.descriptor.equals(desc)) {
-                access = f.access;
-                break;
+        if (repo != null) {
+            ClassNode clazz = classRepo.findClass(owner);
+            if (clazz != null) {
+                switch (type) {
+                    case FIELD:
+                        for (FieldNode f : clazz.fields) {
+                            if (f.name.equals(name) && f.desc.equals(desc)) {
+                                access = f.access;
+                                break;
+                            }
+                        }
+                        break;
+                    case METHOD:
+                        for (MethodNode m : classRepo.findClass(owner).methods) {
+                            if (m.name.equals(name) && m.desc.equals(desc)) {
+                                access = m.access;
+                                break;
+                            }
+                        }
+                        break;
+                }
             }
         }
 
-        // TODO: Proper class repository
-        ClassReader r = null;
-        try {
-            r = new ClassReader(owner);
-        } catch (IOException ex) {
-            Throwables.propagate(ex);
-        }
-        ClassNode n = new ClassNode();
-        r.accept(n, 0);
-        switch (type) {
-            case FIELD:
-                for (FieldNode f : n.fields) {
-                    if (f.name.equals(name) && f.desc.equals(desc)) {
-                        access = f.access;
-                        break;
-                    }
-                }
-                break;
-            case METHOD:
-                for (MethodNode m : n.methods) {
-                    if (m.name.equals(name) && m.desc.equals(desc)) {
-                        access = m.access;
-                    }
-                }
-                break;
-        }
+        return access;
+    }
 
+    private int findAccess(NodeType type, String owner, String name, String desc) {
+        int access;
+        access = findAccess(type, owner, name, desc, classRepo);
         if (access == -1) {
-            throw new IllegalStateException(String.format("No reverse lookup for %s %s %s", owner, name, desc));
+            access = findAccess(type, owner, name, desc, RuntimeRepository.getInstance());
         }
 
         return access;
@@ -173,7 +165,7 @@ public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Chang
     public void visitMethodInsn(int opcode, String owner, String name,
             String desc) {
         super.visitMethodInsn(opcode, remapper.mapType(owner),
-                remapper.mapMethodName(owner, name, desc, findAccess(NodeType.METHOD, owner, name, desc, mapping.newJar.methods)),
+                remapper.mapMethodName(owner, name, desc, findAccess(NodeType.METHOD, owner, name, desc)),
                 remapper.mapMethodDesc(desc));
     }
 
