@@ -28,7 +28,6 @@
  */
 package net.md_5.specialsource.writer;
 
-import java.io.Writer;
 import net.md_5.specialsource.Ownable;
 
 public class Searge extends MappingWriter {

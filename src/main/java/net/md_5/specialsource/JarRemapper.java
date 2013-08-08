@@ -224,6 +224,10 @@ public class JarRemapper extends Remapper {
         return remapClassFile(new ClassReader(is), repo);
     }
 
+    public byte[] remapClassFile(byte[] in, ClassRepo repo) {
+        return remapClassFile(new ClassReader(in), repo);
+    }
+
     @SuppressWarnings("unchecked")
     private byte[] remapClassFile(ClassReader reader, final ClassRepo repo) {
         if (remapperPreprocessor != null) {
