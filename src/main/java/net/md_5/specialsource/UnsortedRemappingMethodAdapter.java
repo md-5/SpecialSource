@@ -28,8 +28,8 @@
  */
 package net.md_5.specialsource;
 
-import net.md_5.specialsource.repo.ClassRepository;
-import net.md_5.specialsource.repo.RuntimeRepository;
+import net.md_5.specialsource.repo.ClassRepo;
+import net.md_5.specialsource.repo.RuntimeRepo;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
@@ -54,15 +54,15 @@ import org.objectweb.asm.tree.MethodNode;
 public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Changed LocalVariablesSorter to MethodVisitor
 
     protected final Remapper remapper;
-    private final ClassRepository classRepo;
+    private final ClassRepo classRepo;
 
     public UnsortedRemappingMethodAdapter(final int access, final String desc,
-            final MethodVisitor mv, final Remapper remapper, ClassRepository classRepo) {
+            final MethodVisitor mv, final Remapper remapper, ClassRepo classRepo) {
         this(Opcodes.ASM4, access, desc, mv, remapper, classRepo);
     }
 
     protected UnsortedRemappingMethodAdapter(final int api, final int access,
-            final String desc, final MethodVisitor mv, final Remapper remapper, ClassRepository classRepo) {
+            final String desc, final MethodVisitor mv, final Remapper remapper, ClassRepo classRepo) {
         super(api, mv); //Lex: Removed access, desc
         this.remapper = remapper;
         this.classRepo = classRepo;
@@ -122,7 +122,7 @@ public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Chang
                 remapper.mapDesc(desc));
     }
 
-    private int findAccess(NodeType type, String owner, String name, String desc, ClassRepository repo) {
+    private int findAccess(NodeType type, String owner, String name, String desc, ClassRepo repo) {
         int access = -1;
         if (repo != null) {
             ClassNode clazz = classRepo.findClass(owner);
@@ -155,7 +155,7 @@ public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Chang
         int access;
         access = findAccess(type, owner, name, desc, classRepo);
         if (access == -1) {
-            access = findAccess(type, owner, name, desc, RuntimeRepository.getInstance());
+            access = findAccess(type, owner, name, desc, RuntimeRepo.getInstance());
         }
 
         return access;

@@ -36,8 +36,8 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
-import net.md_5.specialsource.repo.ClassRepository;
-import net.md_5.specialsource.repo.JarRepository;
+import net.md_5.specialsource.repo.ClassRepo;
+import net.md_5.specialsource.repo.JarRepo;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Attribute;
@@ -166,7 +166,7 @@ public class JarRemapper extends Remapper {
      */
     public void remapJar(Jar jar, File target) throws IOException {
         JarOutputStream out = new JarOutputStream(new FileOutputStream(target));
-        ClassRepository repo = new JarRepository(jar);
+        ClassRepo repo = new JarRepo(jar);
         try {
             if (jar == null) {
                 return;
@@ -220,12 +220,12 @@ public class JarRemapper extends Remapper {
     /**
      * Remap an individual class given an InputStream to its bytecode
      */
-    public byte[] remapClassFile(InputStream is, ClassRepository repo) throws IOException {
+    public byte[] remapClassFile(InputStream is, ClassRepo repo) throws IOException {
         return remapClassFile(new ClassReader(is), repo);
     }
 
     @SuppressWarnings("unchecked")
-    private byte[] remapClassFile(ClassReader reader, final ClassRepository repo) {
+    private byte[] remapClassFile(ClassReader reader, final ClassRepo repo) {
         if (remapperPreprocessor != null) {
             byte[] pre = remapperPreprocessor.preprocess(reader);
             if (pre != null) {

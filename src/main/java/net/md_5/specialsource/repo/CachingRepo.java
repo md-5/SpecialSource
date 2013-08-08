@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import org.objectweb.asm.tree.ClassNode;
 
-public abstract class CachingRepository implements ClassRepository {
+public abstract class CachingRepo implements ClassRepo {
 
     private final Map<String, ClassNode> cache = new WeakHashMap<String, ClassNode>();
 

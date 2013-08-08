@@ -8,10 +8,10 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class RuntimeRepository extends CachingRepository {
+public class RuntimeRepo extends CachingRepo {
 
     @Getter
-    private static final RuntimeRepository instance = new RuntimeRepository();
+    private static final RuntimeRepo instance = new RuntimeRepo();
 
     @Override
     protected ClassNode findClass0(String internalName) {

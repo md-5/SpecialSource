@@ -8,7 +8,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
 @RequiredArgsConstructor
-public class JarRepository extends CachingRepository {
+public class JarRepo extends CachingRepo {
 
     private final Jar jar;
 
