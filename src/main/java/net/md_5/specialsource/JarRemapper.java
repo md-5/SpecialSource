@@ -46,7 +46,6 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.commons.Remapper;
-import org.objectweb.asm.commons.RemappingClassAdapter;
 import org.objectweb.asm.tree.ClassNode;
 
 import static org.objectweb.asm.ClassWriter.*;
@@ -238,83 +237,7 @@ public class JarRemapper extends Remapper {
         }
 
         ClassNode node = new ClassNode();
-        RemappingClassAdapter mapper = new RemappingClassAdapter(node, this) {
-            @Override
-            public MethodVisitor visitMethod(int access, String name, String desc,
-                    String signature, String[] exceptions) {
-                String newDesc = remapper.mapMethodDesc(desc);
-                MethodVisitor mv = super.visitMethod(access, remapper.mapMethodName(
-                        className, name, desc, access), newDesc, remapper.mapSignature(
-                        signature, false),
-                        exceptions == null ? null : remapper.mapTypes(exceptions));
-                return mv == null ? null : createRemappingMethodAdapter(access,
-                        newDesc, mv);
-            }
-
-            @Override
-            public FieldVisitor visitField(int access, String name, String desc,
-                    String signature, Object value) {
-                FieldVisitor fv = super.visitField(access,
-                        remapper.mapFieldName(className, name, desc, access),
-                        remapper.mapDesc(desc), remapper.mapSignature(signature, true),
-                        remapper.mapValue(value));
-                return fv == null ? null : createRemappingFieldAdapter(fv);
-            }
-
-            @Override
-            protected MethodVisitor createRemappingMethodAdapter(int access, String newDesc, MethodVisitor sup) {
-                MethodVisitor remap = new UnsortedRemappingMethodAdapter(access, newDesc, sup, remapper, repo);
-                return new MethodVisitor(Opcodes.ASM4, remap) {
-                    @Override
-                    public void visitAttribute(Attribute attr) {
-                        if (SpecialSource.kill_lvt && attr.type.equals("LocalVariableTable")) {
-                            return;
-                        }
-                        if (SpecialSource.kill_generics && attr.type.equals("LocalVariableTypeTable")) {
-                            return;
-                        }
-                        if (mv != null) {
-                            mv.visitAttribute(attr);
-                        }
-                    }
-                };
-            }
-
-            @Override
-            protected FieldVisitor createRemappingFieldAdapter(FieldVisitor sup) {
-                return new FieldVisitor(Opcodes.ASM4, sup) {
-                    @Override
-                    public void visitAttribute(Attribute attr) {
-                        if (SpecialSource.kill_lvt && attr.type.equals("LocalVariableTable")) {
-                            return;
-                        }
-                        if (SpecialSource.kill_generics && attr.type.equals("LocalVariableTypeTable")) {
-                            return;
-                        }
-                        if (fv != null) {
-                            fv.visitAttribute(attr);
-                        }
-                    }
-                };
-            }
-
-            @Override
-            public void visitSource(String source, String debug) {
-                if (!SpecialSource.kill_source && cv != null) {
-                    cv.visitSource(source, debug);
-                }
-            }
-
-            @Override
-            public void visitAttribute(Attribute attr) {
-                if (SpecialSource.kill_generics && attr.type.equals("Signature")) {
-                    return;
-                }
-                if (cv != null) {
-                    cv.visitAttribute(attr);
-                }
-            }
-        };
+        RemappingClassAdapter mapper = new RemappingClassAdapter(node, this, repo);
         reader.accept(mapper, readerFlags);
 
         ClassWriter wr = new ClassWriter(writerFlags);
