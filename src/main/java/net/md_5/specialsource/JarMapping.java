@@ -95,7 +95,7 @@ public class JarMapping {
         String key = owner + "/" + name;
 
         String mapped = map.get(key);
-        if (mapped == null && !Modifier.isPrivate(access) && !Modifier.isStatic(access)) {
+        if (mapped == null && (access == -1 || (!Modifier.isPrivate(access) && !Modifier.isStatic(access)))) {
             Collection<String> parents = null;
 
             if (inheritanceMap.hasParents(owner)) {
