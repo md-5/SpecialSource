@@ -45,12 +45,12 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.commons.Remapper;
+import net.md_5.specialsource.CustomRemapper;
 import org.objectweb.asm.tree.ClassNode;
 
 import static org.objectweb.asm.ClassWriter.*;
 
-public class JarRemapper extends Remapper {
+public class JarRemapper extends CustomRemapper {
 
     private static final int CLASS_LEN = ".class".length();
     public final JarMapping jarMapping;

@@ -35,7 +35,6 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.commons.RemappingAnnotationAdapter;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
@@ -53,16 +52,16 @@ import org.objectweb.asm.tree.MethodNode;
  */
 public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Changed LocalVariablesSorter to MethodVisitor
 
-    protected final Remapper remapper;
+    protected final CustomRemapper remapper;
     private final ClassRepo classRepo;
 
     public UnsortedRemappingMethodAdapter(final int access, final String desc,
-            final MethodVisitor mv, final Remapper remapper, ClassRepo classRepo) {
+            final MethodVisitor mv, final CustomRemapper remapper, ClassRepo classRepo) {
         this(Opcodes.ASM4, access, desc, mv, remapper, classRepo);
     }
 
     protected UnsortedRemappingMethodAdapter(final int api, final int access,
-            final String desc, final MethodVisitor mv, final Remapper remapper, ClassRepo classRepo) {
+            final String desc, final MethodVisitor mv, final CustomRemapper remapper, ClassRepo classRepo) {
         super(api, mv); //Lex: Removed access, desc
         this.remapper = remapper;
         this.classRepo = classRepo;

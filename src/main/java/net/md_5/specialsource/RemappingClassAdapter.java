@@ -67,7 +67,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.commons.Remapper;
+import net.md_5.specialsource.CustomRemapper;
 import org.objectweb.asm.commons.RemappingAnnotationAdapter;
 
 /**
@@ -77,16 +77,16 @@ import org.objectweb.asm.commons.RemappingAnnotationAdapter;
  */
 public class RemappingClassAdapter extends ClassVisitor {
 
-    protected final Remapper remapper;
+    protected final CustomRemapper remapper;
     protected ClassRepo repo;
     protected String className;
     
-    public RemappingClassAdapter(final ClassVisitor cv, final Remapper remapper, ClassRepo repo) {
+    public RemappingClassAdapter(final ClassVisitor cv, final CustomRemapper remapper, ClassRepo repo) {
         this(Opcodes.ASM4, cv, remapper);
         this.repo = repo;
     }
 
-    protected RemappingClassAdapter(final int api, final ClassVisitor cv, final Remapper remapper) {
+    protected RemappingClassAdapter(final int api, final ClassVisitor cv, final CustomRemapper remapper) {
         super(api, cv);
         this.remapper = remapper;
     }
