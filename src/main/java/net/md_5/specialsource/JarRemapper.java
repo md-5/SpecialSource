@@ -90,11 +90,8 @@ public class JarRemapper extends CustomRemapper {
     }
 
     public static String mapTypeName(String typeName, Map<String, String> packageMap, Map<String, String> classMap, String defaultIfUnmapped) {
-        int index = typeName.indexOf('$');
-        String key = (index == -1) ? typeName : typeName.substring(0, index);
-        String mapped = mapClassName(key, packageMap, classMap);
-
-        return mapped != null ? mapped + (index == -1 ? "" : typeName.substring(index, typeName.length())) : defaultIfUnmapped;
+        String mapped = mapClassName(typeName, packageMap, classMap);
+        return mapped != null ? mapped : defaultIfUnmapped;
     }
 
     /**
@@ -103,6 +100,15 @@ public class JarRemapper extends CustomRemapper {
     private static String mapClassName(String className, Map<String, String> packageMap, Map<String, String> classMap) {
         if (classMap != null && classMap.containsKey(className)) {
             return classMap.get(className);
+        }
+        
+        int index = className.lastIndexOf('$');
+        if (index != -1)
+        {
+            String outer = className.substring(0, index);
+            String mapped = mapClassName(outer, packageMap, classMap);
+            if  (mapped == null) return null;
+            return mapped + className.substring(index);
         }
 
         if (packageMap != null) {
