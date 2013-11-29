@@ -38,30 +38,29 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import net.md_5.specialsource.repo.ClassRepo;
 import net.md_5.specialsource.repo.JarRepo;
-
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.MethodVisitor;
-import net.md_5.specialsource.CustomRemapper;
 import org.objectweb.asm.tree.ClassNode;
-
 import static org.objectweb.asm.ClassWriter.*;
 
 public class JarRemapper extends CustomRemapper {
 
     private static final int CLASS_LEN = ".class".length();
+    private RemapperProcessor preProcessor;
     public final JarMapping jarMapping;
-    public RemapperPreprocessor remapperPreprocessor;
+    private RemapperProcessor postProcessor;
     private int writerFlags = COMPUTE_MAXS;
     private int readerFlags = 0;
     private boolean copyResources = true;
 
-    public JarRemapper(RemapperPreprocessor remapperPreprocessor, JarMapping jarMapping) {
-        this.remapperPreprocessor = remapperPreprocessor;
+    public JarRemapper(RemapperProcessor preProcessor, JarMapping jarMapping, RemapperProcessor postProcessor) {
+        this.preProcessor = preProcessor;
         this.jarMapping = jarMapping;
+        this.postProcessor = postProcessor;
+    }
+
+    public JarRemapper(RemapperProcessor remapperPreprocessor, JarMapping jarMapping) {
+        this(remapperPreprocessor, jarMapping, null);
     }
 
     public JarRemapper(JarMapping jarMapping) {
@@ -235,8 +234,8 @@ public class JarRemapper extends CustomRemapper {
 
     @SuppressWarnings("unchecked")
     private byte[] remapClassFile(ClassReader reader, final ClassRepo repo) {
-        if (remapperPreprocessor != null) {
-            byte[] pre = remapperPreprocessor.preprocess(reader);
+        if (preProcessor != null) {
+            byte[] pre = preProcessor.process(reader);
             if (pre != null) {
                 reader = new ClassReader(pre);
             }
@@ -251,6 +250,7 @@ public class JarRemapper extends CustomRemapper {
         if (SpecialSource.identifier != null) {
             wr.newUTF8(SpecialSource.identifier);
         }
-        return wr.toByteArray();
+
+        return (postProcessor != null) ? postProcessor.process(wr.toByteArray()) : wr.toByteArray();
     }
 }

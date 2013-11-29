@@ -49,7 +49,7 @@ import java.util.List;
  * - Remapping reflected field string constants
  * - Remapping reflected class name string constants
  */
-public class RemapperPreprocessor {
+public class RemapperProcessor {
 
     public boolean debug = false;
     private InheritanceMap inheritanceMap;
@@ -67,7 +67,7 @@ public class RemapperPreprocessor {
      * @param accessMap Access transformer mappings, or null to not apply AT
      * @throws IOException
      */
-    public RemapperPreprocessor(InheritanceMap inheritanceMap, JarMapping jarMapping, AccessMap accessMap) {
+    public RemapperProcessor(InheritanceMap inheritanceMap, JarMapping jarMapping, AccessMap accessMap) {
         this.inheritanceMap = inheritanceMap;
         this.jarMapping = jarMapping;
         this.accessMap = accessMap;
@@ -75,16 +75,16 @@ public class RemapperPreprocessor {
         this.remapReflectClass = false;
     }
 
-    public RemapperPreprocessor(InheritanceMap inheritanceMap, JarMapping jarMapping) {
+    public RemapperProcessor(InheritanceMap inheritanceMap, JarMapping jarMapping) {
         this(inheritanceMap, jarMapping, null);
     }
 
-    public byte[] preprocess(InputStream inputStream) throws IOException {
-        return preprocess(new ClassReader(inputStream));
+    public byte[] process(InputStream inputStream) throws IOException {
+        return process(new ClassReader(inputStream));
     }
 
-    public byte[] preprocess(byte[] bytecode) throws IOException {
-        return preprocess(new ClassReader(bytecode));
+    public byte[] process(byte[] bytecode) {
+        return process(new ClassReader(bytecode));
     }
 
     /**
@@ -104,7 +104,7 @@ public class RemapperPreprocessor {
     }
 
     @SuppressWarnings("unchecked")
-    public byte[] preprocess(ClassReader classReader) {
+    public byte[] process(ClassReader classReader) {
         byte[] bytecode = null;
         ClassNode classNode = new ClassNode();
         int flags = 0;
