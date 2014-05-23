@@ -46,7 +46,7 @@ public class RuntimeRepo extends CachingRepo {
         ClassReader cr;
         try {
             cr = new ClassReader(internalName);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             return null;
         }
         ClassNode node = new ClassNode();
