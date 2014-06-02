@@ -160,6 +160,9 @@ public class AccessChange {
             set &= ~MASK_ALL_VISIBILITY;
         }
 
+        // Merge visibility changes
+        vis = upgradeVisibility(vis, rhs.vis);
+
         set |= rhs.set;
     }
 
