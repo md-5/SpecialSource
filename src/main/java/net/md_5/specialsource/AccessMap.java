@@ -142,7 +142,9 @@ public class AccessMap {
             System.out.println("INFO: merging AccessMap " + key + " from " + map.get(key) + " with " + accessChange);
             map.get(key).merge(accessChange);
         }
-        map.put(key, accessChange);
+        else {
+            map.put(key, accessChange);
+        }
     }
 
     public int applyClassAccess(String className, int access) {
