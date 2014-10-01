@@ -67,6 +67,10 @@ public class SpecialSource {
                         .withRequiredArg()
                         .ofType(String.class);
 
+                acceptsAll(asList("access-transformer"), "Access transformer file")
+                        .withRequiredArg()
+                        .ofType(File.class);
+
                 acceptsAll(asList("s", "srg-out"), "Mapping file output")
                         .withRequiredArg()
                         .ofType(File.class);
@@ -234,6 +238,12 @@ public class SpecialSource {
             inheritanceProviders.add(inheritanceMap);
         }
 
+        RemapperProcessor accessMapper = null;
+        if (options.has("access-transformer")) {
+            AccessMap access = new AccessMap();
+            access.loadAccessTransformer((File) options.valueOf("access-transformer"));
+            accessMapper = new RemapperProcessor(null, jarMapping, access);
+        }
 
         if (options.has("in-jar")) {
             if (!options.has("out-jar")) {
@@ -255,7 +265,7 @@ public class SpecialSource {
             inheritanceProviders.add(new JarProvider(jar3));
 
             log("Remapping final jar");
-            JarRemapper jarRemapper = new JarRemapper(jarMapping);
+            JarRemapper jarRemapper = new JarRemapper(null, jarMapping, accessMapper);
             jarRemapper.remapJar(jar3, (File) options.valueOf("out-jar"));
         }
 

@@ -409,7 +409,13 @@ public class JarMapping {
                 return;
             }
 
-            fields.put(oldClassName + "/" + oldFieldName, newFieldName);
+            String oldEntry = oldClassName + "/" + oldFieldName;
+            if (fields.containsKey(oldEntry) && !newFieldName.equals(fields.get(oldEntry))) {
+                throw new IllegalArgumentException("Duplicate field mapping: " + oldEntry + " ->" + newFieldName
+                        + " but already mapped to " + fields.get(oldEntry) + " in line=" + line);
+            }
+
+            fields.put(oldEntry, newFieldName);
         } else if (kind.equals("MD:")) {
             String oldFull = tokens[1];
             String newFull = tokens[3];
@@ -443,8 +449,14 @@ public class JarMapping {
                 SpecialSource.log("Ignored MD: " + oldClassName + "/" + oldMethodName + " -> " + newMethodName);
                 return;
             }
+            
+            String oldEntry = oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor;
+            if (methods.containsKey(oldEntry) && !newMethodName.equals(methods.get(oldEntry))) {
+                throw new IllegalArgumentException("Duplicate method mapping: " + oldEntry + " ->" + newMethodName
+                        + " but already mapped to " + methods.get(oldEntry) + " in line=" + line);
+            }
 
-            methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
+            methods.put(oldEntry, newMethodName);
         } else {
             throw new IllegalArgumentException("Unable to parse srg file, unrecognized mapping type in line=" + line);
         }
@@ -483,8 +495,10 @@ public class JarMapping {
         for (int i = 0; i < oldJar.classes.size(); i++) {
             String oldClass = oldJar.classes.get(i);
             String newClass = newJar.classes.get(i);
-            classes.put(oldClass, newClass); // always output class names (no duplicate check)
-            srgWriter.addClassMap(oldClass, newClass);
+            if (full || !oldClass.equals(newClass)) {
+                classes.put(oldClass, newClass);
+                srgWriter.addClassMap(oldClass, newClass);
+            }
         }
         for (int i = 0; i < oldJar.fields.size(); i++) {
             Ownable oldField = oldJar.fields.get(i);

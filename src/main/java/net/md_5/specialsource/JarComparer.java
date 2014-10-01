@@ -80,11 +80,9 @@ public class JarComparer extends ClassVisitor {
 
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-        // Check for initializers
-        if (!name.equals("<init>") && !name.equals("<clinit>")) {
-            Ownable method = new Ownable(NodeType.METHOD, myName, name, desc, access);
-            methods.add(method);
-        }
+        Ownable method = new Ownable(NodeType.METHOD, myName, name, desc, access);
+        methods.add(method);
+
         // FIXME: Scan return types too!
         for (Type t : Type.getArgumentTypes(desc)) {
             visitType(t);

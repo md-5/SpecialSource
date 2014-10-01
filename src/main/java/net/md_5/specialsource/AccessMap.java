@@ -175,12 +175,16 @@ public class AccessMap {
     public int applyMethodAccess(String className, String methodName, String methodDesc, int access) {
         int old = access;
 
+        if (className.contains("FileConversionException")){
+            System.out.println("");
+        }
+        
         access = apply("**", access);
         access = apply("*/* ()", access);
         access = apply(className + "/* ()", access);
         access = apply(className + "/" + methodName + " " + methodDesc, access);
 
-        //System.out.println("AT: method: "+className+"/"+methodName+" "+methodDesc+" "+old+" -> "+access);
+        if (access!= old)        System.out.println("AT: method: "+className+"/"+methodName+" "+methodDesc+" "+old+" -> "+access);
 
         return access;
     }
