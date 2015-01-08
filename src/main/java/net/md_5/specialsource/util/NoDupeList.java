@@ -64,6 +64,11 @@ public class NoDupeList<E> implements Iterable<E> {
         return backing.size();
     }
 
+    public void remove(E e) {
+        set.remove(e);
+        backing.remove(e);
+    }
+
     @Override
     public Iterator<E> iterator() {
         return backing.iterator();

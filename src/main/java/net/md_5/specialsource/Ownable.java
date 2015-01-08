@@ -29,12 +29,14 @@
 package net.md_5.specialsource;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * A class which can be used to represent a field, method, or anything else
  * which has an owner, a name and a descriptor.
  */
 @Data
+@EqualsAndHashCode(exclude = "access")
 public class Ownable {
 
     public final NodeType type;

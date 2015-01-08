@@ -150,7 +150,7 @@ public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Chang
         return access;
     }
 
-    private int findAccess(NodeType type, String owner, String name, String desc) {
+    public int findAccess(NodeType type, String owner, String name, String desc) {
         int access;
         access = findAccess(type, owner, name, desc, classRepo);
         if (access == -1) {

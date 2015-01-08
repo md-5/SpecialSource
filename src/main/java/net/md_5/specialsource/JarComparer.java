@@ -28,17 +28,26 @@
  */
 package net.md_5.specialsource;
 
+import java.lang.reflect.Modifier;
+import java.util.Collection;
+import java.util.Map;
+import net.md_5.specialsource.provider.InheritanceProvider;
+import net.md_5.specialsource.provider.JarProvider;
 import net.md_5.specialsource.util.NoDupeList;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.MethodNode;
 
 public class JarComparer extends ClassVisitor {
 
     private final MethodReferenceFinder methodVisitor = new MethodReferenceFinder();
     public final Jar jar;
+    private final InheritanceProvider inheritance;
     private String myName;
     public int iterDepth;
     public NoDupeList<String> classes = new NoDupeList<String>();
@@ -53,11 +62,15 @@ public class JarComparer extends ClassVisitor {
                 classes.add(name);
             }
         }
+        if (type.getSort() == Type.ARRAY){
+            visitType(type.getElementType());
+        }
     }
 
     public JarComparer(Jar jar) {
         super(Opcodes.ASM4);
         this.jar = jar;
+        this.inheritance = new JarProvider(jar);
     }
 
     @Override
@@ -68,6 +81,9 @@ public class JarComparer extends ClassVisitor {
             if (jar.containsClass(implement)) {
                 classes.add(implement);
             }
+        }
+        if (jar.containsClass(superName)) {
+            classes.add(superName);
         }
     }
 
@@ -81,13 +97,66 @@ public class JarComparer extends ClassVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
         Ownable method = new Ownable(NodeType.METHOD, myName, name, desc, access);
+
+        String newN = getDeclarer(myName, method);
+        if (newN != null) {
+            method = new Ownable(method.type, newN, method.name, method.descriptor, method.access);
+        }
         methods.add(method);
 
         // FIXME: Scan return types too!
         for (Type t : Type.getArgumentTypes(desc)) {
             visitType(t);
         }
+        visitType(Type.getReturnType(desc));
         return methodVisitor;
+    }
+
+    public String getDeclarer(String currentParent, Ownable node) {
+
+        String newParent = null;
+
+        ClassNode n = jar.getNode(currentParent);
+        if (n == null) {
+            return newParent;
+        }
+        switch (node.type) {
+            case FIELD:
+                for (FieldNode field : n.fields) {
+                    if (field.name.equals(node.name) && field.desc.equals(node.descriptor)) {
+                        newParent = currentParent;
+                        fields.remove(new Ownable(NodeType.FIELD, currentParent, node.name, node.descriptor, node.access));
+                        break;
+                    }
+                }
+                break;
+            case METHOD:
+                for (MethodNode method : n.methods) {
+                    if (method.name.equals(node.name) && method.desc.equals(node.descriptor) &&(method.access == -1 || (!Modifier.isPrivate(method.access) && !Modifier.isStatic(method.access))) ) {
+                        newParent = currentParent;
+                        methods.remove(new Ownable(NodeType.METHOD, currentParent, node.name, node.descriptor, node.access));
+                        methods.remove(node);
+                        break;
+                    }
+                }
+                break;
+        }
+
+        if ((node.owner.equals(newParent) || newParent == null) && (node.access == -1 || (!Modifier.isPrivate(node.access) && !Modifier.isStatic(node.access)))) {
+            Collection<String> parents = inheritance.getParents(currentParent);
+
+            if (parents != null) {
+                // climb the inheritance tree
+                for (String parent : parents) {
+                    newParent = getDeclarer(parent, node);
+                    if (newParent != null) {
+                        return newParent;
+                    }
+                }
+            }
+        }
+
+        return newParent;
     }
 
     private class MethodReferenceFinder extends MethodVisitor {
