@@ -82,7 +82,7 @@ public class RemappingClassAdapter extends ClassVisitor {
     protected String className;
     
     public RemappingClassAdapter(final ClassVisitor cv, final CustomRemapper remapper, ClassRepo repo) {
-        this(Opcodes.ASM4, cv, remapper);
+        this(Opcodes.ASM5, cv, remapper);
         this.repo = repo;
     }
 
@@ -145,7 +145,7 @@ public class RemappingClassAdapter extends ClassVisitor {
     }
     
     protected FieldVisitor createRemappingFieldAdapter(FieldVisitor sup) {
-        return new FieldVisitor(Opcodes.ASM4, sup) {
+        return new FieldVisitor(Opcodes.ASM5, sup) {
             @Override
             public void visitAttribute(Attribute attr) {
                 if (SpecialSource.kill_lvt && attr.type.equals("LocalVariableTable")) {
@@ -163,7 +163,7 @@ public class RemappingClassAdapter extends ClassVisitor {
 
     protected MethodVisitor createRemappingMethodAdapter(int access, String newDesc, MethodVisitor sup) {
         MethodVisitor remap = new UnsortedRemappingMethodAdapter(access, newDesc, sup, remapper, repo);
-        return new MethodVisitor(Opcodes.ASM4, remap) {
+        return new MethodVisitor(Opcodes.ASM5, remap) {
             @Override
             public void visitAttribute(Attribute attr) {
                 if (SpecialSource.kill_lvt && attr.type.equals("LocalVariableTable")) {
