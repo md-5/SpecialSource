@@ -57,7 +57,7 @@ public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Chang
 
     public UnsortedRemappingMethodAdapter(final int access, final String desc,
             final MethodVisitor mv, final CustomRemapper remapper, ClassRepo classRepo) {
-        this(Opcodes.ASM4, access, desc, mv, remapper, classRepo);
+        this(Opcodes.ASM5, access, desc, mv, remapper, classRepo);
     }
 
     protected UnsortedRemappingMethodAdapter(final int api, final int access,
@@ -161,11 +161,10 @@ public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Chang
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name,
-            String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
         super.visitMethodInsn(opcode, remapper.mapType(owner),
                 remapper.mapMethodName(owner, name, desc, findAccess(NodeType.METHOD, owner, name, desc)),
-                remapper.mapMethodDesc(desc));
+                remapper.mapMethodDesc(desc), itf);
     }
 
     @Override

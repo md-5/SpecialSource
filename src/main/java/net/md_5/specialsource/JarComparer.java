@@ -62,13 +62,13 @@ public class JarComparer extends ClassVisitor {
                 classes.add(name);
             }
         }
-        if (type.getSort() == Type.ARRAY){
+        if (type.getSort() == Type.ARRAY) {
             visitType(type.getElementType());
         }
     }
 
     public JarComparer(Jar jar) {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
         this.jar = jar;
         this.inheritance = new JarProvider(jar);
     }
@@ -132,7 +132,7 @@ public class JarComparer extends ClassVisitor {
                 break;
             case METHOD:
                 for (MethodNode method : n.methods) {
-                    if (method.name.equals(node.name) && method.desc.equals(node.descriptor) &&(method.access == -1 || (!Modifier.isPrivate(method.access) && !Modifier.isStatic(method.access))) ) {
+                    if (method.name.equals(node.name) && method.desc.equals(node.descriptor) && (method.access == -1 || (!Modifier.isPrivate(method.access) && !Modifier.isStatic(method.access)))) {
                         newParent = currentParent;
                         methods.remove(new Ownable(NodeType.METHOD, currentParent, node.name, node.descriptor, node.access));
                         methods.remove(node);
@@ -162,7 +162,7 @@ public class JarComparer extends ClassVisitor {
     private class MethodReferenceFinder extends MethodVisitor {
 
         public MethodReferenceFinder() {
-            super(Opcodes.ASM4);
+            super(Opcodes.ASM5);
         }
 
         @Override
@@ -180,7 +180,7 @@ public class JarComparer extends ClassVisitor {
         }
 
         @Override
-        public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+        public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
             if (jar.containsClass(owner)) {
                 classes.add(owner);
             }
