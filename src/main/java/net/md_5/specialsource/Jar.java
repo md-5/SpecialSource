@@ -65,7 +65,6 @@ public class Jar {
     private final String filename;
     private final LinkedHashMap<String, JarFile> jarForResource;
     private final Set<String> contains = new HashSet<String>();
-    private final Map<String, ClassNode> classes = new HashMap<String, ClassNode>();
 
     /**
      * Check if this jar contains the given class. Takes the internal name of a
@@ -124,12 +123,6 @@ public class Jar {
      * @return
      */
     public ClassNode getNode(String clazz) {
-        // Lets try a cache hit
-        ClassNode cache = classes.get(clazz);
-        if (cache != null) {
-            return cache;
-        }
-
         // No luck, so lets try read it
         try {
             InputStream is = getClass(clazz);
@@ -138,8 +131,7 @@ public class Jar {
                 ClassReader cr = new ClassReader(is);
                 ClassNode node = new ClassNode();
                 cr.accept(node, 0);
-                // Add it to the cache 
-                classes.put(clazz, node);
+
                 return node;
             }
         } catch (IOException ex) {

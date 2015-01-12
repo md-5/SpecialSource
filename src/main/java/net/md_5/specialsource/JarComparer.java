@@ -33,6 +33,8 @@ import java.util.Collection;
 import java.util.Map;
 import net.md_5.specialsource.provider.InheritanceProvider;
 import net.md_5.specialsource.provider.JarProvider;
+import net.md_5.specialsource.repo.ClassRepo;
+import net.md_5.specialsource.repo.JarRepo;
 import net.md_5.specialsource.util.NoDupeList;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
@@ -47,6 +49,7 @@ public class JarComparer extends ClassVisitor {
 
     private final MethodReferenceFinder methodVisitor = new MethodReferenceFinder();
     public final Jar jar;
+    private final ClassRepo jarRepo;
     private final InheritanceProvider inheritance;
     private String myName;
     public int iterDepth;
@@ -70,6 +73,7 @@ public class JarComparer extends ClassVisitor {
     public JarComparer(Jar jar) {
         super(Opcodes.ASM5);
         this.jar = jar;
+        this.jarRepo = new JarRepo(jar);
         this.inheritance = new JarProvider(jar);
     }
 
@@ -116,7 +120,7 @@ public class JarComparer extends ClassVisitor {
 
         String newParent = null;
 
-        ClassNode n = jar.getNode(currentParent);
+        ClassNode n = jarRepo.findClass(currentParent);
         if (n == null) {
             return newParent;
         }
