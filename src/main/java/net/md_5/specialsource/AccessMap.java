@@ -190,7 +190,22 @@ public class AccessMap {
         if (change == null) {
             return existing;
         } else {
-            return change.apply(existing);
+            int newAccess = change.apply(existing);
+            if (newAccess != existing) {
+                accessApplied(key, existing, newAccess);
+            }
+            return newAccess;
         }
+    }
+
+    /**
+     * Called when an access mapping is applied.
+     *
+     * @param key the key which caused the mapping to be matched & applied
+     * @param oldAccess the access which was replaced
+     * @param newAccess the new access which was applied by the mapping
+     */
+    protected void accessApplied(String key, int oldAccess, int newAccess) {
+        // Overrride
     }
 }
