@@ -139,7 +139,9 @@ public class RemapperProcessor {
             // Class access
             if (accessMap != null) {
                 classNode.access = accessMap.applyClassAccess(className, classNode.access);
-                // TODO: inner classes?
+                for (InnerClassNode inner : classNode.innerClasses) {
+                    inner.access = accessMap.applyClassAccess(inner.name, inner.access);
+                }
             }
 
             // Field access
