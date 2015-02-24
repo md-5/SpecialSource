@@ -68,6 +68,7 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import net.md_5.specialsource.CustomRemapper;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.commons.RemappingAnnotationAdapter;
 
 /**
@@ -176,6 +177,13 @@ public class RemappingClassAdapter extends ClassVisitor {
                     mv.visitAttribute(attr);
                 }
             }
+
+            @Override
+            public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
+                if (!SpecialSource.kill_lvt) {
+                    super.visitLocalVariable(name, desc, signature, start, end, index);
+                }
+            }
         };
     }
 
@@ -200,5 +208,4 @@ public class RemappingClassAdapter extends ClassVisitor {
             cv.visitAttribute(attr);
         }
     }
-    
 }
