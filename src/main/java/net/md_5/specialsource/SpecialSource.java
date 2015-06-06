@@ -239,8 +239,9 @@ public class SpecialSource {
         }
 
         RemapperProcessor accessMapper = null;
+        AccessMap access = null;
         if (options.has("access-transformer")) {
-            AccessMap access = new AccessMap();
+            access = new AccessMap();
             access.loadAccessTransformer((File) options.valueOf("access-transformer"));
             accessMapper = new RemapperProcessor(null, jarMapping, access);
         }
@@ -277,6 +278,14 @@ public class SpecialSource {
             PrintWriter printWriter = new PrintWriter((File) options.valueOf("write-inheritance"));
             inheritanceMap.save(printWriter);
             printWriter.close();
+        }
+
+        if (access != null) {
+            for (String entry : access.getMap().keySet()) {
+                if (!access.getAppliedMaps().contains(entry)) {
+                    System.out.println("[WARN] Access map not applied: " + entry);
+                }
+            }
         }
     }
 

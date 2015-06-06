@@ -34,7 +34,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import lombok.Getter;
 
 /**
  * Access mapper - for modifying access flags on symbols
@@ -58,7 +61,10 @@ import java.util.Map;
  */
 public class AccessMap {
 
+    @Getter
     private Map<String, AccessChange> map = new HashMap<String, AccessChange>();
+    @Getter
+    private Set<String> appliedMaps = new HashSet<String>();
 
     public AccessMap() {
     }
@@ -72,9 +78,9 @@ public class AccessMap {
             if (n != -1) {
                 line = line.substring(0, n);
             }
-            
+
             line = line.trim();
-            
+
             if (line.isEmpty()) {
                 continue;
             }
@@ -116,7 +122,6 @@ public class AccessMap {
 
         // now it matches the symbol name format used in the rest of SpecialSource
         // (but also possibly with wildcards)
-
         return s;
     }
 
@@ -141,8 +146,7 @@ public class AccessMap {
         if (map.containsKey(key)) {
             System.out.println("INFO: merging AccessMap " + key + " from " + map.get(key) + " with " + accessChange);
             map.get(key).merge(accessChange);
-        }
-        else {
+        } else {
             map.put(key, accessChange);
         }
     }
@@ -155,7 +159,6 @@ public class AccessMap {
         access = apply(className, access);
 
         //System.out.println("AT: class: "+className+" "+old+" -> "+access); // TODO: debug logging
-
         return access;
     }
 
@@ -168,20 +171,18 @@ public class AccessMap {
         access = apply(className + "/" + fieldName, access);
 
         //System.out.println("AT: field: "+className+"/"+fieldName+" "+old+" -> "+access);
-
         return access;
     }
 
     public int applyMethodAccess(String className, String methodName, String methodDesc, int access) {
         int old = access;
-        
+
         access = apply("**", access);
         access = apply("*/* ()", access);
         access = apply(className + "/* ()", access);
         access = apply(className + "/" + methodName + " " + methodDesc, access);
 
         // if (access!= old)        System.out.println("AT: method: "+className+"/"+methodName+" "+methodDesc+" "+old+" -> "+access);
-
         return access;
     }
 
@@ -192,6 +193,7 @@ public class AccessMap {
         } else {
             int newAccess = change.apply(existing);
             if (newAccess != existing) {
+                appliedMaps.add(key);
                 accessApplied(key, existing, newAccess);
             }
             return newAccess;
@@ -206,6 +208,6 @@ public class AccessMap {
      * @param newAccess the new access which was applied by the mapping
      */
     protected void accessApplied(String key, int oldAccess, int newAccess) {
-        // Overrride
+        // Override
     }
 }
