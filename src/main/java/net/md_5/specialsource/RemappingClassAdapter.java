@@ -73,7 +73,7 @@ import org.objectweb.asm.commons.RemappingAnnotationAdapter;
 
 /**
  * A {@link ClassVisitor} for type remapping.
- * 
+ *
  * @author Eugene Kuleshov
  */
 public class RemappingClassAdapter extends ClassVisitor {
@@ -81,7 +81,7 @@ public class RemappingClassAdapter extends ClassVisitor {
     protected final CustomRemapper remapper;
     protected ClassRepo repo;
     protected String className;
-    
+
     public RemappingClassAdapter(final ClassVisitor cv, final CustomRemapper remapper, ClassRepo repo) {
         this(Opcodes.ASM5, cv, remapper);
         this.repo = repo;
@@ -133,9 +133,11 @@ public class RemappingClassAdapter extends ClassVisitor {
     @Override
     public void visitInnerClass(String name, String outerName,
             String innerName, int access) {
-        // TODO should innerName be changed?
-        super.visitInnerClass(remapper.mapType(name), outerName == null ? null
-                : remapper.mapType(outerName), innerName, access);
+        String newName = remapper.mapType(name);
+        super.visitInnerClass(newName,
+            outerName == null ? null : remapper.mapType(outerName),
+            innerName == null ? null : newName.substring(newName.lastIndexOf(newName.contains("$") ? '$' : '/') + 1),
+            access);
     }
 
     @Override
@@ -144,7 +146,7 @@ public class RemappingClassAdapter extends ClassVisitor {
                 : remapper.mapMethodName(owner, name, desc),
                 desc == null ? null : remapper.mapMethodDesc(desc));
     }
-    
+
     protected FieldVisitor createRemappingFieldAdapter(FieldVisitor sup) {
         return new FieldVisitor(Opcodes.ASM5, sup) {
             @Override
@@ -191,7 +193,7 @@ public class RemappingClassAdapter extends ClassVisitor {
             AnnotationVisitor av) {
         return new RemappingAnnotationAdapter(av, remapper);
     }
-    
+
     @Override
     public void visitSource(String source, String debug) {
         if (!SpecialSource.kill_source && cv != null) {
