@@ -194,8 +194,8 @@ public class AccessMap {
             int newAccess = change.apply(existing);
             if (newAccess != existing) {
                 appliedMaps.add(key);
-                accessApplied(key, existing, newAccess);
             }
+            accessApplied(key, existing, newAccess);
             return newAccess;
         }
     }
