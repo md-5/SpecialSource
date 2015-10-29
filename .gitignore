@@ -2,7 +2,7 @@
 /.classpath
 /.project
 /.settings
-
+/.test
 # netbeans
 /nbproject
 /nbactions.xml
