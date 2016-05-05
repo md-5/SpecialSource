@@ -28,6 +28,8 @@
  */
 package net.md_5.specialsource;
 
+import java.util.Arrays;
+import java.util.Collection;
 import net.md_5.specialsource.repo.ClassRepo;
 import net.md_5.specialsource.repo.RuntimeRepo;
 import org.objectweb.asm.AnnotationVisitor;
@@ -35,6 +37,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.RemappingAnnotationAdapter;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
@@ -51,6 +54,13 @@ import org.objectweb.asm.tree.MethodNode;
  * with RetroGuard's output.
  */
 public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Changed LocalVariablesSorter to MethodVisitor
+
+    private static final Collection<Handle> META_FACTORIES = Arrays.asList(
+            new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory",
+                    "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"),
+            new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "altMetafactory",
+                    "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;")
+    );
 
     protected final CustomRemapper remapper;
     private final ClassRepo classRepo;
@@ -170,11 +180,23 @@ public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Chang
     @Override
     public void visitInvokeDynamicInsn(String name, String desc, Handle bsm,
             Object... bsmArgs) {
+
+        // Special case lambda metaFactory to get new name
+        if (META_FACTORIES.contains(bsm)) {
+            String owner = Type.getReturnType(desc).getInternalName();
+            String odesc = ((Type) bsmArgs[0]).getDescriptor(); // First constant argument is "samMethodType - Signature and return type of method to be implemented by the function object."
+            // index 2 is the signature, but with generic types. Should we use that instead?
+            name = remapper.mapMethodName(owner, name, odesc, findAccess(NodeType.METHOD, owner, name, odesc));
+        } else {
+            name = remapper.mapInvokeDynamicMethodName(name, desc);
+        }
+
         for (int i = 0; i < bsmArgs.length; i++) {
             bsmArgs[i] = remapper.mapValue(bsmArgs[i]);
         }
+
         super.visitInvokeDynamicInsn(
-                remapper.mapInvokeDynamicMethodName(name, desc),
+                name,
                 remapper.mapMethodDesc(desc), (Handle) remapper.mapValue(bsm),
                 bsmArgs);
     }
