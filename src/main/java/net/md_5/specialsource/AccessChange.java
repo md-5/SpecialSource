@@ -30,12 +30,10 @@ package net.md_5.specialsource;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import lombok.ToString;
-import lombok.libs.org.objectweb.asm.Opcodes;
-
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.ToString;
+import org.objectweb.asm.Opcodes;
 
 /**
  * Represents symbol access specifiers to be added or removed
