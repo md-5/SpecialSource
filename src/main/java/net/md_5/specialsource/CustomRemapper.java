@@ -49,4 +49,15 @@ public abstract class CustomRemapper extends Remapper {
     public String mapFieldName(String owner, String name, String desc, int access) {
         return name;
     }
+
+    @Override
+    public String mapSignature(String signature, boolean typeSignature)
+    {
+        // JDT decorates some lambdas with this and SignatureReader chokes on it
+        if (signature != null && signature.contains("!*"))
+        {
+            return null;
+        }
+        return super.mapSignature(signature, typeSignature);
+    }
 }
