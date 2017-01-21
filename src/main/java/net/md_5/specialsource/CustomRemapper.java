@@ -51,11 +51,9 @@ public abstract class CustomRemapper extends Remapper {
     }
 
     @Override
-    public String mapSignature(String signature, boolean typeSignature)
-    {
+    public String mapSignature(String signature, boolean typeSignature) {
         // JDT decorates some lambdas with this and SignatureReader chokes on it
-        if (signature != null && signature.contains("!*"))
-        {
+        if (signature != null && signature.contains("!*")) {
             return null;
         }
         return super.mapSignature(signature, typeSignature);
