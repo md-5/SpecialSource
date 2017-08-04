@@ -28,6 +28,7 @@
  */
 package net.md_5.specialsource;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,7 +57,7 @@ import org.objectweb.asm.tree.ClassNode;
 @ToString
 @EqualsAndHashCode
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class Jar {
+public class Jar implements Closeable {
 
     private final List<JarFile> jarFiles;
     @Getter
@@ -248,5 +249,21 @@ public class Jar {
 
         // Return the new all encompassing jar instance. The file name will be the sum of all names.
         return new Jar(jarFiles, main, fileName, jarForResource);
+    }
+
+    /**
+     * Closes all jar files in this Jar
+     *
+     * @see java.io.Closeable
+     * @throws IOException if an I/O error has occurred
+     */
+    @Override
+    public void close() throws IOException {
+        for (JarFile jarFile : jarFiles) {
+            jarFile.close();
+        }
+        jarFiles.clear();
+        jarForResource.clear();
+        contains.clear();
     }
 }
