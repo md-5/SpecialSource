@@ -47,7 +47,7 @@ public class FileLocator {
         }
 
         // Create our own cache file here, replacing potentially invalid characters
-        String id = CharMatcher.JAVA_LETTER_OR_DIGIT.or(CharMatcher.anyOf("-_.")).negate().replaceFrom(url.toString(), '_');
+        String id = CharMatcher.javaLetterOrDigit().or(CharMatcher.anyOf("-_.")).negate().replaceFrom(url.toString(), '_');
         File file = new File(tempDir, id);
 
         // Check cache for a hit

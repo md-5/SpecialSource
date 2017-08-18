@@ -60,52 +60,24 @@ package net.md_5.specialsource;
  */
 
 import net.md_5.specialsource.repo.ClassRepo;
-
-import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import net.md_5.specialsource.CustomRemapper;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.commons.RemappingAnnotationAdapter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.commons.ClassRemapper;
+import org.objectweb.asm.commons.FieldRemapper;
+import org.objectweb.asm.commons.MethodRemapper;
 
-/**
- * A {@link ClassVisitor} for type remapping.
- *
- * @author Eugene Kuleshov
- */
-public class RemappingClassAdapter extends ClassVisitor {
+public class RemappingClassAdapter extends ClassRemapper {
 
     protected final CustomRemapper remapper;
     protected ClassRepo repo;
-    protected String className;
 
     public RemappingClassAdapter(final ClassVisitor cv, final CustomRemapper remapper, ClassRepo repo) {
-        this(Opcodes.ASM5, cv, remapper);
+        super(cv, remapper);
         this.repo = repo;
-    }
-
-    protected RemappingClassAdapter(final int api, final ClassVisitor cv, final CustomRemapper remapper) {
-        super(api, cv);
         this.remapper = remapper;
-    }
-
-    @Override
-    public void visit(int version, int access, String name, String signature,
-            String superName, String[] interfaces) {
-        this.className = name;
-        super.visit(version, access, remapper.mapType(name), remapper
-                .mapSignature(signature, false), remapper.mapType(superName),
-                interfaces == null ? null : remapper.mapTypes(interfaces));
-    }
-
-    @Override
-    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        AnnotationVisitor av;
-        av = super.visitAnnotation(remapper.mapDesc(desc), visible);
-        return av == null ? null : createRemappingAnnotationAdapter(av);
     }
 
     @Override
@@ -116,8 +88,7 @@ public class RemappingClassAdapter extends ClassVisitor {
                 className, name, desc, access), newDesc, remapper.mapSignature(
                 signature, false),
                 exceptions == null ? null : remapper.mapTypes(exceptions));
-        return mv == null ? null : createRemappingMethodAdapter(access,
-                newDesc, mv);
+        return mv == null ? null : createMethodRemapper(mv);
     }
 
     @Override
@@ -127,7 +98,7 @@ public class RemappingClassAdapter extends ClassVisitor {
                 remapper.mapFieldName(className, name, desc, access),
                 remapper.mapDesc(desc), remapper.mapSignature(signature, true),
                 remapper.mapValue(value));
-        return fv == null ? null : createRemappingFieldAdapter(fv);
+        return fv == null ? null : createFieldRemapper(fv);
     }
 
     @Override
@@ -147,8 +118,9 @@ public class RemappingClassAdapter extends ClassVisitor {
                 desc == null ? null : remapper.mapMethodDesc(desc));
     }
 
-    protected FieldVisitor createRemappingFieldAdapter(FieldVisitor sup) {
-        return new FieldVisitor(Opcodes.ASM5, sup) {
+    @Override
+    protected FieldVisitor createFieldRemapper(FieldVisitor fv) {
+        return new FieldRemapper(fv, remapper) {
             @Override
             public void visitAttribute(Attribute attr) {
                 if (SpecialSource.kill_lvt && attr.type.equals("LocalVariableTable")) {
@@ -157,16 +129,15 @@ public class RemappingClassAdapter extends ClassVisitor {
                 if (SpecialSource.kill_generics && attr.type.equals("LocalVariableTypeTable")) {
                     return;
                 }
-                if (fv != null) {
-                    fv.visitAttribute(attr);
-                }
+
+                super.visitAttribute(attr);
             }
         };
     }
 
-    protected MethodVisitor createRemappingMethodAdapter(int access, String newDesc, MethodVisitor sup) {
-        MethodVisitor remap = new UnsortedRemappingMethodAdapter(access, newDesc, sup, remapper, repo);
-        return new MethodVisitor(Opcodes.ASM5, remap) {
+    @Override
+    protected MethodVisitor createMethodRemapper(MethodVisitor mv) {
+        return new UnsortedRemappingMethodAdapter(mv, remapper, repo) {
             @Override
             public void visitAttribute(Attribute attr) {
                 if (SpecialSource.kill_lvt && attr.type.equals("LocalVariableTable")) {
@@ -175,9 +146,8 @@ public class RemappingClassAdapter extends ClassVisitor {
                 if (SpecialSource.kill_generics && attr.type.equals("LocalVariableTypeTable")) {
                     return;
                 }
-                if (mv != null) {
-                    mv.visitAttribute(attr);
-                }
+
+                super.visitAttribute(attr);
             }
 
             @Override
@@ -189,15 +159,10 @@ public class RemappingClassAdapter extends ClassVisitor {
         };
     }
 
-    protected AnnotationVisitor createRemappingAnnotationAdapter(
-            AnnotationVisitor av) {
-        return new RemappingAnnotationAdapter(av, remapper);
-    }
-
     @Override
     public void visitSource(String source, String debug) {
-        if (!SpecialSource.kill_source && cv != null) {
-            cv.visitSource(source, debug);
+        if (!SpecialSource.kill_source) {
+            super.visitSource(source, debug);
         }
     }
 
@@ -206,8 +171,7 @@ public class RemappingClassAdapter extends ClassVisitor {
         if (SpecialSource.kill_generics && attr.type.equals("Signature")) {
             return;
         }
-        if (cv != null) {
-            cv.visitAttribute(attr);
-        }
+
+        super.visitAttribute(attr);
     }
 }

@@ -10,7 +10,7 @@
 
     <groupId>net.md-5</groupId>
     <artifactId>SpecialSource</artifactId>
-    <version>1.7.5-SNAPSHOT</version>
+    <version>1.8.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>SpecialSource</name>
@@ -45,7 +45,7 @@
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-debug-all</artifactId>
-            <version>5.2</version>
+            <version>6.0_BETA</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -121,7 +121,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <minimizeJar>true</minimizeJar>
+                    <!--<minimizeJar>true</minimizeJar>-->
                     <shadedArtifactAttached>true</shadedArtifactAttached>
                 </configuration>
             </plugin>

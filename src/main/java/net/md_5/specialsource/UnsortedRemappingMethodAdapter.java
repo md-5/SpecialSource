@@ -32,95 +32,31 @@ import java.util.Arrays;
 import java.util.Collection;
 import net.md_5.specialsource.repo.ClassRepo;
 import net.md_5.specialsource.repo.RuntimeRepo;
-import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Handle;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.RemappingAnnotationAdapter;
+import org.objectweb.asm.commons.MethodRemapper;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
-/**
- * A {@link LocalVariablesSorter} for type mapping.
- *
- * @author Eugene Kuleshov
- *
- * Edited 04-24-2013 LexManos: Changed super class to MethodVisitor, using
- * LocalVariablesSorter caused the LV indexes to be reassigned improperly.
- * Causing decompiled code to not follow a predictable pattern and not coincide
- * with RetroGuard's output.
- */
-public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Changed LocalVariablesSorter to MethodVisitor
+public class UnsortedRemappingMethodAdapter extends MethodRemapper {
 
     private static final Collection<Handle> META_FACTORIES = Arrays.asList(
             new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory",
-                    "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"),
+                    "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;", false),
             new Handle(Opcodes.H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "altMetafactory",
-                    "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;")
+                    "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;", false)
     );
 
     protected final CustomRemapper remapper;
     private final ClassRepo classRepo;
 
-    public UnsortedRemappingMethodAdapter(final int access, final String desc,
-            final MethodVisitor mv, final CustomRemapper remapper, ClassRepo classRepo) {
-        this(Opcodes.ASM5, access, desc, mv, remapper, classRepo);
-    }
-
-    protected UnsortedRemappingMethodAdapter(final int api, final int access,
-            final String desc, final MethodVisitor mv, final CustomRemapper remapper, ClassRepo classRepo) {
-        super(api, mv); //Lex: Removed access, desc
+    public UnsortedRemappingMethodAdapter(final MethodVisitor mv, final CustomRemapper remapper, ClassRepo classRepo) {
+        super(mv, remapper);
         this.remapper = remapper;
         this.classRepo = classRepo;
-    }
-
-    @Override
-    public AnnotationVisitor visitAnnotationDefault() {
-        AnnotationVisitor av = mv.visitAnnotationDefault();
-        return av == null ? av : new RemappingAnnotationAdapter(av, remapper);
-    }
-
-    @Override
-    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        AnnotationVisitor av = mv.visitAnnotation(remapper.mapDesc(desc),
-                visible);
-        return av == null ? av : new RemappingAnnotationAdapter(av, remapper);
-    }
-
-    @Override
-    public AnnotationVisitor visitParameterAnnotation(int parameter,
-            String desc, boolean visible) {
-        AnnotationVisitor av = mv.visitParameterAnnotation(parameter,
-                remapper.mapDesc(desc), visible);
-        return av == null ? av : new RemappingAnnotationAdapter(av, remapper);
-    }
-
-    @Override
-    public void visitFrame(int type, int nLocal, Object[] local, int nStack,
-            Object[] stack) {
-        super.visitFrame(type, nLocal, remapEntries(nLocal, local), nStack,
-                remapEntries(nStack, stack));
-    }
-
-    private Object[] remapEntries(int n, Object[] entries) {
-        for (int i = 0; i < n; i++) {
-            if (entries[i] instanceof String) {
-                Object[] newEntries = new Object[n];
-                if (i > 0) {
-                    System.arraycopy(entries, 0, newEntries, 0, i);
-                }
-                do {
-                    Object t = entries[i];
-                    newEntries[i++] = t instanceof String ? remapper
-                            .mapType((String) t) : t;
-                } while (i < n);
-                return newEntries;
-            }
-        }
-        return entries;
     }
 
     @Override
@@ -199,34 +135,5 @@ public class UnsortedRemappingMethodAdapter extends MethodVisitor { //Lex: Chang
                 name,
                 remapper.mapMethodDesc(desc), (Handle) remapper.mapValue(bsm),
                 bsmArgs);
-    }
-
-    @Override
-    public void visitTypeInsn(int opcode, String type) {
-        super.visitTypeInsn(opcode, remapper.mapType(type));
-    }
-
-    @Override
-    public void visitLdcInsn(Object cst) {
-        super.visitLdcInsn(remapper.mapValue(cst));
-    }
-
-    @Override
-    public void visitMultiANewArrayInsn(String desc, int dims) {
-        super.visitMultiANewArrayInsn(remapper.mapDesc(desc), dims);
-    }
-
-    @Override
-    public void visitTryCatchBlock(Label start, Label end, Label handler,
-            String type) {
-        super.visitTryCatchBlock(start, end, handler, type == null ? null
-                : remapper.mapType(type));
-    }
-
-    @Override
-    public void visitLocalVariable(String name, String desc, String signature,
-            Label start, Label end, int index) {
-        super.visitLocalVariable(name, remapper.mapDesc(desc),
-                remapper.mapSignature(signature, true), start, end, index);
     }
 }
