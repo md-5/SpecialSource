@@ -75,8 +75,17 @@ public class Jar implements Closeable {
      * @return
      */
     public boolean containsClass(String clazz) {
+        if (contains.contains(clazz)) {
+            return true;
+        }
+
         try {
-            return contains.contains(clazz) ? true : getClass(clazz) != null;
+            InputStream current = getClass(clazz);
+            if (current == null) {
+                return false;
+            }
+            current.close();
+            return true;
         } catch (IOException ex) {
             // IO error - regardless we do not have access to the class, so we can ignore it and move on
             return false;
@@ -128,8 +137,13 @@ public class Jar implements Closeable {
         try {
             InputStream is = getClass(clazz);
             if (is != null) {
+                ClassReader cr;
                 // Process it
-                ClassReader cr = new ClassReader(is);
+                try {
+                    cr = new ClassReader(is);
+                } finally {
+                    is.close();
+                }
                 ClassNode node = new ClassNode();
                 cr.accept(node, 0);
 

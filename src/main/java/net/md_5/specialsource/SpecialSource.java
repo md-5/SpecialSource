@@ -299,8 +299,20 @@ public class SpecialSource {
         JarComparer visitor1 = visitors.first;
         JarComparer visitor2 = visitors.second;
 
-        ClassReader clazz1 = new ClassReader(jars.first.getClass(classes.first));
-        ClassReader clazz2 = new ClassReader(jars.second.getClass(classes.second));
+        ClassReader clazz1, clazz2;
+        InputStream first = null;
+        InputStream second = null;
+        try {
+            clazz1 = new ClassReader(first = jars.second.getClass(classes.first));
+            clazz2 = new ClassReader(second = jars.first.getClass(classes.second));
+        } finally {
+            if (first != null) {
+                first.close();
+            }
+            if (second != null) {
+                second.close();
+            }
+        }
         clazz1.accept(visitor1, 0);
         clazz2.accept(visitor2, 0);
 
