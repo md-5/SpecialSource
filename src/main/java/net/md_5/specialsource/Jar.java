@@ -75,12 +75,26 @@ public class Jar implements Closeable {
      * @return
      */
     public boolean containsClass(String clazz) {
-        try {
-            return contains.contains(clazz) ? true : getClass(clazz) != null;
-        } catch (IOException ex) {
-            // IO error - regardless we do not have access to the class, so we can ignore it and move on
-            return false;
+        if (contains.contains(clazz)) {
+            return true;
         }
+
+        if (containsResource(clazz + ".class")) {
+            contains.add(clazz);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if this jar contains the given resource.
+     *
+     * @param name The name of the resource
+     * @return true Whether a resource with the given name exists
+     */
+    public boolean containsResource(String name) {
+        JarFile jarFile = jarForResource.get(name);
+        return jarFile != null && jarFile.getEntry(name) != null;
     }
 
     /**
@@ -128,8 +142,13 @@ public class Jar implements Closeable {
         try {
             InputStream is = getClass(clazz);
             if (is != null) {
+                ClassReader cr;
                 // Process it
-                ClassReader cr = new ClassReader(is);
+                try {
+                    cr = new ClassReader(is);
+                } finally {
+                    is.close();
+                }
                 ClassNode node = new ClassNode();
                 cr.accept(node, 0);
 
