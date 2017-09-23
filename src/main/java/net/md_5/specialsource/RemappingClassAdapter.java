@@ -67,7 +67,6 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.FieldRemapper;
-import org.objectweb.asm.commons.MethodRemapper;
 
 public class RemappingClassAdapter extends ClassRemapper {
 
@@ -76,6 +75,9 @@ public class RemappingClassAdapter extends ClassRemapper {
 
     public RemappingClassAdapter(final ClassVisitor cv, final CustomRemapper remapper, ClassRepo repo) {
         super(cv, remapper);
+        if (cv == null) {
+            throw new NullPointerException("ClassVisitor cv must not be null");
+        }
         this.repo = repo;
         this.remapper = remapper;
     }
@@ -84,7 +86,7 @@ public class RemappingClassAdapter extends ClassRemapper {
     public MethodVisitor visitMethod(int access, String name, String desc,
             String signature, String[] exceptions) {
         String newDesc = remapper.mapMethodDesc(desc);
-        MethodVisitor mv = super.visitMethod(access, remapper.mapMethodName(
+        MethodVisitor mv = cv.visitMethod(access, remapper.mapMethodName(
                 className, name, desc, access), newDesc, remapper.mapSignature(
                 signature, false),
                 exceptions == null ? null : remapper.mapTypes(exceptions));
@@ -94,7 +96,7 @@ public class RemappingClassAdapter extends ClassRemapper {
     @Override
     public FieldVisitor visitField(int access, String name, String desc,
             String signature, Object value) {
-        FieldVisitor fv = super.visitField(access,
+        FieldVisitor fv = cv.visitField(access,
                 remapper.mapFieldName(className, name, desc, access),
                 remapper.mapDesc(desc), remapper.mapSignature(signature, true),
                 remapper.mapValue(value));
@@ -105,17 +107,10 @@ public class RemappingClassAdapter extends ClassRemapper {
     public void visitInnerClass(String name, String outerName,
             String innerName, int access) {
         String newName = remapper.mapType(name);
-        super.visitInnerClass(newName,
+        cv.visitInnerClass(newName,
             outerName == null ? null : remapper.mapType(outerName),
             innerName == null ? null : newName.substring(newName.lastIndexOf(newName.contains("$") ? '$' : '/') + 1),
             access);
-    }
-
-    @Override
-    public void visitOuterClass(String owner, String name, String desc) {
-        super.visitOuterClass(remapper.mapType(owner), name == null ? null
-                : remapper.mapMethodName(owner, name, desc),
-                desc == null ? null : remapper.mapMethodDesc(desc));
     }
 
     @Override
