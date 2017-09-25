@@ -30,6 +30,8 @@ package net.md_5.specialsource;
 
 import java.util.Arrays;
 import java.util.Collection;
+
+import com.google.common.base.Preconditions;
 import net.md_5.specialsource.repo.ClassRepo;
 import net.md_5.specialsource.repo.RuntimeRepo;
 import org.objectweb.asm.Handle;
@@ -55,6 +57,7 @@ public class UnsortedRemappingMethodAdapter extends MethodRemapper {
 
     public UnsortedRemappingMethodAdapter(final MethodVisitor mv, final CustomRemapper remapper, ClassRepo classRepo) {
         super(mv, remapper);
+        Preconditions.checkArgument(mv != null, "mv");
         this.remapper = remapper;
         this.classRepo = classRepo;
     }
@@ -62,7 +65,7 @@ public class UnsortedRemappingMethodAdapter extends MethodRemapper {
     @Override
     public void visitFieldInsn(int opcode, String owner, String name,
             String desc) {
-        super.visitFieldInsn(opcode, remapper.mapType(owner),
+        mv.visitFieldInsn(opcode, remapper.mapType(owner),
                 remapper.mapFieldName(owner, name, desc, findAccess(NodeType.FIELD, owner, name, desc)),
                 remapper.mapDesc(desc));
     }
@@ -108,7 +111,7 @@ public class UnsortedRemappingMethodAdapter extends MethodRemapper {
 
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
-        super.visitMethodInsn(opcode, remapper.mapType(owner),
+        mv.visitMethodInsn(opcode, remapper.mapType(owner),
                 remapper.mapMethodName(owner, name, desc, findAccess(NodeType.METHOD, owner, name, desc)),
                 remapper.mapMethodDesc(desc), itf);
     }
@@ -131,7 +134,7 @@ public class UnsortedRemappingMethodAdapter extends MethodRemapper {
             bsmArgs[i] = remapper.mapValue(bsmArgs[i]);
         }
 
-        super.visitInvokeDynamicInsn(
+        mv.visitInvokeDynamicInsn(
                 name,
                 remapper.mapMethodDesc(desc), (Handle) remapper.mapValue(bsm),
                 bsmArgs);
