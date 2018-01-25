@@ -57,18 +57,13 @@ public abstract class MappingWriter {
     public final void write(PrintWriter out) {
         // Sort lines for easy finding
         Collections.sort(lines);
-        // No try with resources for us!
-        try {
-            // Format header
-            out.println(MessageFormat.format(HEADER, oldJarName, newJarName, new Date()));
-            // Write out lines
-            for (String s : lines) {
-                out.println(s);
-            }
-        } finally {
-            // Make sure we close the outputstream in all cases
-            out.close();
+        // Format header
+        out.println(MessageFormat.format(HEADER, oldJarName, newJarName, new Date()));
+        // Write out lines
+        for (String s : lines) {
+            out.println(s);
         }
+        // Caller is in charge of closes the output stream
     }
 
     protected final void addLine(String line) {

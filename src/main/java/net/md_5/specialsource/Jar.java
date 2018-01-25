@@ -141,16 +141,10 @@ public class Jar implements Closeable {
      */
     public ClassNode getNode(String clazz) {
         // No luck, so lets try read it
-        try {
-            InputStream is = getClass(clazz);
+        try (InputStream is = getClass(clazz)) {
             if (is != null) {
-                ClassReader cr;
+                ClassReader cr = new ClassReader(is);
                 // Process it
-                try {
-                    cr = new ClassReader(is);
-                } finally {
-                    is.close();
-                }
                 ClassNode node = new ClassNode();
                 cr.accept(node, 0);
 

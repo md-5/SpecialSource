@@ -64,20 +64,10 @@ public class FileLocator {
             System.out.println("Downloading " + url);
         }
 
-        ReadableByteChannel rbc = null;
-        FileOutputStream fos = null;
-        try {
-            // TODO: Better solution for cleaning names - this extraneous '\' is introduced by path joining on the mcp dir
-            rbc = Channels.newChannel(new URL(url.replace('\\', '/')).openStream());
-            fos = new FileOutputStream(file);
+        // TODO: Better solution for cleaning names - this extraneous '\' is introduced by path joining on the mcp dir
+        try (ReadableByteChannel rbc = Channels.newChannel(new URL(url.replace('\\', '/')).openStream());
+             FileOutputStream fos = new FileOutputStream(file)) {
             fos.getChannel().transferFrom(rbc, 0, 1 << 24);
-        } finally {
-            if (rbc != null) {
-                rbc.close();
-            }
-            if (fos != null) {
-                fos.close();
-            }
         }
 
         // Success!

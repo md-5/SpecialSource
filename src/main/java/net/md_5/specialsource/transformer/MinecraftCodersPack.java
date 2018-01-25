@@ -73,11 +73,8 @@ public class MinecraftCodersPack extends MappingTransformer {
     }
 
     private void readIntoMap(File file, Map<String, String> map) throws IOException {
-        FileReader fileReader = null;
-        CSVReader csvReader = null;
-        try {
-            fileReader = new FileReader(file);
-            csvReader = new CSVReader(fileReader);
+        try (FileReader fileReader = new FileReader(file);
+             CSVReader csvReader = new CSVReader(fileReader)) {
 
             String[] line;
             while ((line = csvReader.readNext()) != null) {
@@ -86,13 +83,6 @@ public class MinecraftCodersPack extends MappingTransformer {
                 }
                 Preconditions.checkArgument(line.length >= 2, "Invalid csv line: %s", (Object) line);
                 map.put(line[0], line[1]);
-            }
-        } finally {
-            if (csvReader != null) {
-                csvReader.close();
-            }
-            if (fileReader != null) {
-                fileReader.close();
             }
         }
     }
