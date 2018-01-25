@@ -92,6 +92,7 @@ public class Jar implements Closeable {
      * @param name The name of the resource
      * @return true Whether a resource with the given name exists
      */
+    @SuppressWarnings("resource") // closed when the this Jar is closed
     public boolean containsResource(String name) {
         JarFile jarFile = jarForResource.get(name);
         return jarFile != null && jarFile.getEntry(name) != null;
@@ -104,6 +105,7 @@ public class Jar implements Closeable {
      * @return
      * @throws IOException
      */
+    @SuppressWarnings("resource") // closed when the this Jar is closed
     public InputStream getResource(String name) throws IOException {
         JarFile jarFile = jarForResource.get(name);
         if (jarFile == null) {

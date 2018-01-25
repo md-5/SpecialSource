@@ -191,7 +191,9 @@ public class JarMapping {
     }
 
     public void loadMappings(File file) throws IOException {
-        loadMappings(new BufferedReader(new FileReader(file)), null, null, false);
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            loadMappings(reader, null, null, false);
+        }
     }
 
     /**
@@ -233,7 +235,9 @@ public class JarMapping {
                 throw new IllegalArgumentException("loadMappings(" + filename + "): numeric only supported on directories, not files");
             }
 
-            loadMappings(new BufferedReader(new FileReader(FileLocator.getFile(filename))), inputTransformer, outputTransformer, reverse);
+            try (BufferedReader reader = new BufferedReader(new FileReader(FileLocator.getFile(filename)))) {
+                loadMappings(reader, inputTransformer, outputTransformer, reverse);
+            }
         }
     }
 

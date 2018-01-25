@@ -155,6 +155,13 @@ public class SpecialSource {
             return;
         }
 
+        if (options.has("in-jar") && !options.has("out-jar")) {
+            System.err.println("No output jar given, in-jar requires out-jar");
+            parser.printHelpOn(System.err);
+            System.exit(-1);
+            return;
+        }
+
         JarMapping jarMapping;
         verbose = !options.has("quiet");
         kill_source = options.has("kill-source");
@@ -174,11 +181,13 @@ public class SpecialSource {
 
         FileLocator.useCache = !options.has("force-redownload");
 
+        Jar jar1 = null, jar2 = null, jar3 = null;
+
         if (options.has("first-jar") && options.has("second-jar")) {
             // Generate mappings from two otherwise-identical jars
             log("Reading jars");
-            Jar jar1 = Jar.init(FileLocator.getFile((String) options.valueOf("first-jar")));
-            Jar jar2 = Jar.init(FileLocator.getFile((String) options.valueOf("second-jar")));
+            jar1 = Jar.init(FileLocator.getFile((String) options.valueOf("first-jar")));
+            jar2 = Jar.init(FileLocator.getFile((String) options.valueOf("second-jar")));
 
             log("Creating jar compare");
             JarComparer visitor1 = new JarComparer(jar1);
@@ -229,10 +238,11 @@ public class SpecialSource {
         if (options.has("read-inheritance")) {
             InheritanceMap inheritanceMap = new InheritanceMap();
 
-            BufferedReader reader = new BufferedReader(new FileReader(FileLocator.getFile((String) options.valueOf("read-inheritance"))));
-
             BiMap<String, String> inverseClassMap = HashBiMap.create(jarMapping.classes).inverse();
-            inheritanceMap.load(reader, inverseClassMap);
+            File inheritanceFile = FileLocator.getFile((String) options.valueOf("read-inheritance"));
+            try (BufferedReader reader = new BufferedReader(new FileReader(inheritanceFile))) {
+                inheritanceMap.load(reader, inverseClassMap);
+            }
             log("Loaded inheritance map for " + inheritanceMap.size() + " classes");
 
             inheritanceProviders.add(inheritanceMap);
@@ -246,14 +256,7 @@ public class SpecialSource {
             accessMapper = new RemapperProcessor(null, jarMapping, access);
         }
 
-        if (options.has("in-jar")) {
-            if (!options.has("out-jar")) {
-                System.err.println("No output jar given, in-jar requires out-jar");
-                parser.printHelpOn(System.err);
-                System.exit(-1);
-                return;
-            }
-
+        if (options.has("in-jar") && options.has("out-jar")) {
             @SuppressWarnings("unchecked")
             List<String> filenames = (List<String>) options.valuesOf("in-jar");
             List<File> files = new ArrayList<File>();
@@ -261,7 +264,7 @@ public class SpecialSource {
                 files.add(FileLocator.getFile(filename));
             }
 
-            Jar jar3 = Jar.init(files);
+            jar3 = Jar.init(files);
 
             inheritanceProviders.add(new JarProvider(jar3));
 
@@ -287,6 +290,9 @@ public class SpecialSource {
                 }
             }
         }
+        if (jar1 != null) jar1.close();
+        if (jar2 != null) jar2.close();
+        if (jar3 != null) jar3.close();
     }
 
     public static void log(String message) {
