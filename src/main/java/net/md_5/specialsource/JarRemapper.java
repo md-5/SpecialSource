@@ -169,18 +169,16 @@ public class JarRemapper extends CustomRemapper {
      * Remap all the classes in a jar, writing a new jar to the target
      */
     public void remapJar(Jar jar, File target) throws IOException {
-        JarOutputStream out = new JarOutputStream(new FileOutputStream(target));
+        if (jar == null) {
+            return;
+        }
         ClassRepo repo = new JarRepo(jar);
-        try {
-            if (jar == null) {
-                return;
-            }
+        try (JarOutputStream out = new JarOutputStream(new FileOutputStream(target))) {
             for (String name : jar.getEntryNames()) {
 
                 JarEntry entry;
 
-                InputStream is = jar.getResource(name);
-                try {
+                try (InputStream is = jar.getResource(name)) {
                     byte[] data;
                     if (name.endsWith(".class")) {
                         // remap classes
@@ -211,12 +209,8 @@ public class JarRemapper extends CustomRemapper {
                     }
                     out.putNextEntry(entry);
                     out.write(data);
-                } finally {
-                    is.close();
                 }
             }
-        } finally {
-            out.close();
         }
     }
 

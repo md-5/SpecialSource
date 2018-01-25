@@ -278,9 +278,9 @@ public class SpecialSource {
             InheritanceMap inheritanceMap = new InheritanceMap();
 
             inheritanceMap.generate(inheritanceProviders, jarMapping.classes.values());
-            PrintWriter printWriter = new PrintWriter((File) options.valueOf("write-inheritance"));
-            inheritanceMap.save(printWriter);
-            printWriter.close();
+            try (PrintWriter printWriter = new PrintWriter((File) options.valueOf("write-inheritance"))) {
+                inheritanceMap.save(printWriter);
+            }
         }
 
         if (access != null) {
@@ -306,18 +306,10 @@ public class SpecialSource {
         JarComparer visitor2 = visitors.second;
 
         ClassReader clazz1, clazz2;
-        InputStream first = null;
-        InputStream second = null;
-        try {
-            clazz1 = new ClassReader(first = jars.second.getClass(classes.first));
-            clazz2 = new ClassReader(second = jars.first.getClass(classes.second));
-        } finally {
-            if (first != null) {
-                first.close();
-            }
-            if (second != null) {
-                second.close();
-            }
+        try (InputStream first = jars.second.getClass(classes.first);
+             InputStream second = jars.first.getClass(classes.second)) {
+            clazz1 = new ClassReader(first);
+            clazz2 = new ClassReader(second);
         }
         clazz1.accept(visitor1, 0);
         clazz2.accept(visitor2, 0);

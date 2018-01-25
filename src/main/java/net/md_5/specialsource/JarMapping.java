@@ -486,13 +486,6 @@ public class JarMapping {
 
         this.newJar = newJar;
 
-        PrintWriter out;
-        if (logfile == null) {
-            out = new PrintWriter(System.out);
-        } else {
-            out = new PrintWriter(logfile);
-        }
-
         MappingWriter srgWriter = (compact) ? new CompactSearge(oldJar.jar.getFilename(), newJar.jar.getFilename()) : new Searge(oldJar.jar.getFilename(), newJar.jar.getFilename());
 
 
@@ -528,6 +521,8 @@ public class JarMapping {
             }
         }
 
-        srgWriter.write(out);
+        try (PrintWriter out = (logfile != null ? new PrintWriter(System.out) : new PrintWriter(logfile))) {
+            srgWriter.write(out);
+        }
     }
 }

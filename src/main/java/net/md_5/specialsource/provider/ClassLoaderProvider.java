@@ -51,12 +51,12 @@ public class ClassLoaderProvider implements InheritanceProvider {
     public Collection<String> getParents(String owner) {
         // TODO: ToInternalName
         String ownerInternalName = owner.replace('.', '/').concat(".class");
-        InputStream input = classLoader.getResourceAsStream(ownerInternalName);
-        if (input == null) {
-            return null;
-        }
 
-        try {
+        try (InputStream input = classLoader.getResourceAsStream(ownerInternalName)) {
+            if (input == null) {
+                return null;
+            }
+
             ClassReader cr = new ClassReader(input);
             ClassNode node = new ClassNode();
             cr.accept(node, 0);
@@ -72,14 +72,6 @@ public class ClassLoaderProvider implements InheritanceProvider {
             return parents;
         } catch (Exception ex) {
             // Just ignore this, means that we couldn't get any lookup for the specified class
-        } finally {
-            if (input != null) {
-                try {
-                    input.close();
-                } catch (IOException ex) {
-                    // Too bad, can't recover from here
-                }
-            }
         }
 
         return null;
