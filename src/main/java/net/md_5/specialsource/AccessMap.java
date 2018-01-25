@@ -90,7 +90,9 @@ public class AccessMap {
     }
 
     public void loadAccessTransformer(File file) throws IOException {
-        loadAccessTransformer(new BufferedReader(new FileReader(file)));
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            loadAccessTransformer(reader);
+        }
     }
 
     /**
