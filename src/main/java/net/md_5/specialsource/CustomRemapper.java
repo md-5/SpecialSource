@@ -28,7 +28,11 @@
  */
 package net.md_5.specialsource;
 
+import java.util.Stack;
+
 import org.objectweb.asm.commons.Remapper;
+import org.objectweb.asm.commons.SignatureRemapper;
+import org.objectweb.asm.signature.SignatureVisitor;
 
 public abstract class CustomRemapper extends Remapper {
 
@@ -57,5 +61,51 @@ public abstract class CustomRemapper extends Remapper {
             return null;
         }
         return super.mapSignature(signature, typeSignature);
+    }
+
+    @Override
+    protected SignatureVisitor createSignatureRemapper(SignatureVisitor v) {
+        return new ProguardSignatureFixer(v, this);
+    }
+
+    /**
+     * Proguard has a problem where it will sometimes incorrectly output a method signature.
+     * It will put the fully qualified obf name for the inner instead of the inner name.
+     * So here we try and detect and fix that.
+     * Example:
+     *   Bad:  (TK;)Lzt<TK;TT;TR;>.zt$a;
+     *   Good: (TK;)Lzt<TK;TT;TR;>.a;
+     */
+    static class ProguardSignatureFixer extends SignatureRemapper {
+        private Stack<String> classNames = new Stack<String>();
+
+        ProguardSignatureFixer(SignatureVisitor sv, Remapper m) {
+            super(sv, m);
+        }
+
+        @Override
+        public void visitClassType(String name) {
+            classNames.push(name);
+            super.visitClassType(name);
+        }
+
+        @Override
+        public void visitInnerClassType(String name) {
+            String outerClassName = classNames.pop();
+
+            if (name.startsWith(outerClassName + '$')) {
+                name = name.substring(outerClassName.length() + 1);
+            }
+
+            String className = outerClassName + '$' + name;
+            classNames.push(className);
+            super.visitInnerClassType(name);
+        }
+
+        @Override
+        public void visitEnd() {
+            classNames.pop();
+            super.visitEnd();
+        }
     }
 }
