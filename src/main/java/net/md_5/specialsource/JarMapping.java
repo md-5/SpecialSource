@@ -42,6 +42,8 @@ import java.io.*;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
+import org.objectweb.asm.commons.Remapper;
+
 public class JarMapping {
 
     public final LinkedHashMap<String, String> packages = new LinkedHashMap<String, String>();
@@ -51,6 +53,7 @@ public class JarMapping {
     private InheritanceMap inheritanceMap = new InheritanceMap();
     private InheritanceProvider fallbackInheritanceProvider = null;
     private Set<String> excludedPackages = new HashSet<String>();
+    private String currentClass = null;
 
     public JarMapping() {
     }
@@ -259,6 +262,7 @@ public class JarMapping {
             outputTransformer = MavenShade.IDENTITY;
         }
 
+        List<String> lines = new ArrayList<>();
         String line;
         while ((line = reader.readLine()) != null) {
             int commentIndex = line.indexOf('#');
@@ -268,23 +272,58 @@ public class JarMapping {
             if (line.isEmpty()) {
                 continue;
             }
+            lines.add(line);
+        }
 
-            if (line.contains(":")) {
-                // standard srg
-                parseSrgLine(line, inputTransformer, outputTransformer, reverse);
+        //Gather class mappings here so that we can support reversing csrg/tsrg.
+        final Map<String, String> clsMap = new HashMap<>();
+        for (String l : lines) {
+            if (l.contains(":")) {
+                if (!l.startsWith("CL:")) {
+                    continue;
+                }
+                String[] tokens = l.split(" ");
+                clsMap.put(tokens[1], tokens[1]);
             } else {
-                // better 'compact' srg format
-                parseCsrgLine(line, inputTransformer, outputTransformer, reverse);
+                if (l.startsWith("\t")) {
+                    continue;
+                }
+                String[] tokens = l.split(" ");
+                clsMap.put(tokens[0], tokens[1]);
             }
         }
+
+        // We use a Remapper so that we don't have to duplicate the logic of remapping method descriptors.
+        Remapper reverseMapper = new Remapper() {
+            @Override
+            public String map(String cls) {
+                return clsMap.getOrDefault(cls, cls);
+            }
+        };
+
+        for (String l : lines) {
+            if (l.contains(":")) {
+                // standard srg
+                parseSrgLine(l, inputTransformer, outputTransformer, reverse);
+            } else {
+                // better 'compact' srg format
+                parseCsrgLine(l, inputTransformer, outputTransformer, reverse, reverseMapper);
+            }
+        }
+
+        currentClass = null;
     }
 
     /**
      * Parse a 'csrg' mapping format line and populate the data structures
      */
-    private void parseCsrgLine(String line, MappingTransformer inputTransformer, MappingTransformer outputTransformer, boolean reverse) throws IOException {
-        if (reverse) {
-            throw new IllegalArgumentException("csrg reversed not supported"); // TODO: reverse csg (need to lookup remapped classes)
+    private void parseCsrgLine(String line, MappingTransformer inputTransformer, MappingTransformer outputTransformer, boolean reverse, Remapper reverseMap) throws IOException {
+        //Tsrg format, identical to Csrg, except the field and method lines start with \t and should use the last class the was parsed.
+        if (line.startsWith("\t")) {
+            if (this.currentClass == null) {
+                throw new IOException("Invalid tsrg file, tsrg field/method line before class line: " + line);
+            }
+            line = currentClass + " " + line.substring(1);
         }
 
         String[] tokens = line.split(" ");
@@ -295,21 +334,57 @@ public class JarMapping {
 
             if (oldClassName.endsWith("/")) {
                 // Special case: mapping an entire hierarchy of classes
-                // TODO: support default package, '.' in .srg
-                packages.put(oldClassName.substring(0, oldClassName.length() - 1), newClassName);
+                if (reverse) {
+                    packages.put(newClassName, oldClassName.substring(0, oldClassName.length() - 1));
+                } else {
+                    packages.put(oldClassName.substring(0, oldClassName.length() - 1), newClassName);
+                }
             } else {
-                classes.put(oldClassName, newClassName);
+                if (reverse) {
+                    classes.put(newClassName, oldClassName);
+                    currentClass = tokens[1];
+                } else {
+                    classes.put(oldClassName, newClassName);
+                    currentClass = tokens[0];
+                }
             }
         } else if (tokens.length == 3) {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
             String oldFieldName = inputTransformer.transformFieldName(tokens[0], tokens[1]);
             String newFieldName = outputTransformer.transformFieldName(tokens[0], tokens[2]);
+
+            if (reverse) {
+                String newClassName = reverseMap.map(oldClassName);
+                if (newClassName.equals(oldClassName)) {
+                    throw new IOException("Invalid csrg file line, could not be reversed: " + line);
+                }
+                oldClassName = newClassName;
+
+                String temp = newFieldName;
+                newFieldName = oldFieldName;
+                oldFieldName = temp;
+            }
+
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
         } else if (tokens.length == 4) {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
             String oldMethodName = inputTransformer.transformMethodName(tokens[0], tokens[1], tokens[2]);
             String oldMethodDescriptor = inputTransformer.transformMethodDescriptor(tokens[2]);
             String newMethodName = outputTransformer.transformMethodName(tokens[0], tokens[3], tokens[2]);
+
+            if (reverse) {
+                String newClassName = reverseMap.map(oldClassName);
+                if (newClassName.equals(oldClassName)) {
+                    throw new IOException("Invalid csrg file line, could not be reversed: " + line);
+                }
+                oldClassName = newClassName;
+                oldMethodDescriptor = reverseMap.mapMethodDesc(oldMethodDescriptor);
+
+                String temp = newMethodName;
+                newMethodName = oldMethodName;
+                oldMethodName = temp;
+            }
+
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
         } else {
             throw new IOException("Invalid csrg file line, token count " + tokens.length + " unexpected in " + line);
@@ -352,6 +427,7 @@ public class JarMapping {
                 packages.put(oldClassName, newClassName);
             } else {
                 classes.put(oldClassName, newClassName);
+                currentClass = tokens[1];
             }
         } else if (kind.equals("PK:")) {
             String oldPackageName = inputTransformer.transformClassName(tokens[1]);
@@ -453,7 +529,7 @@ public class JarMapping {
                 SpecialSource.log("Ignored MD: " + oldClassName + "/" + oldMethodName + " -> " + newMethodName);
                 return;
             }
-            
+
             String oldEntry = oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor;
             if (methods.containsKey(oldEntry) && !newMethodName.equals(methods.get(oldEntry))) {
                 throw new IllegalArgumentException("Duplicate method mapping: " + oldEntry + " ->" + newMethodName
