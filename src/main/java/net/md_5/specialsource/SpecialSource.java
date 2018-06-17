@@ -189,6 +189,12 @@ public class SpecialSource {
             jar1 = Jar.init(FileLocator.getFile((String) options.valueOf("first-jar")));
             jar2 = Jar.init(FileLocator.getFile((String) options.valueOf("second-jar")));
 
+            if (jar1.getMain() == null || jar2.getMain() == null) {
+                System.err.println("Jars for comparison must both define Main-Class manifest attribute");
+                System.exit(-1);
+                return;
+            }
+
             log("Creating jar compare");
             JarComparer visitor1 = new JarComparer(jar1);
             JarComparer visitor2 = new JarComparer(jar2);
