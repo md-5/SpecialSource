@@ -597,7 +597,7 @@ public class JarMapping {
             }
         }
 
-        try (PrintWriter out = (logfile != null ? new PrintWriter(System.out) : new PrintWriter(logfile))) {
+        try (PrintWriter out = (logfile == null ? new PrintWriter(System.out) : new PrintWriter(logfile))) {
             srgWriter.write(out);
         }
     }
