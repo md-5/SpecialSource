@@ -275,6 +275,8 @@ public class JarMapping {
             lines.add(line);
         }
 
+        ProgressMeter meter = new ProgressMeter(lines.size() * 2, "Loading mappings... %2.0f%%");
+
         //Gather class mappings here so that we can support reversing csrg/tsrg.
         final Map<String, String> clsMap = new HashMap<>();
         for (String l : lines) {
@@ -291,6 +293,7 @@ public class JarMapping {
                 String[] tokens = l.split(" ");
                 clsMap.put(tokens[0], tokens[1]);
             }
+            meter.makeProgress();
         }
 
         // We use a Remapper so that we don't have to duplicate the logic of remapping method descriptors.
@@ -309,6 +312,7 @@ public class JarMapping {
                 // better 'compact' srg format
                 parseCsrgLine(l, inputTransformer, outputTransformer, reverse, reverseMapper);
             }
+            meter.makeProgress();
         }
 
         currentClass = null;

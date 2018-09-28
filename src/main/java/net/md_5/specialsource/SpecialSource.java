@@ -116,6 +116,10 @@ public class SpecialSource {
                 //acceptsAll(asList("G", "remap-reflect-field"), "Remap reflection calls to getDeclaredField()"); // TODO
 
                 acceptsAll(asList("q", "quiet"), "Quiet mode");
+                acceptsAll(asList("progress-interval"),"% markers at which to print progress")
+                        .withRequiredArg()
+                        .ofType(Integer.class)
+                        .defaultsTo(10);
 
                 acceptsAll(asList("v", "version"), "Displays version information");
 
@@ -148,6 +152,9 @@ public class SpecialSource {
             System.exit(-1);
             return;
         }
+
+        // has default
+        ProgressMeter.printInterval = ((Number) options.valueOf("progress-interval")).doubleValue();
 
         if (options.has("version"))
         {

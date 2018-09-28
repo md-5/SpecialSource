@@ -174,8 +174,10 @@ public class JarRemapper extends CustomRemapper {
         }
         ClassRepo repo = new JarRepo(jar);
         try (JarOutputStream out = new JarOutputStream(new FileOutputStream(target))) {
-            for (String name : jar.getEntryNames()) {
+            Set<String> jarEntries = jar.getEntryNames();
+            ProgressMeter meter = new ProgressMeter(jarEntries.size(), "Remapping jar... %2.0f%%");
 
+            for (String name : jarEntries) {
                 JarEntry entry;
 
                 try (InputStream is = jar.getResource(name)) {
@@ -209,6 +211,8 @@ public class JarRemapper extends CustomRemapper {
                     }
                     out.putNextEntry(entry);
                     out.write(data);
+
+                    meter.makeProgress();
                 }
             }
         }
