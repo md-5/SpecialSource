@@ -172,6 +172,9 @@ public class JarRemapper extends CustomRemapper {
         if (jar == null) {
             return;
         }
+        if (!target.getParentFile().exists()) {
+            target.getParentFile().mkdirs();
+        }
         ClassRepo repo = new JarRepo(jar);
         try (JarOutputStream out = new JarOutputStream(new FileOutputStream(target))) {
             Set<String> jarEntries = jar.getEntryNames();
