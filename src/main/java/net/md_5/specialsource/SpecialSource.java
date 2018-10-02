@@ -53,6 +53,7 @@ public class SpecialSource {
     public static boolean kill_lvt = false;
     public static boolean kill_generics = false;
     public static String identifier = null;
+    public static boolean stable = false;
 
     public static void main(String[] args) throws Exception {
         OptionParser parser = new OptionParser() {
@@ -120,6 +121,7 @@ public class SpecialSource {
                         .withRequiredArg()
                         .ofType(Integer.class)
                         .defaultsTo(10);
+                acceptsAll(asList("stable"), "Attempts to make output stable for a given input");
 
                 acceptsAll(asList("v", "version"), "Displays version information");
 
@@ -187,6 +189,7 @@ public class SpecialSource {
         }
 
         FileLocator.useCache = !options.has("force-redownload");
+        SpecialSource.stable = options.has("stable");
 
         Jar jar1 = null, jar2 = null, jar3 = null;
 
