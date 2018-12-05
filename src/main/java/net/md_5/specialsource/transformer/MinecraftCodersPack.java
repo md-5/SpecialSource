@@ -28,8 +28,8 @@
  */
 package net.md_5.specialsource.transformer;
 
-import au.com.bytecode.opencsv.CSVReader;
 import com.google.common.base.Preconditions;
+import com.opencsv.CSVReader;
 
 import java.io.File;
 import java.io.FileReader;

@@ -71,7 +71,7 @@ public class JarComparer extends ClassVisitor {
     }
 
     public JarComparer(Jar jar) {
-        super(Opcodes.ASM6);
+        super(Opcodes.ASM7);
         this.jar = jar;
         this.jarRepo = new JarRepo(jar);
         this.inheritance = new JarProvider(jar);
@@ -166,7 +166,7 @@ public class JarComparer extends ClassVisitor {
     private class MethodReferenceFinder extends MethodVisitor {
 
         public MethodReferenceFinder() {
-            super(Opcodes.ASM6);
+            super(Opcodes.ASM7);
         }
 
         @Override
