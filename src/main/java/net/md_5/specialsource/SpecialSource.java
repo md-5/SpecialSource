@@ -34,6 +34,8 @@ import net.md_5.specialsource.provider.JointProvider;
 import net.md_5.specialsource.provider.JarProvider;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -132,6 +134,10 @@ public class SpecialSource {
                         .withRequiredArg()
                         .ofType(String.class);
                 acceptsAll(asList("e", "excluded-packages"), "A comma seperated list of packages that should not be transformed, even if the srg specifies they should")
+                        .withRequiredArg()
+                        .ofType(String.class);
+
+                acceptsAll(asList("only"), "Process only the specified packages. Similar to --excluded-packages but applies at the processing rather than loading phase")
                         .withRequiredArg()
                         .ofType(String.class);
             }
@@ -286,7 +292,7 @@ public class SpecialSource {
 
             log("Remapping final jar");
             JarRemapper jarRemapper = new JarRemapper(null, jarMapping, accessMapper);
-            jarRemapper.remapJar(jar3, (File) options.valueOf("out-jar"));
+            jarRemapper.remapJar(jar3, (File) options.valueOf("out-jar"), new HashSet<String>((Collection<String>) options.valuesOf("only")));
         }
 
 

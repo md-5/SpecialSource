@@ -165,10 +165,14 @@ public class JarRemapper extends CustomRemapper {
         return mapped == null ? name : mapped;
     }
 
+    public void remapJar(Jar jar, File target) throws IOException {
+        remapJar(jar, target, Collections.EMPTY_SET);
+    }
+
     /**
      * Remap all the classes in a jar, writing a new jar to the target
      */
-    public void remapJar(Jar jar, File target) throws IOException {
+    public void remapJar(Jar jar, File target, Set<String> includes) throws IOException {
         if (jar == null) {
             return;
         }
@@ -185,7 +189,7 @@ public class JarRemapper extends CustomRemapper {
 
                 try (InputStream is = jar.getResource(name)) {
                     byte[] data;
-                    if (name.endsWith(".class")) {
+                    if (name.endsWith(".class") && shouldHandle(name, includes)) {
                         // remap classes
                         name = name.substring(0, name.length() - CLASS_LEN);
 
@@ -222,6 +226,23 @@ public class JarRemapper extends CustomRemapper {
                 }
             }
         }
+    }
+
+    private static boolean shouldHandle(String name, Set<String> includes) {
+        if (includes.isEmpty()) {
+            return true;
+        }
+
+        for (String match : includes) {
+            if (match.equals(".") && !name.contains("/")) {
+                return true;
+            }
+            if (name.startsWith(match)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
