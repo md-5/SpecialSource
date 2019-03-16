@@ -45,7 +45,7 @@
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-commons</artifactId>
-            <version>7.0</version>
+            <version>7.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -124,6 +124,18 @@
                     <minimizeJar>true</minimizeJar>
                     <shadedArtifactAttached>true</shadedArtifactAttached>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.github.zlika</groupId>
+                <artifactId>reproducible-build-maven-plugin</artifactId>
+                <version>0.8</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>strip-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
