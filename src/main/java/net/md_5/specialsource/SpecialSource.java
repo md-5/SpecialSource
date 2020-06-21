@@ -328,8 +328,8 @@ public class SpecialSource {
         JarComparer visitor2 = visitors.second;
 
         ClassReader clazz1, clazz2;
-        try (InputStream first = jars.second.getClass(classes.first);
-             InputStream second = jars.first.getClass(classes.second)) {
+        try (InputStream first = jars.first.getClass(classes.first);
+             InputStream second = jars.second.getClass(classes.second)) {
             clazz1 = new ClassReader(first);
             clazz2 = new ClassReader(second);
         }
