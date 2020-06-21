@@ -87,9 +87,9 @@ public class InheritanceMap implements InheritanceProvider {
         String line;
 
         while ((line = reader.readLine()) != null) {
-            int commentIndex = line.indexOf('#')
+            int commentIndex = line.indexOf('#');
             if (commentIndex != -1) {
-                line = line.substring(0, commentIndex)
+                line = line.substring(0, commentIndex);
             }
             if (line.isEmpty()) {
                 continue;
