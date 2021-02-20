@@ -77,7 +77,7 @@ public abstract class CustomRemapper extends Remapper {
      *   Good: (TK;)Lzt<TK;TT;TR;>.a;
      */
     static class ProguardSignatureFixer extends SignatureRemapper {
-        private Stack<String> classNames = new Stack<String>();
+        private final Stack<String> classNames = new Stack<String>();
 
         ProguardSignatureFixer(SignatureVisitor sv, Remapper m) {
             super(sv, m);
