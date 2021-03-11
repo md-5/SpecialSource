@@ -33,15 +33,11 @@ import java.util.Collection;
 
 import com.google.common.base.Preconditions;
 import net.md_5.specialsource.repo.ClassRepo;
-import net.md_5.specialsource.repo.RuntimeRepo;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.MethodRemapper;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.MethodNode;
 
 public class UnsortedRemappingMethodAdapter extends MethodRemapper {
 
@@ -52,67 +48,31 @@ public class UnsortedRemappingMethodAdapter extends MethodRemapper {
                     "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;", false)
     );
 
-    protected final CustomRemapper remapper;
-    private final ClassRepo classRepo;
+    protected final RepoRemapper remapper;
 
     public UnsortedRemappingMethodAdapter(final MethodVisitor mv, final CustomRemapper remapper, ClassRepo classRepo) {
         super(mv, remapper);
         Preconditions.checkArgument(mv != null, "mv");
-        this.remapper = remapper;
-        this.classRepo = classRepo;
+        this.remapper = new RepoRemapper(remapper, classRepo);
     }
 
     @Override
     public void visitFieldInsn(int opcode, String owner, String name,
             String desc) {
         mv.visitFieldInsn(opcode, remapper.mapType(owner),
-                remapper.mapFieldName(owner, name, desc, findAccess(NodeType.FIELD, owner, name, desc)),
+                remapper.mapFieldName(owner, name, desc),
                 remapper.mapDesc(desc));
     }
 
-    private int findAccess(NodeType type, String owner, String name, String desc, ClassRepo repo) {
-        int access = -1;
-        if (repo != null) {
-            ClassNode clazz = classRepo.findClass(owner);
-            if (clazz != null) {
-                switch (type) {
-                    case FIELD:
-                        for (FieldNode f : clazz.fields) {
-                            if (f.name.equals(name) && f.desc.equals(desc)) {
-                                access = f.access;
-                                break;
-                            }
-                        }
-                        break;
-                    case METHOD:
-                        for (MethodNode m : classRepo.findClass(owner).methods) {
-                            if (m.name.equals(name) && m.desc.equals(desc)) {
-                                access = m.access;
-                                break;
-                            }
-                        }
-                        break;
-                }
-            }
-        }
-
-        return access;
-    }
-
+    @Deprecated
     public int findAccess(NodeType type, String owner, String name, String desc) {
-        int access;
-        access = findAccess(type, owner, name, desc, classRepo);
-        if (access == -1) {
-            access = findAccess(type, owner, name, desc, RuntimeRepo.getInstance());
-        }
-
-        return access;
+        return remapper.findAccess(type, owner, name, desc);
     }
 
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
         mv.visitMethodInsn(opcode, remapper.mapType(owner),
-                remapper.mapMethodName(owner, name, desc, findAccess(NodeType.METHOD, owner, name, desc)),
+                remapper.mapMethodName(owner, name, desc),
                 remapper.mapMethodDesc(desc), itf);
     }
 
@@ -125,7 +85,7 @@ public class UnsortedRemappingMethodAdapter extends MethodRemapper {
             String owner = Type.getReturnType(desc).getInternalName();
             String odesc = ((Type) bsmArgs[0]).getDescriptor(); // First constant argument is "samMethodType - Signature and return type of method to be implemented by the function object."
             // index 2 is the signature, but with generic types. Should we use that instead?
-            name = remapper.mapMethodName(owner, name, odesc, findAccess(NodeType.METHOD, owner, name, odesc));
+            name = remapper.mapMethodName(owner, name, odesc );
         } else {
             name = remapper.mapInvokeDynamicMethodName(name, desc);
         }
