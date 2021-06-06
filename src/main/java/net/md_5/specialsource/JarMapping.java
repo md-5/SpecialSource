@@ -305,6 +305,9 @@ public class JarMapping {
         };
 
         for (String l : lines) {
+            if (l.startsWith("tsrg2")) {
+                continue;
+            }
             if (l.contains(":")) {
                 // standard srg
                 parseSrgLine(l, inputTransformer, outputTransformer, reverse);
@@ -323,6 +326,10 @@ public class JarMapping {
      */
     private void parseCsrgLine(String line, MappingTransformer inputTransformer, MappingTransformer outputTransformer, boolean reverse, Remapper reverseMap) throws IOException {
         //Tsrg format, identical to Csrg, except the field and method lines start with \t and should use the last class the was parsed.
+        if (line.startsWith("\t\t")) {
+            // Two tabs means the format is Tsrgv2 with parameters and extra data that isn't needed.
+            return;
+        }
         if (line.startsWith("\t")) {
             if (this.currentClass == null) {
                 throw new IOException("Invalid tsrg file, tsrg field/method line before class line: " + line);
