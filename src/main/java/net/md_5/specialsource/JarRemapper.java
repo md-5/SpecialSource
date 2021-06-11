@@ -155,13 +155,13 @@ public class JarRemapper extends CustomRemapper {
 
     @Override
     public String mapFieldName(String owner, String name, String desc, int access) {
-        String mapped = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, owner, name, access);
+        String mapped = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, owner, name, desc, access);
         return mapped == null ? name : mapped;
     }
 
     @Override
     public String mapMethodName(String owner, String name, String desc, int access) {
-        String mapped = jarMapping.tryClimb(jarMapping.methods, NodeType.METHOD, owner, name + " " + desc, access);
+        String mapped = jarMapping.tryClimb(jarMapping.methods, NodeType.METHOD, owner, name + " " + desc, null, access);
         return mapped == null ? name : mapped;
     }
 

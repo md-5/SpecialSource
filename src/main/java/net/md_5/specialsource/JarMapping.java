@@ -41,6 +41,8 @@ import net.md_5.specialsource.transformer.MappingTransformer;
 import java.io.*;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.objectweb.asm.commons.Remapper;
 
@@ -94,10 +96,13 @@ public class JarMapping {
         return false;
     }
 
-    public String tryClimb(Map<String, String> map, NodeType type, String owner, String name, int access) {
+    public String tryClimb(Map<String, String> map, NodeType type, String owner, String name, String desc, int access) {
         String key = owner + "/" + name;
 
-        String mapped = map.get(key);
+        String mapped = (desc != null) ? map.get(key + "/" + desc) : null;
+        if (mapped == null) {
+            mapped = map.get(key);
+        }
         if (mapped == null && (access == -1 || (!Modifier.isPrivate(access) && !Modifier.isStatic(access)))) {
             Collection<String> parents = null;
 
@@ -111,7 +116,7 @@ public class JarMapping {
             if (parents != null) {
                 // climb the inheritance tree
                 for (String parent : parents) {
-                    mapped = tryClimb(map, type, parent, name, access);
+                    mapped = tryClimb(map, type, parent, name, desc, access);
                     if (mapped != null) {
                         return mapped;
                     }
@@ -279,19 +284,29 @@ public class JarMapping {
 
         //Gather class mappings here so that we can support reversing csrg/tsrg.
         final Map<String, String> clsMap = new HashMap<>();
+        final Map<String, String> prgMap = new HashMap<>();
         for (String l : lines) {
-            if (l.contains(":")) {
+            if (l.endsWith(":")) {
+                String[] parts = l.split(" -> ");
+                String orig = parts[0].replace('.', '/');
+                String obf = parts[1].substring(0, parts[1].length() - 1).replace('.', '/');
+
+                clsMap.put(obf, orig);
+                prgMap.put(orig, obf);
+            } else if (l.contains(":")) {
                 if (!l.startsWith("CL:")) {
                     continue;
                 }
                 String[] tokens = l.split(" ");
-                clsMap.put(tokens[1], tokens[1]);
+                clsMap.put(tokens[0], tokens[1]);
             } else {
                 if (l.startsWith("\t")) {
                     continue;
                 }
                 String[] tokens = l.split(" ");
-                clsMap.put(tokens[0], tokens[1]);
+                if (tokens.length == 2) {
+                    clsMap.put(tokens[0], tokens[1]);
+                }
             }
             meter.makeProgress();
         }
@@ -308,7 +323,9 @@ public class JarMapping {
             if (l.startsWith("tsrg2")) {
                 continue;
             }
-            if (l.contains(":")) {
+            if (l.contains(" -> ")) {
+                parseProguardLine(l, inputTransformer, outputTransformer, reverse, reverseMapper, prgMap);
+            } else if (l.contains(":")) {
                 // standard srg
                 parseSrgLine(l, inputTransformer, outputTransformer, reverse);
             } else {
@@ -319,6 +336,96 @@ public class JarMapping {
         }
 
         currentClass = null;
+    }
+
+    private static final Pattern MEMBER_PATTERN = Pattern.compile("(?:\\d+:\\d+:)?(.*?) (.*?) \\-> (.*)");
+    private void parseProguardLine(String line, MappingTransformer inputTransformer, MappingTransformer outputTransformer, boolean reverse, Remapper reverseMap, Map<String, String> prgMap) throws IOException {
+        //Tsrg format, identical to Csrg, except the field and method lines start with \t and should use the last class the was parsed.
+        if (line.startsWith("    ")) {
+            if (this.currentClass == null) {
+                throw new IOException("Invalid proguard file, tsrg field/method line before class line: " + line);
+            }
+            line = line.trim();
+        }
+
+        if (line.endsWith(":")) {
+            String[] parts = line.split(" -> ");
+            String orig = parts[0].replace('.', '/');
+            String obf = parts[1].substring(0, parts[1].length() - 1).replace('.', '/');
+
+            String oldClassName = inputTransformer.transformClassName(obf);
+            String newClassName = outputTransformer.transformClassName(orig);
+
+            if (oldClassName.endsWith("/")) {
+                // Special case: mapping an entire hierarchy of classes
+                if (reverse) {
+                    packages.put(newClassName, oldClassName.substring(0, oldClassName.length() - 1));
+                } else {
+                    packages.put(oldClassName.substring(0, oldClassName.length() - 1), newClassName);
+                }
+            } else {
+                if (reverse) {
+                    classes.put(newClassName, oldClassName);
+                    currentClass = orig;
+                } else {
+                    classes.put(oldClassName, newClassName);
+                    currentClass = obf;
+                }
+            }
+        } else {
+            Matcher matcher = MEMBER_PATTERN.matcher(line);
+            matcher.find();
+
+            String obfName = matcher.group(3);
+            String nameDesc = matcher.group(2);
+            if (nameDesc.contains("(")) {
+                String desc = ProguardUtil.csrgDesc(prgMap, nameDesc.substring(nameDesc.indexOf('(')), matcher.group(1));
+                String newName = nameDesc.substring(0, nameDesc.indexOf('('));
+
+                // System.out.println( lastClass + " " + matcher.group( 3 ) + " " + sig + " " + mojName );
+                String oldClassName = inputTransformer.transformClassName(currentClass);
+                String oldMethodName = inputTransformer.transformMethodName(currentClass, obfName, desc);
+                String oldMethodDescriptor = inputTransformer.transformMethodDescriptor(desc);
+                String newMethodName = outputTransformer.transformMethodName(currentClass, newName, desc);
+
+                if (reverse) {
+                    String newClassName = reverseMap.map(oldClassName);
+                    if (newClassName.equals(oldClassName)) {
+                        // throw new IOException("Invalid csrg file line, could not be reversed: " + line);
+                    }
+                    oldClassName = newClassName;
+                    oldMethodDescriptor = reverseMap.mapMethodDesc(oldMethodDescriptor);
+
+                    String temp = newMethodName;
+                    newMethodName = oldMethodName;
+                    oldMethodName = temp;
+                }
+
+                methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
+            } else {
+                String desc = ProguardUtil.toJVMType(prgMap, matcher.group(1));
+
+                String oldClassName = inputTransformer.transformClassName(currentClass);
+                String oldFieldName = inputTransformer.transformFieldName(currentClass, obfName);
+                String oldFieldDescriptor = inputTransformer.transformMethodDescriptor(desc);
+                String newFieldName = outputTransformer.transformFieldName(currentClass, nameDesc);
+
+                if (reverse) {
+                    String newClassName = reverseMap.map(oldClassName);
+                    if (newClassName.equals(oldClassName)) {
+                        // throw new IOException("Invalid csrg file line, could not be reversed: " + line);
+                    }
+                    oldClassName = newClassName;
+                    oldFieldDescriptor = reverseMap.mapDesc(oldFieldDescriptor);
+
+                    String temp = newFieldName;
+                    newFieldName = oldFieldName;
+                    oldFieldName = temp;
+                }
+
+                fields.put(oldClassName + "/" + oldFieldName + "/" + oldFieldDescriptor, newFieldName);
+            }
+        }
     }
 
     /**
@@ -367,7 +474,7 @@ public class JarMapping {
             if (reverse) {
                 String newClassName = reverseMap.map(oldClassName);
                 if (newClassName.equals(oldClassName)) {
-                    throw new IOException("Invalid csrg file line, could not be reversed: " + line);
+                    // throw new IOException("Invalid csrg file line, could not be reversed: " + line);
                 }
                 oldClassName = newClassName;
 
@@ -386,7 +493,7 @@ public class JarMapping {
             if (reverse) {
                 String newClassName = reverseMap.map(oldClassName);
                 if (newClassName.equals(oldClassName)) {
-                    throw new IOException("Invalid csrg file line, could not be reversed: " + line);
+                    // throw new IOException("Invalid csrg file line, could not be reversed: " + line);
                 }
                 oldClassName = newClassName;
                 oldMethodDescriptor = reverseMap.mapMethodDesc(oldMethodDescriptor);
@@ -610,6 +717,54 @@ public class JarMapping {
 
         try (PrintWriter out = (logfile == null ? new PrintWriter(System.out) : new PrintWriter(logfile))) {
             srgWriter.write(out);
+        }
+    }
+
+    private static class ProguardUtil {
+
+        private static String csrgDesc(Map<String, String> data, String args, String ret) {
+            String[] parts = args.substring(1, args.length() - 1).split(",");
+            StringBuilder desc = new StringBuilder("(");
+            for (String part : parts) {
+                if (part.isEmpty()) {
+                    continue;
+                }
+                desc.append(toJVMType(data, part));
+            }
+            desc.append(")");
+            desc.append(toJVMType(data, ret));
+            return desc.toString();
+        }
+
+        private static String toJVMType(Map<String, String> data, String type) {
+            switch (type) {
+                case "byte":
+                    return "B";
+                case "char":
+                    return "C";
+                case "double":
+                    return "D";
+                case "float":
+                    return "F";
+                case "int":
+                    return "I";
+                case "long":
+                    return "J";
+                case "short":
+                    return "S";
+                case "boolean":
+                    return "Z";
+                case "void":
+                    return "V";
+                default:
+                    if (type.endsWith("[]")) {
+                        return "[" + toJVMType(data, type.substring(0, type.length() - 2));
+                    }
+                    String clazzType = type.replace('.', '/');
+                    String mappedType = data.get(clazzType);
+
+                    return "L" + ((mappedType != null) ? mappedType : clazzType) + ";";
+            }
         }
     }
 }
