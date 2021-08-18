@@ -42,22 +42,29 @@ import lombok.Getter;
 /**
  * Access mapper - for modifying access flags on symbols
  *
- * Supports loading _at.cfg files in the following format: - comments beginning
- * with '#' extending to end of line - symbol pattern, space, then access
- * changes
+ * Supports loading _at.cfg files in the following format:
+ * <ul>
+ * <li>comments beginning with '#' extending to end of line</li>
+ * <li>symbol pattern, space, then access changes</li>
+ * </ul>
  *
- * Symbol pattern format: foo class foo/bar field foo/bar ()desc method foo/*
- * fields in class foo/* ()desc methods in class * all classes
- * *<nobr/>/* all fields
- * *<nobr/>/*() all methods ** all classes, fields, and methods
- *
- * Internal ('/') and source ('.') conventions are accepted, and the space
- * preceding the method descriptor is optional.
+ * Symbol pattern format:
+ * <pre>
+ * foo              class
+ * foo/bar          field
+ * foo/bar ()desc   method
+ * foo/*            fields in class
+ * foo/* ()desc     methods in class
+ * *                all classes
+ * *&#47;*       all fields
+ * *&#47;*()     all methods
+ * **               all classes, fields, and methods
+ * </pre>
+ * Internal ('/') and source ('.') conventions are accepted,
+ * and the space preceding the method descriptor is optional.
  *
  * Access change format: visibility (required) + access flags
- *
  * @see AccessChange
- *
  */
 public class AccessMap {
 
@@ -205,7 +212,7 @@ public class AccessMap {
     /**
      * Called when an access mapping is applied.
      *
-     * @param key the key which caused the mapping to be matched & applied
+     * @param key the key which caused the mapping to be matched and applied
      * @param oldAccess the access which was replaced
      * @param newAccess the new access which was applied by the mapping
      */

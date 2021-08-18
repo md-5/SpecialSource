@@ -65,7 +65,6 @@ public class RemapperProcessor {
      * @param jarMapping Mapping for reflection remapping, or null to not remap
      * reflection
      * @param accessMap Access transformer mappings, or null to not apply AT
-     * @throws IOException
      */
     public RemapperProcessor(InheritanceMap inheritanceMap, JarMapping jarMapping, AccessMap accessMap) {
         this.inheritanceMap = inheritanceMap;
