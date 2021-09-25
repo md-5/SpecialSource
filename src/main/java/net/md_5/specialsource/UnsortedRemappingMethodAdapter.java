@@ -81,6 +81,7 @@ public class UnsortedRemappingMethodAdapter extends MethodRemapper {
             Object... bsmArgs) {
 
         // Special case lambda metaFactory to get new name
+
         if (META_FACTORIES.contains(bsm)) {
             String owner = Type.getReturnType(desc).getInternalName();
             String odesc = ((Type) bsmArgs[0]).getDescriptor(); // First constant argument is "samMethodType - Signature and return type of method to be implemented by the function object."
@@ -88,6 +89,19 @@ public class UnsortedRemappingMethodAdapter extends MethodRemapper {
             name = remapper.mapMethodName(owner, name, odesc );
         } else {
             name = remapper.mapInvokeDynamicMethodName(name, desc);
+        }
+
+        if (bsm.getOwner().equals("java/lang/runtime/ObjectMethods")) {
+            // TODO: consider asserting name (the parameter) equals hashCode, toString, or equals
+
+            Type clazz = (Type)bsmArgs[0];
+            // TODO: consider asserting (String)bsmArgs[1] == "step;feature"
+
+            for (int i = 2; i < bsmArgs.length; i++) {
+                Handle h = (Handle)bsmArgs[i];
+                String newName = remapper.mapFieldName(clazz.getInternalName(), h.getName(), h.getDesc());
+                bsmArgs[i] = new Handle(h.getTag(), h.getOwner(), newName, h.getDesc(), h.isInterface());
+            }
         }
 
         for (int i = 0; i < bsmArgs.length; i++) {

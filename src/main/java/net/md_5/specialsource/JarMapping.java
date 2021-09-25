@@ -471,8 +471,8 @@ public class JarMapping {
             String oldFieldName = inputTransformer.transformFieldName(tokens[0], tokens[1]);
             String newFieldName = outputTransformer.transformFieldName(tokens[0], tokens[2]);
 
+            String newClassName = reverseMap.map(oldClassName);
             if (reverse) {
-                String newClassName = reverseMap.map(oldClassName);
                 if (newClassName.equals(oldClassName)) {
                     // throw new IOException("Invalid csrg file line, could not be reversed: " + line);
                 }
@@ -484,6 +484,7 @@ public class JarMapping {
             }
 
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
+            fields.put(newClassName + "/" + oldFieldName, newFieldName);
         } else if (tokens.length == 4) {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
             String oldMethodName = inputTransformer.transformMethodName(tokens[0], tokens[1], tokens[2]);
@@ -608,12 +609,14 @@ public class JarMapping {
             }
 
             String oldEntry = oldClassName + "/" + oldFieldName;
+            String newEntryHack = newClassName + "/" + oldFieldName;
+
             if (fields.containsKey(oldEntry) && !newFieldName.equals(fields.get(oldEntry))) {
                 throw new IllegalArgumentException("Duplicate field mapping: " + oldEntry + " ->" + newFieldName
                         + " but already mapped to " + fields.get(oldEntry) + " in line=" + line);
             }
-
             fields.put(oldEntry, newFieldName);
+            fields.put(newEntryHack, newFieldName);
         } else if (kind.equals("MD:")) {
             String oldFull = tokens[1];
             String newFull = tokens[3];
