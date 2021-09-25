@@ -99,7 +99,7 @@ public class UnsortedRemappingMethodAdapter extends MethodRemapper {
 
             for (int i = 2; i < bsmArgs.length; i++) {
                 Handle h = (Handle)bsmArgs[i];
-                String newName = remapper.mapFieldName(clazz.getInternalName(), h.getName(), h.getDesc());
+                String newName = remapper.mapFieldName(clazz.getInternalName(), h.getName(), h.getDesc(), 0);
                 bsmArgs[i] = new Handle(h.getTag(), h.getOwner(), newName, h.getDesc(), h.isInterface());
             }
         }
