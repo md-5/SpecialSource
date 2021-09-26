@@ -90,6 +90,18 @@ public class UnsortedRemappingMethodAdapter extends MethodRemapper {
             name = remapper.mapInvokeDynamicMethodName(name, desc);
         }
 
+        if (bsm.getOwner().equals("java/lang/runtime/ObjectMethods")) {
+            // TODO: consider asserting name (the parameter) equals hashCode, toString, or equals
+            Type clazz = (Type) bsmArgs[0];
+
+            // TODO: consider asserting (String)bsmArgs[1] == "step;feature"
+            for (int i = 2; i < bsmArgs.length; i++) {
+                Handle h = (Handle) bsmArgs[i];
+                String newName = remapper.mapFieldName(clazz.getInternalName(), h.getName(), h.getDesc(), 0);
+                bsmArgs[i] = new Handle(h.getTag(), h.getOwner(), newName, h.getDesc(), h.isInterface());
+            }
+        }
+
         for (int i = 0; i < bsmArgs.length; i++) {
             bsmArgs[i] = remapper.mapValue(bsmArgs[i]);
         }
