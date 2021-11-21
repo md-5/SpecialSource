@@ -30,14 +30,17 @@ package net.md_5.specialsource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import lombok.Setter;
 import net.md_5.specialsource.repo.ClassRepo;
 import net.md_5.specialsource.repo.JarRepo;
+import net.md_5.specialsource.writer.LogWriter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
@@ -49,6 +52,8 @@ public class JarRemapper extends CustomRemapper {
     private RemapperProcessor preProcessor;
     public final JarMapping jarMapping;
     private RemapperProcessor postProcessor;
+    @Setter
+    private LogWriter logWriter;
     private int writerFlags = COMPUTE_MAXS;
     private int readerFlags = 0;
     private boolean copyResources = true;
@@ -81,6 +86,10 @@ public class JarRemapper extends CustomRemapper {
             readerFlags &= ~ClassReader.SKIP_CODE;
             copyResources = true;
         }
+    }
+
+    public void setLogFile(File file) throws FileNotFoundException {
+        this.logWriter = new LogWriter(file);
     }
 
     @Override
@@ -226,6 +235,13 @@ public class JarRemapper extends CustomRemapper {
                 }
             }
         }
+        if (logWriter != null) {
+            try {
+                logWriter.close();
+            } catch (IOException ex) {
+                //
+            }
+        }
     }
 
     private static boolean shouldHandle(String name, Set<String> includes) {
@@ -267,6 +283,9 @@ public class JarRemapper extends CustomRemapper {
 
         ClassNode node = new ClassNode();
         RemappingClassAdapter mapper = new RemappingClassAdapter(node, this, repo);
+        if (logWriter != null) {
+            mapper.setLogWriter(logWriter);
+        }
         reader.accept(mapper, readerFlags);
 
         ClassWriter wr = new ClassWriter(writerFlags);

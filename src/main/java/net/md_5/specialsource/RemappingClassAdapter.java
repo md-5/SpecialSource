@@ -60,7 +60,9 @@ package net.md_5.specialsource;
  */
 
 import com.google.common.base.Preconditions;
+import lombok.Setter;
 import net.md_5.specialsource.repo.ClassRepo;
+import net.md_5.specialsource.writer.LogWriter;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
@@ -73,6 +75,8 @@ public class RemappingClassAdapter extends ClassRemapper {
 
     protected final CustomRemapper remapper;
     protected ClassRepo repo;
+    @Setter
+    protected LogWriter logWriter;
 
     public RemappingClassAdapter(final ClassVisitor cv, final CustomRemapper remapper, ClassRepo repo) {
         super(cv, remapper);
@@ -83,23 +87,47 @@ public class RemappingClassAdapter extends ClassRemapper {
     }
 
     @Override
+    public void visit(int version, int access, String name, String signature,
+            String superName, String[] interfaces) {
+        this.className = name;
+
+        String newName = remapper.mapType(name);
+        cv.visit(version,
+                access,
+                newName,
+                remapper.mapSignature(signature, false),
+                remapper.mapType(superName),
+                interfaces == null ? null : remapper.mapTypes(interfaces));
+
+        if (logWriter != null) {
+            logWriter.addClassMap(className, newName);
+        }
+    }
+
+    @Override
     public MethodVisitor visitMethod(int access, String name, String desc,
             String signature, String[] exceptions) {
+        String newName = remapper.mapMethodName(className, name, desc, access);
         String newDesc = remapper.mapMethodDesc(desc);
-        MethodVisitor mv = cv.visitMethod(access, remapper.mapMethodName(
-                className, name, desc, access), newDesc, remapper.mapSignature(
+        MethodVisitor mv = cv.visitMethod(access, newName, newDesc, remapper.mapSignature(
                 signature, false),
                 exceptions == null ? null : remapper.mapTypes(exceptions));
-        return mv == null ? null : createMethodRemapper(mv);
+        return mv == null ? null : createMethodRemapper(mv, desc, name, newName);
     }
 
     @Override
     public FieldVisitor visitField(int access, String name, String desc,
             String signature, Object value) {
+        String newName = remapper.mapFieldName(className, name, desc, access);
         FieldVisitor fv = cv.visitField(access,
-                remapper.mapFieldName(className, name, desc, access),
+                newName,
                 remapper.mapDesc(desc), remapper.mapSignature(signature, true),
                 remapper.mapValue(value));
+
+        if (logWriter != null) {
+            logWriter.addFieldMap(desc, name, newName);
+        }
+
         return fv == null ? null : createFieldRemapper(fv);
     }
 
@@ -131,7 +159,11 @@ public class RemappingClassAdapter extends ClassRemapper {
     }
 
     @Override
-    protected MethodVisitor createMethodRemapper(MethodVisitor mv) {
+    protected MethodVisitor createMethodRemapper(MethodVisitor methodVisitor) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    protected MethodVisitor createMethodRemapper(MethodVisitor mv, final String oldDesc, final String oldName, final String newName) {
         return new UnsortedRemappingMethodAdapter(mv, remapper, repo) {
             @Override
             public void visitAttribute(Attribute attr) {
@@ -150,6 +182,26 @@ public class RemappingClassAdapter extends ClassRemapper {
                 if (!SpecialSource.kill_lvt) {
                     super.visitLocalVariable(name, desc, signature, start, end, index);
                 }
+            }
+
+            private int startLine = Integer.MAX_VALUE;
+            private int endLine = Integer.MIN_VALUE;
+
+            @Override
+            public void visitLineNumber(int line, Label start) {
+                startLine = Math.min(startLine, line);
+                endLine = Math.max(endLine, line);
+
+                super.visitLineNumber(line, start);
+            }
+
+            @Override
+            public void visitEnd() {
+                if (logWriter != null) {
+                    logWriter.addMethodMap(startLine, endLine, oldDesc, oldName, newName);
+                }
+
+                super.visitEnd();
             }
         };
     }

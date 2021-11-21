@@ -140,6 +140,10 @@ public class SpecialSource {
                 acceptsAll(asList("only"), "Process only the specified packages. Similar to --excluded-packages but applies at the processing rather than loading phase")
                         .withRequiredArg()
                         .ofType(String.class);
+
+                acceptsAll(asList("log"), "Output log to write")
+                        .withRequiredArg()
+                        .ofType(File.class);
             }
         };
 
@@ -292,6 +296,11 @@ public class SpecialSource {
 
             log("Remapping final jar");
             JarRemapper jarRemapper = new JarRemapper(null, jarMapping, accessMapper);
+            if (options.has("log")) {
+                File logOutput = (File) options.valueOf("log");
+                jarRemapper.setLogFile(logOutput);
+            }
+
             jarRemapper.remapJar(jar3, (File) options.valueOf("out-jar"), new HashSet<String>((Collection<String>) options.valuesOf("only")));
         }
 
