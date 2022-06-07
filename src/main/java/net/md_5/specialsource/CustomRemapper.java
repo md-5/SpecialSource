@@ -46,6 +46,11 @@ public abstract class CustomRemapper extends Remapper {
     }
 
     @Override
+    public String mapRecordComponentName(String owner, String name, String desc) {
+        return mapFieldName(owner, name, desc);
+    }
+
+    @Override
     public String mapFieldName(String owner, String name, String desc) {
         return mapFieldName(owner, name, desc, 0);
     }
