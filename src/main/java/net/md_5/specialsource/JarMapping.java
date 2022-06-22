@@ -366,11 +366,10 @@ public class JarMapping {
             } else {
                 if (reverse) {
                     classes.put(newClassName, oldClassName);
-                    currentClass = orig;
                 } else {
                     classes.put(oldClassName, newClassName);
-                    currentClass = obf;
                 }
+                currentClass = obf;
             }
         } else {
             Matcher matcher = MEMBER_PATTERN.matcher(line);
