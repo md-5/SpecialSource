@@ -460,11 +460,10 @@ public class JarMapping {
             } else {
                 if (reverse) {
                     classes.put(newClassName, oldClassName);
-                    currentClass = tokens[1];
                 } else {
                     classes.put(oldClassName, newClassName);
-                    currentClass = tokens[0];
                 }
+                currentClass = tokens[0];
             }
         } else if (tokens.length == 3) {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
@@ -545,7 +544,7 @@ public class JarMapping {
                 packages.put(oldClassName, newClassName);
             } else {
                 classes.put(oldClassName, newClassName);
-                currentClass = tokens[1];
+                currentClass = tokens[0];
             }
         } else if (kind.equals("PK:")) {
             String oldPackageName = inputTransformer.transformClassName(tokens[1]);
