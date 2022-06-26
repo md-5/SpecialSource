@@ -57,6 +57,7 @@ public class JarRemapper extends CustomRemapper {
     private int writerFlags = COMPUTE_MAXS;
     private int readerFlags = 0;
     private boolean copyResources = true;
+    private boolean copyEmptyDirectories = true;
 
     public JarRemapper(RemapperProcessor preProcessor, JarMapping jarMapping, RemapperProcessor postProcessor) {
         this.preProcessor = preProcessor;
@@ -88,6 +89,10 @@ public class JarRemapper extends CustomRemapper {
         }
     }
 
+    public void setCopyEmptyDirectories(boolean copyEmptyDirectories) {
+        this.copyEmptyDirectories = copyEmptyDirectories;
+    }
+
     public void setLogFile(File file) throws FileNotFoundException {
         this.logWriter = new LogWriter(file);
     }
@@ -109,7 +114,7 @@ public class JarRemapper extends CustomRemapper {
         if (classMap != null && classMap.containsKey(className)) {
             return classMap.get(className);
         }
-        
+
         int index = className.lastIndexOf('$');
         if (index != -1)
         {
@@ -213,6 +218,9 @@ public class JarRemapper extends CustomRemapper {
                         // copy other resources
                         if (!copyResources) {
                             continue; // unless generating an API
+                        }
+                        if (!copyEmptyDirectories && name.endsWith("/")) {
+                            continue; // Don't copy empty directories
                         }
                         entry = new JarEntry(name);
 
