@@ -454,11 +454,21 @@ public class JarMapping {
             String newClassName = outputTransformer.transformClassName(tokens[1]);
 
             if (oldClassName.endsWith("/")) {
+
+                // package names always either 1) suffixed with '/', or 2) equal to '.' to signify default package
+                if (!newClassName.equals(".") && !newClassName.endsWith("/")) {
+                    newClassName += "/";
+                }
+
+                if (!oldClassName.equals(".") && !oldClassName.endsWith("/")) {
+                    oldClassName += "/";
+                }
+
                 // Special case: mapping an entire hierarchy of classes
                 if (reverse) {
-                    packages.put(newClassName, oldClassName.substring(0, oldClassName.length() - 1));
+                    packages.put(newClassName, oldClassName);
                 } else {
-                    packages.put(oldClassName.substring(0, oldClassName.length() - 1), newClassName);
+                    packages.put(oldClassName, newClassName);
                 }
             } else {
                 if (reverse) {
