@@ -77,7 +77,7 @@ public class MinecraftCodersPack extends MappingTransformer {
              CSVReader csvReader = new CSVReader(fileReader)) {
 
             String[] line;
-            while ((line = csvReader.readNext()) != null) {
+            while ((line = csvReader.readNextSilently()) != null) {
                 if (line.length == 0) {
                     continue;
                 }
