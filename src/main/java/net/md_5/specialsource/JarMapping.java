@@ -453,7 +453,17 @@ public class JarMapping {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
             String newClassName = outputTransformer.transformClassName(tokens[1]);
 
+            if (reverse) {
+                String temp = newClassName;
+                newClassName = oldClassName;
+                oldClassName = temp;
+            }
+
             if (oldClassName.endsWith("/")) {
+                if (isExcludedPackage(oldClassName)) {
+                    SpecialSource.log("Ignored PK: " + oldClassName + " " + newClassName);
+                    return;
+                }
 
                 // package names always either 1) suffixed with '/', or 2) equal to '.' to signify default package
                 if (!newClassName.equals(".") && !newClassName.endsWith("/")) {
@@ -465,18 +475,16 @@ public class JarMapping {
                 }
 
                 // Special case: mapping an entire hierarchy of classes
-                if (reverse) {
-                    packages.put(newClassName, oldClassName);
-                } else {
-                    packages.put(oldClassName, newClassName);
-                }
+                packages.put(oldClassName, newClassName);
             } else {
-                if (reverse) {
-                    classes.put(newClassName, oldClassName);
-                } else {
-                    classes.put(oldClassName, newClassName);
-                }
                 currentClass = tokens[0];
+       
+                if (isExcludedPackage(oldClassName)) {
+                    SpecialSource.log("Ignored CL: " + oldClassName + " " + newClassName);
+                    return;
+                }
+
+                classes.put(oldClassName, newClassName);
             }
         } else if (tokens.length == 3) {
             String oldClassName = inputTransformer.transformClassName(tokens[0]);
@@ -493,6 +501,11 @@ public class JarMapping {
                 String temp = newFieldName;
                 newFieldName = oldFieldName;
                 oldFieldName = temp;
+            }
+
+            if (isExcludedPackage(oldClassName)) {
+                SpecialSource.log("Ignored FD: " + oldClassName + "/" + oldFieldName + " -> " + newFieldName);
+                return;
             }
 
             fields.put(oldClassName + "/" + oldFieldName, newFieldName);
@@ -513,6 +526,11 @@ public class JarMapping {
                 String temp = newMethodName;
                 newMethodName = oldMethodName;
                 oldMethodName = temp;
+            }
+
+            if (isExcludedPackage(oldClassName)) {
+                SpecialSource.log("Ignored MD: " + oldClassName + "/" + oldMethodName + " -> " + newMethodName);
+                return;
             }
 
             methods.put(oldClassName + "/" + oldMethodName + " " + oldMethodDescriptor, newMethodName);
