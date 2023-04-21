@@ -123,6 +123,8 @@
                 <configuration>
                     <minimizeJar>true</minimizeJar>
                     <shadedArtifactAttached>true</shadedArtifactAttached>
+                    <!-- In 3.3.0 and later, shadedArtifactAttached causes dependant projects to use dependency reduced pom (bug?) -->
+                    <createDependencyReducedPom>false</createDependencyReducedPom>
                 </configuration>
             </plugin>
             <plugin>
