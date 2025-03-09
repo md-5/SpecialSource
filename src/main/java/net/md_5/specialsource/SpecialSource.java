@@ -116,7 +116,7 @@ public class SpecialSource {
                         .withRequiredArg()
                         .ofType(String.class);
 
-                //acceptsAll(asList("G", "remap-reflect-field"), "Remap reflection calls to getDeclaredField()"); // TODO
+                acceptsAll(asList("G", "remap-reflect-field"), "Remap reflection calls to getDeclaredField()");
 
                 acceptsAll(asList("q", "quiet"), "Quiet mode");
                 acceptsAll(asList("progress-interval"),"% markers at which to print progress")
@@ -274,6 +274,11 @@ public class SpecialSource {
             inheritanceProviders.add(inheritanceMap);
         }
 
+        RemapperProcessor reflectionMapper = null;
+        if (options.has("remap-reflect-field")) {
+            reflectionMapper = new RemapperProcessor(null, jarMapping, null);
+        }
+
         RemapperProcessor accessMapper = null;
         AccessMap access = null;
         if (options.has("access-transformer")) {
@@ -295,7 +300,7 @@ public class SpecialSource {
             inheritanceProviders.add(new JarProvider(jar3));
 
             log("Remapping final jar");
-            JarRemapper jarRemapper = new JarRemapper(null, jarMapping, accessMapper);
+            JarRemapper jarRemapper = new JarRemapper(reflectionMapper, jarMapping, accessMapper);
             if (options.has("log")) {
                 File logOutput = (File) options.valueOf("log");
                 jarRemapper.setLogFile(logOutput);
