@@ -45,6 +45,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import net.md_5.specialsource.util.Pair2;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
@@ -114,6 +115,24 @@ public class Jar implements Closeable {
 
         ZipEntry e = jarFile.getEntry(name);
         return e == null ? null : jarFile.getInputStream(e);
+    }
+
+    /**
+     * Get the stream for a file in this jar.
+     *
+     * @param name
+     * @return
+     * @throws IOException
+     */
+    @SuppressWarnings("resource") // closed when the this Jar is closed
+    public Pair2<ZipEntry, InputStream> getEntry(String name) throws IOException {
+        JarFile jarFile = jarForResource.get(name);
+        if (jarFile == null) {
+            return null;
+        }
+
+        ZipEntry e = jarFile.getEntry(name);
+        return e == null ? null : new Pair2<>(e, jarFile.getInputStream(e));
     }
 
     /**

@@ -37,9 +37,11 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
 import lombok.Setter;
 import net.md_5.specialsource.repo.ClassRepo;
 import net.md_5.specialsource.repo.JarRepo;
+import net.md_5.specialsource.util.Pair2;
 import net.md_5.specialsource.writer.LogWriter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -201,7 +203,8 @@ public class JarRemapper extends CustomRemapper {
             for (String name : jarEntries) {
                 JarEntry entry;
 
-                try (InputStream is = jar.getResource(name)) {
+                Pair2<ZipEntry, InputStream> pair = jar.getEntry(name);
+                try (InputStream is = pair.second) {
                     byte[] data;
                     if (name.endsWith(".class") && shouldHandle(name, includes)) {
                         // remap classes
@@ -233,9 +236,7 @@ public class JarRemapper extends CustomRemapper {
                         buffer.flush();
                         data = buffer.toByteArray();
                     }
-                    if (SpecialSource.stable) {
-                        entry.setTime(0);
-                    }
+                    entry.setTime(pair.first.getTime());
                     out.putNextEntry(entry);
                     out.write(data);
 
