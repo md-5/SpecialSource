@@ -50,7 +50,7 @@ public class JarMapping {
 
     public final LinkedHashMap<String, String> packages = new LinkedHashMap<String, String>();
     public final Map<String, String> classes = new HashMap<String, String>();
-    public final Map<String, String> fields = new HashMap<String, String>();
+    public final SortedMap<String, String> fields = new TreeMap<String, String>();
     public final Map<String, String> methods = new HashMap<String, String>();
     private InheritanceMap inheritanceMap = new InheritanceMap();
     private InheritanceProvider fallbackInheritanceProvider = null;
