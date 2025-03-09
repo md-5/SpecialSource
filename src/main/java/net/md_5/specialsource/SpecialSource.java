@@ -284,7 +284,7 @@ public class SpecialSource {
         if (options.has("access-transformer")) {
             access = new AccessMap();
             access.loadAccessTransformer((File) options.valueOf("access-transformer"));
-            accessMapper = new RemapperProcessor(null, jarMapping, access);
+            accessMapper = new RemapperProcessor(null, null, access);
         }
 
         if (options.has("in-jar") && options.has("out-jar")) {
