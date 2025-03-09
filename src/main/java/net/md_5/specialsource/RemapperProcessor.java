@@ -37,7 +37,8 @@ import org.objectweb.asm.tree.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * "Pre-process" a class file, intended to be used before remapping with
@@ -228,7 +229,7 @@ public class RemapperProcessor {
         }
         String className = ((Type) ldcClass.cst).getInternalName();
 
-        String newName = jarMapping.tryClimb(jarMapping.fields, NodeType.FIELD, className, fieldName, null, 0);
+        String newName = getDeclaredFieldMapping(className, fieldName);
         logR("Remapping " + className + "/" + fieldName + " -> " + newName);
 
         if (newName != null) {
@@ -238,6 +239,39 @@ public class RemapperProcessor {
         }
     }
 
+    private static final Pattern JVM_TYPE_PATTERN = Pattern.compile("^\\[*L.+;$");
+    private String getDeclaredFieldMapping(String className, String fieldName) {
+        String exactKey = className + '/' + fieldName;
+
+        // Perform direct lookup first.
+        String exactResult = jarMapping.fields.get(exactKey);
+        if (exactResult != null) {
+            return exactResult;
+        }
+
+        // Fall through to an indirect lookup in case the mapping is from Proguard.
+        int exactLen = exactKey.length();
+        // Exclusive upper bound is the next character to ensure that all keys start with the exact key.
+        // Ex: "abc/Def/player" to "abc/Def/playes"
+        String high = exactKey.substring(0, exactLen - 1) + ((char) (exactKey.charAt(exactLen - 1) + 1));
+        Map<String, String> submap = jarMapping.fields.subMap(exactKey, high);
+        for (Map.Entry<String, String> entry : submap.entrySet()) {
+            // Due to the map bounds and the fact that the exact key isn't contained,
+            // all entries should have keys that are longer than and start with the exact key.
+            if (entry.getKey().charAt(exactLen) != '/') {
+                // Skip fields with a common prefix (i.e. abc/Def/players)
+                continue;
+            }
+
+            // If the suffix appears to be a type, accept the match.
+            String type = entry.getKey().substring(exactLen + 1);
+          if (type.length() >= 3 && JVM_TYPE_PATTERN.matcher(type).find()) {
+                return entry.getValue();
+            }
+        }
+
+        return null;
+    }
 
      /**
      * Replace Class.forName("string") with a remapped field string
