@@ -465,6 +465,14 @@ public class JarMapping {
                     return;
                 }
 
+                // #96: Add backwards compatibility for './' mappings signifying default package
+                if (newClassName.equals("./")) {
+                    newClassName = ".";
+                }
+                if (oldClassName.equals("./")) {
+                    oldClassName = ".";
+                }
+
                 // package names always either 1) suffixed with '/', or 2) equal to '.' to signify default package
                 if (!newClassName.equals(".") && !newClassName.endsWith("/")) {
                     newClassName += "/";
