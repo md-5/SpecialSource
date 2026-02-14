@@ -29,8 +29,8 @@
         <connection>scm:git:git@github.com:md-5/SpecialSource.git</connection>
         <developerConnection>scm:git:git@github.com:md-5/SpecialSource.git</developerConnection>
         <url>git@github.com:md-5/SpecialSource.git</url>
-      <tag>HEAD</tag>
-  </scm>
+        <tag>HEAD</tag>
+    </scm>
     <issueManagement>
         <system>GitHub</system>
         <url>https://github.com/md-5/SpecialSource/issues</url>
