@@ -4,7 +4,7 @@
 
     <groupId>net.md-5</groupId>
     <artifactId>SpecialSource</artifactId>
-    <version>1.11.6-SNAPSHOT</version>
+    <version>1.11.6</version>
     <packaging>jar</packaging>
 
     <name>SpecialSource</name>
@@ -29,7 +29,8 @@
         <connection>scm:git:git@github.com:md-5/SpecialSource.git</connection>
         <developerConnection>scm:git:git@github.com:md-5/SpecialSource.git</developerConnection>
         <url>git@github.com:md-5/SpecialSource.git</url>
-    </scm>
+      <tag>SpecialSource-1.11.6</tag>
+  </scm>
     <issueManagement>
         <system>GitHub</system>
         <url>https://github.com/md-5/SpecialSource/issues</url>
