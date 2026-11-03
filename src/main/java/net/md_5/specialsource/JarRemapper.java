@@ -28,6 +28,7 @@
  */
 package net.md_5.specialsource;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -196,7 +197,7 @@ public class JarRemapper extends CustomRemapper {
             target.getParentFile().mkdirs();
         }
         ClassRepo repo = new JarRepo(jar);
-        try (JarOutputStream out = new JarOutputStream(new FileOutputStream(target))) {
+        try (JarOutputStream out = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(target), 64 * 1024))) {
             Set<String> jarEntries = jar.getEntryNames();
             ProgressMeter meter = new ProgressMeter(jarEntries.size(), "Remapping jar... %2.0f%%");
 
